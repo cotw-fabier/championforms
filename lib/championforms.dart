@@ -23,4 +23,7 @@ export 'package:fleather/fleather.dart';
 export 'package:parchment/parchment.dart';
 export 'package:parchment_delta/parchment_delta.dart';
 
+// Export field wrappers for easy access
+export 'package:championforms/widgets_external/fieldwrappers/coloredbox.dart';
+
 // TODO: Build some basic form styles to use in light or dark mode
