@@ -38,6 +38,5 @@ class ColoredBoxDecoratorWidget extends StatelessWidget {
         child: child,
       ),
     );
-    ;
   }
 }

@@ -16,13 +16,13 @@ class QuillControllerNotifier extends _$QuillControllerNotifier {
     // We need to insert custom heuristics here.
     // This will crash the app if you use const.
     // ignore: prefer_const_constructors
-    final heuristics = ParchmentHeuristics(
+    /* final heuristics = ParchmentHeuristics(
       formatRules: [],
       insertRules: [
         const YoutubeEmbedInsertRule(),
       ],
       deleteRules: [],
-    ).merge(ParchmentHeuristics.fallback);
+    ).merge(ParchmentHeuristics.fallback); */
 
     // TODO: Convert the heuistics rule to autoformat
     final autoFormats = AutoFormats(autoFormats: [
