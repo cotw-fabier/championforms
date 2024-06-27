@@ -7,6 +7,7 @@ export 'package:championforms/widgets_external/championform.dart';
 // Export Form Classes
 export 'package:championforms/models/formfieldclass.dart';
 export 'package:championforms/models/formfieldtoolbar.dart';
+export 'package:championforms/models/validatorclass.dart';
 
 // Export functions to get results and validate forms
 export 'package:championforms/functions/getresults.dart';
