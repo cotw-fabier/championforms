@@ -1,7 +1,19 @@
-library championforms;
+// Export the form builder sugar syntax widget
+export 'package:championforms/widgets_external/championform.dart';
+// TODO: Create provider container widget for projects which don't implement riverpod but want to use this project
 
-/// A Calculator.
-class Calculator {
-  /// Returns [value] plus 1.
-  int addOne(int value) => value + 1;
-}
+// Export Form Classes
+export 'package:championforms/models/formfieldclass.dart';
+export 'package:championforms/models/formfieldtoolbar.dart';
+
+// Export functions to get results and validate forms
+export 'package:championforms/functions/getresults.dart';
+export 'package:championforms/functions/geterrors.dart';
+
+// export this type so you can work with form results such as building custom validation.
+export 'package:championforms/models/formresultstype.dart';
+
+// Export some default validators
+export 'package:championforms/functions/defaultvalidators/defaultvalidators.dart';
+
+// TODO: Build some basic form styles to use in light or dark mode
