@@ -20,5 +20,6 @@ export 'package:championforms/functions/defaultvalidators/defaultvalidators.dart
 
 export 'package:fleather/fleather.dart';
 export 'package:parchment/parchment.dart';
+export 'package:parchment_delta/parchment_delta.dart';
 
 // TODO: Build some basic form styles to use in light or dark mode
