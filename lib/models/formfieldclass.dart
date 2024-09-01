@@ -677,4 +677,53 @@ class FormFieldDef implements FormFieldBase {
       fieldBuilder: fieldBuilder,
     );
   }
+// textField
+  factory FormFieldDef.widget({
+    required String id,
+    required Widget child,
+    String hintText = "",
+    String? title,
+    bool hideField = false,
+    bool active = true,
+    bool requestFocus = false,
+    double? height,
+    double? maxHeight,
+    double? width,
+    int? flex,
+    bool fillArea = false,
+    Widget Function({required Widget child})? fieldBuilder,
+    Future<void> Function({
+      FleatherController? fleatherController,
+      TextEditingController? controller,
+      required String formId,
+      required String fieldId,
+      required WidgetRef ref,
+    })? onDrop,
+    bool draggable = true,
+    Future<void> Function({
+      FleatherController? fleatherController,
+      TextEditingController? controller,
+      required String formId,
+      required String fieldId,
+      required WidgetRef ref,
+    })? onPaste,
+  }) {
+    return FormFieldDef._internal(
+      type: FormFieldType.widget,
+      id: id,
+      hintText: hintText,
+      title: title,
+      hideField: hideField,
+      active: active,
+      height: height,
+      maxHeight: maxHeight,
+      width: width,
+      flex: flex,
+      fillArea: fillArea,
+      fieldBuilder: fieldBuilder,
+      onDrop: onDrop,
+      draggable: draggable,
+      onPaste: onPaste,
+    );
+  }
 }

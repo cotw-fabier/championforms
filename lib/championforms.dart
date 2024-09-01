@@ -1,5 +1,4 @@
 // Export the form builder sugar syntax widget
-import 'package:fleather/fleather.dart';
 
 export 'package:championforms/widgets_external/championform.dart';
 // TODO: Create provider container widget for projects which don't implement riverpod but want to use this project
