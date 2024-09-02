@@ -255,15 +255,18 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
                   hintStyle: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurface.withOpacity(0.5)),
                 ),
-                onFieldSubmitted: (value) {
-                  if (widget.maxLines != null) {
-                    ref.read(textFormFieldValueById(widget.id).notifier).state =
-                        value;
-                  }
-                  if (widget.onSubmitted != null) {
-                    widget.onSubmitted!(value);
-                  }
-                },
+                onFieldSubmitted: widget.onSubmitted != null
+                    ? (value) {
+                        if (widget.maxLines != null) {
+                          ref
+                              .read(textFormFieldValueById(widget.id).notifier)
+                              .state = value;
+                        }
+                        if (widget.onSubmitted != null) {
+                          widget.onSubmitted!(value);
+                        }
+                      }
+                    : null,
               ),
             ),
           ),
