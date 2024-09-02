@@ -345,7 +345,7 @@ class FormFieldDef implements FormFieldBase {
     })? onPaste,
   }) {
     return FormFieldDef._internal(
-      type: FormFieldType.textField,
+      type: FormFieldType.textArea,
       id: id,
       hintText: hintText,
       icon: icon,
