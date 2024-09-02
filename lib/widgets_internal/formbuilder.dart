@@ -219,6 +219,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
                         child: TextFieldWidget(
                           formId: widget.id,
                           fieldId: field.id,
+                          keyboardType: TextInputType.multiline,
                           onDrop: field.onDrop,
                           onPaste: field.onPaste,
                           draggable: field.draggable,
@@ -238,6 +239,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
                     : TextFieldWidget(
                         formId: widget.id,
                         fieldId: field.id,
+                        keyboardType: TextInputType.multiline,
                         onDrop: field.onDrop,
                         onPaste: field.onPaste,
                         draggable: field.draggable,

@@ -19,6 +19,7 @@ class TextFieldWidget extends ConsumerStatefulWidget {
     this.password = false,
     this.onChanged,
     this.onSubmitted,
+    this.keyboardType = TextInputType.text,
     this.validate,
     this.icon,
     this.initialValue = "",
@@ -42,6 +43,7 @@ class TextFieldWidget extends ConsumerStatefulWidget {
   final Function(String value)? onChanged;
   final Function(String value)? onSubmitted;
   final Function(String value)? validate;
+  final TextInputType keyboardType;
   final String? initialValue;
   final Icon? icon;
   final String hintText;
