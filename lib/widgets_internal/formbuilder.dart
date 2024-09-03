@@ -90,15 +90,15 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
 
           // Populate the rich text field controller
           if (field.type == FormFieldType.richText) {
-            /*ref
+            ref
                 .read(quillControllerNotifierProvider(
                   widget.id,
                   field.id,
                 ).notifier)
                 .setValue(
                   (field.deltaValue ?? Delta()
-                    ..insert(field.defaultValue)),
-                );*/
+                    ..insert(field.defaultValue ?? "")),
+                );
           }
         }
       }
@@ -289,7 +289,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
                           active: field.active,
                           icon: field.icon,
                           initialValue: field.deltaValue ?? Delta()
-                            ..insert(field.defaultValue),
+                            ..insert(field.defaultValue ?? ""),
                           hintText: field.hintText,
                           maxLines: null,
                           fieldBuilder: field.fieldBuilder,
@@ -306,7 +306,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
                         requestFocus: field.requestFocus,
                         icon: field.icon,
                         initialValue: field.deltaValue ?? Delta()
-                          ..insert(field.defaultValue),
+                          ..insert(field.defaultValue ?? ""),
                         hintText: field.hintText,
                         maxLines: null,
                         fieldBuilder: field.fieldBuilder,
