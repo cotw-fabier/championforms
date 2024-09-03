@@ -90,7 +90,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
 
           // Populate the rich text field controller
           if (field.type == FormFieldType.richText) {
-            ref
+            /*ref
                 .read(quillControllerNotifierProvider(
                   widget.id,
                   field.id,
@@ -98,8 +98,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
                 .setValue(
                   (field.deltaValue ?? Delta()
                     ..insert(field.defaultValue)),
-                );
-            ;
+                );*/
           }
         }
       }
