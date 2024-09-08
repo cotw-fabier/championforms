@@ -1,4 +1,5 @@
 import 'package:championforms/providers/textformfieldbyid.dart';
+import 'package:championforms/widgets_internal/dropdownsearchablewidget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:parchment_delta/parchment_delta.dart';
@@ -385,7 +386,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
                 const SizedBox(height: 7),
                 field.fillArea
                     ? Expanded(
-                        child: FormFieldDropDownField(
+                        child: FormFieldSearchableDropDownField(
                           field: field,
                           formId: widget.id,
                           multiSelect: field.multiselect,
@@ -395,7 +396,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
                           fieldBuilder: field.fieldBuilder,
                         ),
                       )
-                    : FormFieldDropDownField(
+                    : FormFieldSearchableDropDownField(
                         field: field,
                         formId: widget.id,
                         multiSelect: field.multiselect,

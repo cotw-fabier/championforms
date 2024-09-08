@@ -68,45 +68,6 @@ class FormFieldDropDownField extends ConsumerWidget {
               }
             },
           ),
-          /* child: Wrap(
-            spacing: 7,
-            runSpacing: 10,
-            children: field.options
-                .map((option) => ChoiceChip(
-                    label: Text(option.name),
-                    selected: chipValues
-                            .firstWhereOrNull(
-                                (element) => element.id == option.value)
-                            ?.value ??
-                        false,
-                    onSelected: (bool selected) {
-                      if (!multiSelect && selected) {
-                        ref.invalidate(
-                            choiceChipNotifierProvider("$formId${field.id}"));
-                      }
-
-                      // do we reset the values so only one can be selected?
-
-                      debugPrint(
-                          "Selected: ${option.value} Turned it $selected");
-                      if (selected) {
-                        final newChipSelection =
-                            ChoiceChipValue(id: option.value, value: true);
-                        ref
-                            .read(
-                                choiceChipNotifierProvider("$formId${field.id}")
-                                    .notifier)
-                            .addChoice(newChipSelection);
-                      } else {
-                        ref
-                            .read(
-                                choiceChipNotifierProvider("$formId${field.id}")
-                                    .notifier)
-                            .removeChoice(option.value);
-                      }
-                    }))
-                .toList(),
-          ), */
         ),
       );
     });

@@ -25,6 +25,10 @@ class ChoiceChipNotifier extends _$ChoiceChipNotifier {
     state = newValues;
   }
 
+  void replaceChoice(ChoiceChipValue choice) {
+    state = [choice];
+  }
+
   void removeChoice(String id) {
     state = state.where((choice) => choice.id != id).toList();
   }
