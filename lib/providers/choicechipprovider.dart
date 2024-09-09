@@ -19,17 +19,28 @@ class ChoiceChipNotifier extends _$ChoiceChipNotifier {
     return [];
   }
 
-  void addChoice(ChoiceChipValue choice) {
+  List<ChoiceChipValue> addChoice(ChoiceChipValue choice) {
     List<ChoiceChipValue> newValues = [...state];
     newValues.add(choice);
     state = newValues;
+    return newValues;
   }
 
-  void replaceChoice(ChoiceChipValue choice) {
+  List<ChoiceChipValue> replaceChoice(ChoiceChipValue choice) {
     state = [choice];
+    return [choice];
   }
 
-  void removeChoice(String id) {
-    state = state.where((choice) => choice.id != id).toList();
+  List<ChoiceChipValue> removeChoice(String id) {
+    final newState = state;
+    final updated = newState.where((choice) => choice.id != id).toList();
+
+    state = updated;
+    return updated;
+  }
+
+  List<ChoiceChipValue> resetChoices() {
+    state = [];
+    return [];
   }
 }
