@@ -1,3 +1,4 @@
+import 'package:championforms/providers/formfieldsstorage.dart';
 import 'package:championforms/providers/textformfieldbyid.dart';
 import 'package:championforms/widgets_internal/dropdownsearchablewidget.dart';
 import 'package:flutter/material.dart';
@@ -49,7 +50,10 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
 
     // We're going to loop through the incoming fields and set defaults for chip values
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      //
+      // At this point we need to make sure all these fields are merged together into one list in case we need to reference it later.
+      ref
+          .read(formFieldsStorageNotifierProvider(widget.id).notifier)
+          .addFields(widget.fields.whereType<FormFieldDef>().toList());
 
       // Replace with your default values for chips
 
@@ -110,6 +114,9 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
   Widget build(BuildContext context) {
     List<Widget> output = [];
     final theme = Theme.of(context);
+
+    // Listen for the form fields as long as this form is active
+    ref.listen(formFieldsStorageNotifierProvider(widget.id), (prev, next) {});
 
     for (final field in widget.fields) {
       if (field is FormFieldDef) {
@@ -182,6 +189,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
                   onPaste: field.onPaste,
                   draggable: field.draggable,
                   height: field.height,
+                  onSubmitted: field.onSubmit,
                   maxHeight: field.maxHeight,
                   expanded: field.fillArea,
                   password: field.password,

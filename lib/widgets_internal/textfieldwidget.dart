@@ -241,6 +241,7 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
                 maxLines: widget.maxLines,
                 focusNode: _focusNode,
                 controller: _controller,
+                onFieldSubmitted: widget.onSubmitted,
                 style: theme.textTheme.bodyMedium,
                 decoration: InputDecoration(
                   prefixIcon: widget.icon,

@@ -3,16 +3,21 @@ import 'package:championforms/models/formfieldclass.dart';
 import 'package:championforms/models/formresultstype.dart';
 import 'package:championforms/models/validatorclass.dart';
 import 'package:championforms/providers/formerrorprovider.dart';
+import 'package:championforms/providers/formfieldsstorage.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 List<FormBuilderError> getFormBuilderErrors(
-    {required List<FormFieldDef> fields,
+    {List<FormFieldDef>? fields,
     required Map<String, FormResults> results,
     required String formId,
     required WidgetRef ref}) {
   List<FormBuilderError> errors = [];
-  for (final field in fields) {
+
+  List<FormFieldDef> finalFields =
+      fields ?? ref.read(formFieldsStorageNotifierProvider(formId));
+
+  for (final field in finalFields) {
     final FormResults? result = results[field.id];
     // Skip validation if no result is found.
     if (result == null) continue;

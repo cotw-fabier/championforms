@@ -1,15 +1,19 @@
 import 'package:championforms/models/formfieldclass.dart';
 import 'package:championforms/models/formresultstype.dart';
 import 'package:championforms/providers/choicechipprovider.dart';
+import 'package:championforms/providers/formfieldsstorage.dart';
 import 'package:championforms/providers/formliststringsprovider.dart';
 import 'package:championforms/providers/textformfieldbyid.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 Map<String, FormResults> gatherFormBuilderResults(
-    String id, List<FormFieldDef> fields, WidgetRef ref) {
+    String id, List<FormFieldDef>? fields, WidgetRef ref) {
   Map<String, FormResults> results = {};
 
-  for (final field in fields) {
+  List<FormFieldDef> finalFields =
+      fields ?? ref.read(formFieldsStorageNotifierProvider(id));
+
+  for (final field in finalFields) {
     if (field.type == FormFieldType.chips ||
         field.type == FormFieldType.dropdown ||
         field.type == FormFieldType.checkbox) {

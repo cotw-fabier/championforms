@@ -80,6 +80,11 @@ class FormFieldDef implements FormFieldBase {
   // children FormFieldDef so you can create rows, columns, tabs, and more.
   final List<FormFieldDef>? children;
 
+  // Functions
+  // THis can be called on compatible fields. When you press enter or trigger a field submit it will trigger this function.
+  final Function(String value)? onSubmit;
+
+  // THis function triggers.....?
   final Function(String)? callBack;
 
   // For quill fields, support custom embeds from this app.
@@ -143,6 +148,7 @@ class FormFieldDef implements FormFieldBase {
     this.validators,
     this.validateLive = false,
     this.callBack,
+    this.onSubmit,
     //this.embeds = const [],
     this.height,
     this.maxHeight,
@@ -261,6 +267,7 @@ class FormFieldDef implements FormFieldBase {
     double? maxHeight,
     double? width,
     int? flex,
+    Function(String value)? onSubmit,
     bool fillArea = false,
     Widget Function({required Widget child})? fieldBuilder,
     Future<void> Function({
@@ -290,6 +297,7 @@ class FormFieldDef implements FormFieldBase {
       requestFocus: requestFocus,
       password: password,
       isSet: isSet,
+      onSubmit: onSubmit,
       defaultValue: defaultValue,
       fieldOptions: fieldOptions,
       validators: validators,

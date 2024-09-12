@@ -7,7 +7,7 @@ part of 'choicechipprovider.dart';
 // **************************************************************************
 
 String _$choiceChipNotifierHash() =>
-    r'c09d17d495a358a9416b8cc8e8d17f120ef9ff74';
+    r'34bb5db76e6e58338fc0fefc2a865beb35d58504';
 
 /// Copied from Dart SDK
 class _SystemHash {

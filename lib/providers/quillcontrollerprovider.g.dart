@@ -7,7 +7,7 @@ part of 'quillcontrollerprovider.dart';
 // **************************************************************************
 
 String _$quillControllerNotifierHash() =>
-    r'19ea446885a70b0b5be5e2d213b7c4e764b5691b';
+    r'a21046951833c48422eff4c9d1b255fc29068050';
 
 /// Copied from Dart SDK
 class _SystemHash {
