@@ -1,15 +1,16 @@
 // Lets build a model for holding a single field's results, including error information
-import 'package:championforms/championforms.dart';
+import 'package:championforms/functions/geterrors.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formfieldclass.dart';
-import 'package:championforms/models/formresultstype.dart';
 import 'package:championforms/providers/choicechipprovider.dart';
 import 'package:championforms/providers/formfieldsstorage.dart';
 import 'package:championforms/providers/formliststringsprovider.dart';
 import 'package:championforms/providers/quillcontrollerprovider.dart';
 import 'package:championforms/providers/textformfieldbyid.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:parchment/parchment.dart';
 import 'package:parchment_delta/parchment_delta.dart';
+import 'package:collection/collection.dart';
 
 class FieldResults {
   final String id;
@@ -21,6 +22,167 @@ class FieldResults {
     required this.values,
     required this.type,
   });
+
+  // As String -- join all values together into one long string, take in an optional seperator if desired or fall back to ", "
+
+  // Optional result id
+  String asString({String? id, String delimiter = ", ", String fallback = ""}) {
+    String output = "";
+    if (type == FieldType.bool) {
+      if (id != null) {
+        // Return a single subvalue. We're checking if it exists.
+        final item = values.firstWhereOrNull((data) => data.id == id);
+        output = item?.active ?? false ? item?.id ?? "" : "";
+      } else {
+        // We're going to merge this all together into one long string of values
+        output = values.map((item) => item.id).join(delimiter);
+      }
+    } else if (type == FieldType.string) {
+      if (id != null) {
+        // Return a single subvalue. We're checking if it exists.
+        final item = values.firstWhereOrNull((data) => data.id == id);
+        output = item?.value ?? "";
+      } else {
+        // We're going to merge this all together into one long string of values
+        output = values.map((item) => item.value).join(delimiter);
+      }
+    } else if (type == FieldType.parchment) {
+      output = values
+          .map((item) => ParchmentDocument.fromDelta(item.deltaValue ?? Delta())
+              .toPlainText())
+          .join(delimiter);
+    }
+    return output != "" ? output : fallback;
+  }
+
+  List<String> asStringList({String? id, List<String> fallback = const []}) {
+    List<String> output = [];
+    if (type == FieldType.bool) {
+      if (id != null) {
+        // Return a single subvalue. We're checking if it exists.
+        final item = values.firstWhereOrNull((data) => data.id == id);
+        output.add(item?.active ?? false ? item?.id ?? "" : "");
+      } else {
+        // We're going to merge this all together into one long string of values
+        output.addAll(values.map((item) => item.id).toList());
+      }
+    } else if (type == FieldType.string) {
+      if (id != null) {
+        // Return a single subvalue. We're checking if it exists.
+        final item = values.firstWhereOrNull((data) => data.id == id);
+        output.add(item?.value ?? "");
+      } else {
+        // We're going to merge this all together into one long string of values
+        output.addAll(values.map((item) => item.value ?? "").toList());
+      }
+    } else if (type == FieldType.parchment) {
+      output.addAll(values
+          .map((item) => ParchmentDocument.fromDelta(item.deltaValue ?? Delta())
+              .toPlainText())
+          .toList());
+    }
+    return output != [] ? output : fallback;
+  }
+
+  // As Bool -- True or false. returns a list of true / false values
+
+  List<bool> asBool({String? id}) {
+    if (type == FieldType.bool) {
+      if (id != null) {
+        // Return a single subvalue. We're checking if it exists.
+        final item = values.firstWhereOrNull((data) => data.id == id);
+        if (item == null) return [false];
+        return [item.active];
+      } else {
+        // We're going to merge this all together into one long string of values
+        return values.map((item) => item.active).toList();
+      }
+    } else if (type == FieldType.string) {
+      if (id != null) {
+        // Return a single subvalue. We're checking if it exists.
+        final item = values.firstWhereOrNull((data) => data.id == id);
+        if (item == null) return [false];
+        return item.value != "" ? [true] : [false];
+      } else {
+        // We're going to merge this all together into one long string of values
+        return values.map((item) => item.value != "" ? true : false).toList();
+      }
+    } else if (type == FieldType.parchment) {
+      return values
+          .map((item) => ParchmentDocument.fromDelta(item.deltaValue ?? Delta())
+                      .toPlainText() !=
+                  ""
+              ? true
+              : false)
+          .toList();
+    }
+    return [];
+  }
+
+  // As Named Bool True or false. returns a map of ID / true / false values
+
+  Map<String, bool> asBoolMap({String? id}) {
+    if (type == FieldType.bool) {
+      if (id != null) {
+        // Return a single subvalue. We're checking if it exists.
+        final item = values.firstWhereOrNull((data) => data.id == id);
+        if (item == null) return {};
+        return {item.id: item.active};
+      } else {
+        // We're going to merge this all together into one long string of values
+        Map<String, bool> myMap = {
+          for (var item in values) item.id: item.active
+        };
+        return myMap;
+      }
+    } else if (type == FieldType.string) {
+      if (id != null) {
+        // Return a single subvalue. We're checking if it exists.
+        final item = values.firstWhereOrNull((data) => data.id == id);
+        if (item == null) return {};
+        return {item.value ?? item.id: item.value != "" ? true : false};
+      } else {
+        // We're going to merge this all together into one long string of values
+        Map<String, bool> myMap = {
+          for (var item in values)
+            item.value ?? item.id: item.value != "" ? true : false
+        };
+        return myMap;
+      }
+    } else if (type == FieldType.parchment) {
+      Map<String, bool> myMap = {
+        for (var item in values)
+          ParchmentDocument.fromDelta(item.deltaValue ?? Delta()).toPlainText():
+              ParchmentDocument.fromDelta(item.deltaValue ?? Delta())
+                          .toPlainText() !=
+                      ""
+                  ? true
+                  : false
+      };
+      return myMap;
+    }
+    return {};
+  }
+
+  // SingleBool. Returns the first bool value.
+
+  // As Map
+
+  // As Delta. Returns the delta of the field.
+
+  Delta asDelta({String delimiter = ", "}) {
+    if (type == FieldType.parchment) {
+      values.first.deltaValue ?? Delta();
+    } else if (type == FieldType.string) {
+      //return Delta.from(values.map((item) => item.value).join(delimiter));
+      // TODO: Convert strings to delta
+      return Delta();
+    }
+
+    return Delta();
+  }
+
+  //
 }
 
 enum FieldType {
@@ -173,7 +335,9 @@ class FormResults {
   }
 
   // Grab field value (or with default)
-  //String grabField
+  FieldResults grab(String id) {
+    return results.firstWhere((item) => item.id == id);
+  }
 
   // Grab field list value (or with default)
 

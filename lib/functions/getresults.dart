@@ -6,7 +6,7 @@ import 'package:championforms/providers/formliststringsprovider.dart';
 import 'package:championforms/providers/textformfieldbyid.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-Map<String, FormResults> gatherFormBuilderResults(
+/*Map<String, FormResults> gatherFormBuilderResults(
     String id, List<FormFieldDef>? fields, WidgetRef ref) {
   Map<String, FormResults> results = {};
 
@@ -35,4 +35,4 @@ Map<String, FormResults> gatherFormBuilderResults(
   }
 
   return results;
-}
+}*/

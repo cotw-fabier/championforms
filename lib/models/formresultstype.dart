@@ -2,7 +2,7 @@
 
 import 'package:championforms/providers/choicechipprovider.dart';
 
-abstract class FormResults {
+/*abstract class FormResults {
   String val();
   String valWithDefault(String defaultVal);
   List<String> valList();
@@ -101,4 +101,4 @@ class ChoiceChipResultsList extends FormResults {
         .toList();
     return compressedList.isEmpty ? defaultVal : compressedList;
   }
-}
+}*/
