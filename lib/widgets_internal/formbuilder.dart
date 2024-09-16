@@ -1,3 +1,4 @@
+import 'package:championforms/models/formresults.dart';
 import 'package:championforms/providers/formfieldsstorage.dart';
 import 'package:championforms/providers/textformfieldbyid.dart';
 import 'package:championforms/widgets_internal/dropdownsearchablewidget.dart';
@@ -8,15 +9,12 @@ import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formfieldbase.dart';
 import 'package:championforms/models/formfieldclass.dart';
 import 'package:championforms/models/formfieldtoolbar.dart';
-import 'package:championforms/models/formresultstype.dart';
-import 'package:championforms/models/validatorclass.dart';
 import 'package:championforms/providers/choicechipprovider.dart';
 import 'package:championforms/providers/formerrorprovider.dart';
 import 'package:championforms/providers/formliststringsprovider.dart';
 import 'package:championforms/providers/quillcontrollerprovider.dart';
 import 'package:championforms/widgets_internal/checkboxwidget.dart';
 import 'package:championforms/widgets_internal/chipwidget.dart';
-import 'package:championforms/widgets_internal/dropdownwidget.dart';
 import 'package:championforms/widgets_internal/quilltoolbar.dart';
 import 'package:championforms/widgets_internal/quillwidget.dart';
 import 'package:championforms/widgets_internal/tagfield.dart';
@@ -130,8 +128,30 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
             debugPrint("Validator was run on field ${field.id}");
             int validatorPosition = 0;
 
+            // Pull results for just this field
+            final fieldResults = FormResults.getResults(
+              formId: widget.id,
+              fields: [field],
+              ref: ref,
+            );
+
+            // This should happen automatically when we call results for the field.
+            /* if (fieldResults.errorState) {
+              for (final fieldError in fieldResults.formErrors) {
+                ref
+                    .read(formBuilderErrorNotifierProvider(
+                            widget.id, field.id, validatorPosition)
+                        .notifier)
+                    .setError(fieldError);
+
+                validatorPosition++;
+              }
+            }*/
+
+            // This is depreciated to use the new form results API
+
             // We basically loop through each validator, check if it matched anything, and add it to
-            for (final FormBuilderValidator validator
+            /*for (final FormBuilderValidator validator
                 in field.validators ?? []) {
               // loop through the validators and we're going to execute each one at a time
               final FormResults formValue = StringItem(value);
@@ -167,7 +187,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
               }
 
               validatorPosition++;
-            }
+            } */
           };
         }
 

@@ -1,6 +1,6 @@
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formfieldclass.dart';
-import 'package:championforms/models/formresultstype.dart';
+import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/validatorclass.dart';
 import 'package:championforms/providers/formerrorprovider.dart';
 import 'package:championforms/providers/formfieldsstorage.dart';
@@ -9,7 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 List<FormBuilderError> getFormBuilderErrors(
     {List<FormFieldDef>? fields,
-    required Map<String, FormResults> results,
+    required List<FieldResults> results,
     required String formId,
     required WidgetRef ref}) {
   List<FormBuilderError> errors = [];
@@ -18,7 +18,8 @@ List<FormBuilderError> getFormBuilderErrors(
       fields ?? ref.read(formFieldsStorageNotifierProvider(formId));
 
   for (final field in finalFields) {
-    final FormResults? result = results[field.id];
+    final FieldResults? result =
+        results.firstWhereOrNull((item) => item.id == field.id);
     // Skip validation if no result is found.
     if (result == null) continue;
     // skip validation if the field is hidden.
