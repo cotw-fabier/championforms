@@ -58,7 +58,8 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
       for (final field in widget.fields) {
         if (field is FormFieldDef) {
           // populate default values for the text fields
-          if (field.type == FormFieldType.textField) {
+          if (field.type == FormFieldType.textField ||
+              field.type == FormFieldType.textArea) {
             debugPrint("Text Field Defaults: ${field.defaultValue}");
             ref
                 .read(

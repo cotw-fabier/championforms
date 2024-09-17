@@ -1,3 +1,4 @@
+import 'package:championforms/models/formresults.dart';
 import 'package:championforms/providers/textformfieldbyid.dart';
 import 'package:championforms/widgets_internal/draggablewidget.dart';
 import 'package:championforms/widgets_internal/fieldwrapperdefault.dart';
@@ -41,7 +42,7 @@ class TextFieldWidget extends ConsumerStatefulWidget {
   final bool requestFocus;
   final bool password;
   final Function(String value)? onChanged;
-  final Function(String value)? onSubmitted;
+  final Function(String value, FormResults results)? onSubmitted;
   final Function(String value)? validate;
   final TextInputType keyboardType;
   final String? initialValue;
@@ -241,7 +242,12 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
                 maxLines: widget.maxLines,
                 focusNode: _focusNode,
                 controller: _controller,
-                onFieldSubmitted: widget.onSubmitted,
+                onFieldSubmitted: (value) {
+                  if (widget.onSubmitted == null) return;
+                  final formResults =
+                      FormResults.getResults(ref: ref, formId: widget.formId);
+                  widget.onSubmitted!(value, formResults);
+                },
                 style: theme.textTheme.bodyMedium,
                 decoration: InputDecoration(
                   prefixIcon: widget.icon,

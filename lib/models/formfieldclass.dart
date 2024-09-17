@@ -1,4 +1,5 @@
 import 'package:championforms/models/formfieldbase.dart';
+import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/validatorclass.dart';
 import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
@@ -82,7 +83,7 @@ class FormFieldDef implements FormFieldBase {
 
   // Functions
   // THis can be called on compatible fields. When you press enter or trigger a field submit it will trigger this function.
-  final Function(String value)? onSubmit;
+  final Function(String value, FormResults results)? onSubmit;
 
   // THis function triggers.....?
   final Function(String)? callBack;
@@ -267,7 +268,7 @@ class FormFieldDef implements FormFieldBase {
     double? maxHeight,
     double? width,
     int? flex,
-    Function(String value)? onSubmit,
+    Function(String value, FormResults results)? onSubmit,
     bool fillArea = false,
     Widget Function({required Widget child})? fieldBuilder,
     Future<void> Function({

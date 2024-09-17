@@ -285,7 +285,9 @@ class FormResults {
 
         results.add(FieldResults(
           id: field.id,
-          values: field.multiselect ? stringResults : [stringResults.first],
+          values: field.multiselect
+              ? stringResults
+              : (stringResults.isNotEmpty ? [stringResults.first] : []),
           type: type,
         ));
       } else if (field.type == FormFieldType.richText) {
