@@ -39,7 +39,7 @@ List<FormBuilderError> getFormBuilderErrors(
 
       final errorResult = validator.validator(result);
 
-      if (errorResult) {
+      if (!errorResult) {
         final errorOutput = FormBuilderError(
           fieldId: field.id,
           formId: formId,
