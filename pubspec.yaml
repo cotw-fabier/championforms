@@ -1,6 +1,6 @@
 name: championforms
 description: "Easy Build Data Input Fields of All Types in Flutter"
-version: 0.0.1
+version: 0.0.2
 homepage:
 
 environment:
@@ -10,7 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  fleather: ^1.15.0+1
+  fleather:   
   flutter_riverpod: ^2.5.1
   riverpod_annotation: ^2.3.5
   parchment_delta: ^1.0.0
@@ -25,19 +25,25 @@ dependencies:
   parchment: 
 
 dependency_overrides:
+  fleather:
+    git:
+      url: https://github.com/cotw-fabier/fleather
+      branch: master 
+      path: packages/fleather
+
   parchment:
     git: 
       url: https://github.com/cotw-fabier/fleather
-      branch: dev
+      branch: master 
       path: packages/parchment
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
   riverpod_generator: ^2.4.0
   build_runner: ^2.4.8
-  custom_lint: ^0.6.2
+  custom_lint: ^0.6.8
   riverpod_lint: ^2.3.10
 
 # For information on the generic Dart part of this file, see the
