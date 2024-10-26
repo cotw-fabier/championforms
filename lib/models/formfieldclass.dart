@@ -45,6 +45,7 @@ class FormFieldDef implements FormFieldBase {
 
   // This is the field title and will be displayed next to the field.
   final String? title;
+  final String? description;
 
   // Options for dropdown, radio, and chips
   final List<FormFieldChoiceOption> options;
@@ -84,6 +85,9 @@ class FormFieldDef implements FormFieldBase {
   // Functions
   // THis can be called on compatible fields. When you press enter or trigger a field submit it will trigger this function.
   final Function(String value, FormResults results)? onSubmit;
+
+  // This can be called on compatible fields. When the field changes, this function is run.
+  final Function(String value, FormResults results)? onChange;
 
   // THis function triggers.....?
   final Function(String)? callBack;
@@ -133,6 +137,7 @@ class FormFieldDef implements FormFieldBase {
     this.hintText = "",
     this.icon,
     this.title,
+    this.description,
     this.options = const [],
     this.hideField = false,
     this.active = true,
@@ -150,6 +155,7 @@ class FormFieldDef implements FormFieldBase {
     this.validateLive = false,
     this.callBack,
     this.onSubmit,
+    this.onChange,
     //this.embeds = const [],
     this.height,
     this.maxHeight,
@@ -254,6 +260,7 @@ class FormFieldDef implements FormFieldBase {
     String hintText = "",
     Icon? icon,
     String? title,
+    String? description,
     bool hideField = false,
     bool active = true,
     bool requestFocus = false,
@@ -269,6 +276,7 @@ class FormFieldDef implements FormFieldBase {
     double? width,
     int? flex,
     Function(String value, FormResults results)? onSubmit,
+    Function(String value, FormResults results)? onChange,
     bool fillArea = false,
     Widget Function({required Widget child})? fieldBuilder,
     Future<void> Function({
@@ -293,12 +301,14 @@ class FormFieldDef implements FormFieldBase {
       hintText: hintText,
       icon: icon,
       title: title,
+      description: description,
       hideField: hideField,
       active: active,
       requestFocus: requestFocus,
       password: password,
       isSet: isSet,
       onSubmit: onSubmit,
+      onChange: onChange,
       defaultValue: defaultValue,
       fieldOptions: fieldOptions,
       validators: validators,
@@ -322,11 +332,13 @@ class FormFieldDef implements FormFieldBase {
     String hintText = "",
     Icon? icon,
     String? title,
+    String? description,
     bool hideField = false,
     bool active = true,
     bool requestFocus = false,
     bool isSet = false,
     String? defaultValue,
+    Function(String value, FormResults results)? onChange,
     List<Map<String, String>>? fieldOptions = const [],
     List<FormBuilderValidator>? validators,
     bool validateLive = false,
@@ -359,6 +371,7 @@ class FormFieldDef implements FormFieldBase {
       hintText: hintText,
       icon: icon,
       title: title,
+      description: description,
       hideField: hideField,
       active: active,
       isSet: isSet,
@@ -377,6 +390,7 @@ class FormFieldDef implements FormFieldBase {
       onDrop: onDrop,
       draggable: draggable,
       onPaste: onPaste,
+      onChange: onChange,
     );
   }
 
@@ -386,12 +400,14 @@ class FormFieldDef implements FormFieldBase {
     String hintText = "",
     Icon? icon,
     String? title,
+    String? description,
     bool hideField = false,
     bool active = true,
     bool requestFocus = false,
     bool isSet = false,
     Delta? deltaValue,
     String? defaultValue,
+    Function(String value, FormResults results)? onChange,
     List<Map<String, String>>? fieldOptions = const [],
     List<FormBuilderValidator>? validators,
     bool validateLive = false,
@@ -430,6 +446,7 @@ class FormFieldDef implements FormFieldBase {
       requestFocus: requestFocus,
       deltaValue: deltaValue,
       defaultValue: defaultValue,
+      onChange: onChange,
       fieldOptions: fieldOptions,
       validators: validators,
       validateLive: validateLive,
@@ -453,7 +470,9 @@ class FormFieldDef implements FormFieldBase {
   factory FormFieldDef.chips({
     required String id,
     String? title,
+    String? description,
     List<FormFieldChoiceOption> options = const [],
+    Function(String value, FormResults results)? onChange,
     bool hideField = false,
     bool active = true,
     bool requestFocus = false,
@@ -476,6 +495,8 @@ class FormFieldDef implements FormFieldBase {
       type: FormFieldType.chips,
       id: id,
       title: title,
+      description: description,
+      onChange: onChange,
       options: options,
       hideField: hideField,
       active: active,
@@ -501,6 +522,9 @@ class FormFieldDef implements FormFieldBase {
   factory FormFieldDef.tagField({
     required String id,
     String? title,
+    String? description,
+    Function(String value, FormResults results)? onChange,
+    Function(String value, FormResults results)? onSubmit,
     List<FormFieldChoiceOption> options = const [],
     bool hideField = false,
     bool active = true,
@@ -524,6 +548,9 @@ class FormFieldDef implements FormFieldBase {
       type: FormFieldType.tagField,
       id: id,
       title: title,
+      description: description,
+      onSubmit: onSubmit,
+      onChange: onChange,
       options: options,
       hideField: hideField,
       active: active,
@@ -549,6 +576,8 @@ class FormFieldDef implements FormFieldBase {
   factory FormFieldDef.checkbox({
     required String id,
     String? title,
+    String? description,
+    Function(String value, FormResults results)? onChange,
     List<FormFieldChoiceOption> options = const [],
     bool hideField = false,
     bool active = true,
@@ -572,6 +601,8 @@ class FormFieldDef implements FormFieldBase {
       type: FormFieldType.checkbox,
       id: id,
       title: title,
+      description: description,
+      onChange: onChange,
       options: options,
       hideField: hideField,
       active: active,
@@ -597,6 +628,9 @@ class FormFieldDef implements FormFieldBase {
   factory FormFieldDef.dropdown({
     required String id,
     String? title,
+    String? description,
+    Function(String value, FormResults results)? onChange,
+    Function(String value, FormResults results)? onSubmit,
     List<FormFieldChoiceOption> options = const [],
     bool hideField = false,
     bool active = true,
@@ -620,6 +654,9 @@ class FormFieldDef implements FormFieldBase {
       type: FormFieldType.dropdown,
       id: id,
       title: title,
+      description: description,
+      onSubmit: onSubmit,
+      onChange: onChange,
       options: options,
       hideField: hideField,
       active: active,
@@ -645,6 +682,8 @@ class FormFieldDef implements FormFieldBase {
   factory FormFieldDef.radio({
     required String id,
     String? title,
+    String? description,
+    Function(String value, FormResults results)? onChange,
     List<FormFieldChoiceOption> options = const [],
     bool hideField = false,
     bool active = true,
@@ -668,6 +707,8 @@ class FormFieldDef implements FormFieldBase {
       type: FormFieldType.radio,
       id: id,
       title: title,
+      description: description,
+      onChange: onChange,
       options: options,
       hideField: hideField,
       active: active,
@@ -688,7 +729,7 @@ class FormFieldDef implements FormFieldBase {
       fieldBuilder: fieldBuilder,
     );
   }
-// textField
+// Display any widget
   factory FormFieldDef.widget({
     required String id,
     required Widget child,
