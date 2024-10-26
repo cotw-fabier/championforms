@@ -1,3 +1,4 @@
+import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/providers/formfieldsstorage.dart';
 import 'package:championforms/providers/textformfieldbyid.dart';
@@ -28,6 +29,11 @@ class FormBuilderWidget extends ConsumerStatefulWidget {
     this.spacing = 10,
     this.formWidth,
     this.formHeight,
+    this.colorScheme,
+    this.activeColorScheme,
+    this.disabledColorScheme,
+    this.errorColorScheme,
+    this.selectedColorScheme,
   });
 
   final List<FormFieldBase> fields;
@@ -35,6 +41,11 @@ class FormBuilderWidget extends ConsumerStatefulWidget {
   final double spacing;
   final double? formWidth;
   final double? formHeight;
+  final FieldColorScheme? activeColorScheme;
+  final FieldColorScheme? disabledColorScheme;
+  final FieldColorScheme? selectedColorScheme;
+  final FieldColorScheme? errorColorScheme;
+  final FieldColorScheme? colorScheme;
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() =>
