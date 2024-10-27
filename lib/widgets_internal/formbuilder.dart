@@ -403,7 +403,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
               initialValues: field.defaultValues ?? [],
               // TODO: Implement OnSubmitted
               //onSubmitted: field.onSubmit,
-              onChanged: field.onChange,
+              //onChanged: field.onChange,
               expanded: field.fillArea,
               fieldBuilder: field.fieldBuilder,
             );
