@@ -1,8 +1,12 @@
 import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formresults.dart';
+import 'package:championforms/providers/fieldactiveprovider.dart';
 import 'package:championforms/providers/formfieldsstorage.dart';
 import 'package:championforms/providers/textformfieldbyid.dart';
+import 'package:championforms/widgets_external/layoutwrappers/verticallayout.dart';
 import 'package:championforms/widgets_internal/dropdownsearchablewidget.dart';
+import 'package:championforms/widgets_internal/fieldelements.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:parchment_delta/parchment_delta.dart';
@@ -29,15 +33,17 @@ class FormBuilderWidget extends ConsumerStatefulWidget {
     this.spacing = 10,
     this.formWidth,
     this.formHeight,
-    this.colorScheme,
-    this.activeColorScheme,
-    this.disabledColorScheme,
-    this.errorColorScheme,
-    this.selectedColorScheme,
-    this.titleStyle,
-    this.descriptionStyle,
-    this.hintTextStyle,
-    this.chipTextStyle,
+    required this.colorScheme,
+    required this.activeColorScheme,
+    required this.disabledColorScheme,
+    required this.errorColorScheme,
+    required this.selectedColorScheme,
+    required this.titleStyle,
+    required this.descriptionStyle,
+    required this.hintTextStyle,
+    required this.chipTextStyle,
+    this.fieldBuilder,
+    this.fieldLayoutBuilder,
   });
 
   final List<FormFieldBase> fields;
@@ -45,17 +51,32 @@ class FormBuilderWidget extends ConsumerStatefulWidget {
   final double spacing;
   final double? formWidth;
   final double? formHeight;
-  final FieldColorScheme? activeColorScheme;
-  final FieldColorScheme? disabledColorScheme;
-  final FieldColorScheme? selectedColorScheme;
-  final FieldColorScheme? errorColorScheme;
-  final FieldColorScheme? colorScheme;
+  final FieldColorScheme activeColorScheme;
+  final FieldColorScheme disabledColorScheme;
+  final FieldColorScheme selectedColorScheme;
+  final FieldColorScheme errorColorScheme;
+  final FieldColorScheme colorScheme;
 
   // Text Styles
-  final TextStyle? titleStyle;
-  final TextStyle? descriptionStyle;
-  final TextStyle? hintTextStyle;
-  final TextStyle? chipTextStyle;
+  final TextStyle titleStyle;
+  final TextStyle descriptionStyle;
+  final TextStyle hintTextStyle;
+  final TextStyle chipTextStyle;
+
+// Add a builder for defining the field style
+  final Widget Function({required Widget child})? fieldBuilder;
+
+  // This is the widget requirements for a widget layout other than the default.
+  final Widget Function({
+    Widget? title,
+    Widget? description,
+    Widget? errors,
+    Widget Function({required Widget child})? fieldWrapper,
+    Widget? icon,
+    bool? expanded,
+    FieldColorScheme? colors,
+    required Widget field,
+  })? fieldLayoutBuilder;
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() =>
@@ -81,7 +102,6 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
           // populate default values for the text fields
           if (field.type == FormFieldType.textField ||
               field.type == FormFieldType.textArea) {
-            debugPrint("Text Field Defaults: ${field.defaultValue}");
             ref
                 .read(
                     textFormFieldValueById("${widget.id}${field.id}").notifier)
@@ -92,7 +112,6 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
           if (field.type == FormFieldType.chips ||
               field.type == FormFieldType.checkbox ||
               field.type == FormFieldType.dropdown) {
-            debugPrint("Chip Defaults: ${field.defaultValues?.join(", ")}");
             for (final defaultValue in field.defaultValues ?? []) {
               final defaultChipValue =
                   ChoiceChipValue(id: defaultValue, value: true);
@@ -105,8 +124,6 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
 
           // populate default values for tag field
           if (field.type == FormFieldType.tagField) {
-            debugPrint("Chip Defaults: ${field.defaultValues?.join(", ")}");
-
             ref
                 .read(formListStringsNotifierProvider("${widget.id}${field.id}")
                     .notifier)
@@ -147,7 +164,6 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
         Function(String value)? validate;
         if (field.validateLive) {
           validate = (value) {
-            debugPrint("Validator was run on field ${field.id}");
             int validatorPosition = 0;
 
             // Pull results for just this field
@@ -213,8 +229,196 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
           };
         }
 
+        // Determine what state we are in and set colors / etc based on our state:
+
+        // Start with errors
+
+        final int validatorCount = field.validators?.length ?? 0;
+        List<FormBuilderError> errors = [];
+
+        for (int i = 0; i < validatorCount; i++) {
+          final error = ref
+              .watch(formBuilderErrorNotifierProvider(widget.id, field.id, i));
+
+          if (error != null) errors.add(error);
+        }
+
+        // Set the state
+        FieldState fieldState;
+        FieldColorScheme fieldColor;
+        if (errors.isNotEmpty) {
+          fieldState = FieldState.error;
+          fieldColor = field.errorColorScheme ?? widget.errorColorScheme;
+        } else if (field.disabled == true) {
+          fieldState = FieldState.disabled;
+          fieldColor = field.disabledColorScheme ?? widget.disabledColorScheme;
+        } else if (ref.watch(fieldActiveNotifierProvider(widget.id)) ==
+            field.id) {
+          fieldState = FieldState.active;
+          fieldColor = field.activeColorScheme ?? widget.activeColorScheme;
+        } else {
+          fieldState = FieldState.normal;
+          fieldColor = field.colorScheme ?? widget.colorScheme;
+        }
+
+        // Lets establish our field layout
+        Widget Function({
+          Widget? title,
+          Widget? description,
+          Widget? errors,
+          Widget Function({required Widget child})? fieldWrapper,
+          Widget? icon,
+          bool? expanded,
+          FieldColorScheme? colors,
+          required Widget field,
+        }) fieldLayout;
+
+        if (widget.fieldLayoutBuilder != null) {
+          fieldLayout = widget.fieldLayoutBuilder!;
+        } else {
+          fieldLayout = ({
+            Widget? title,
+            Widget? description,
+            Widget? errors,
+            Widget Function({required Widget child})? fieldWrapper,
+            Widget? icon,
+            bool? expanded,
+            FieldColorScheme? colors,
+            required Widget field,
+          }) {
+            // Create and return the FieldVerticalLayout widget inline
+            return FieldVerticalLayout(
+              title: title,
+              description: description,
+              errors: errors,
+              fieldWrapper: fieldWrapper,
+              icon: icon,
+              expanded: expanded ?? false,
+              colors: colors ?? fieldColor,
+              field: field,
+            );
+          };
+        }
+
+        Widget outputWidget;
+
         switch (field.type) {
           case FormFieldType.textField:
+            outputWidget = TextFieldWidget(
+              id: "${widget.id}${field.id}",
+              formId: widget.id,
+              fieldId: field.id,
+              onDrop: field.onDrop,
+              onPaste: field.onPaste,
+              draggable: field.draggable,
+              height: field.height,
+              onSubmitted: field.onSubmit,
+              maxHeight: field.maxHeight,
+              expanded: field.fillArea,
+              password: field.password,
+              requestFocus: field.requestFocus,
+              validate: validate,
+              icon: field.icon,
+              initialValue: field.defaultValue,
+              hintText: field.hintText,
+              maxLines: 1,
+            );
+
+            break;
+          case FormFieldType.textArea:
+            outputWidget = TextFieldWidget(
+              formId: widget.id,
+              fieldId: field.id,
+              keyboardType: TextInputType.multiline,
+              onDrop: field.onDrop,
+              onPaste: field.onPaste,
+              draggable: field.draggable,
+              height: field.height,
+              maxHeight: field.maxHeight,
+              expanded: field.fillArea,
+              password: field.password,
+              id: "${widget.id}${field.id}",
+              requestFocus: field.requestFocus,
+              icon: field.icon,
+              initialValue: field.defaultValue,
+              hintText: field.hintText,
+              maxLines: null,
+            );
+
+            break;
+          case FormFieldType.richText:
+            outputWidget = QuillWidgetTextArea(
+              height: field.height,
+              maxHeight: field.maxHeight,
+              password: field.password,
+              id: "${widget.id}${field.id}",
+              fieldId: field.id,
+              formId: widget.id,
+              requestFocus: field.requestFocus,
+              active: field.active,
+              icon: field.icon,
+              initialValue: field.deltaValue ?? Delta()
+                ..insert(field.defaultValue ?? ""),
+              hintText: field.hintText,
+              maxLines: null,
+              onDrop: field.onDrop,
+              onPaste: field.onPaste,
+              draggable: field.draggable,
+            );
+
+            break;
+          case FormFieldType.chips:
+            outputWidget = FormFieldChipField(
+              field: field,
+              formId: widget.id,
+              multiSelect: field.multiselect,
+              height: field.height,
+              maxHeight: field.maxHeight,
+              expanded: field.fillArea,
+            );
+
+            break;
+          case FormFieldType.dropdown:
+            outputWidget = FormFieldSearchableDropDownField(
+              field: field,
+              formId: widget.id,
+              multiSelect: field.multiselect,
+              height: field.height,
+              maxHeight: field.maxHeight,
+              expanded: field.fillArea,
+            );
+
+            break;
+          case FormFieldType.checkbox:
+            outputWidget = FormFieldCheckboxWidgetField(
+              field: field,
+              formId: widget.id,
+              multiSelect: field.multiselect,
+              height: field.height,
+              maxHeight: field.maxHeight,
+              expanded: field.fillArea,
+            );
+
+            break;
+          case FormFieldType.tagField:
+            // Watch this provider to keep it alive while the form is active
+            final tagValues = ref.watch(
+                formListStringsNotifierProvider("${widget.id}${field.id}"));
+
+            outputWidget = FormBuilderStringAutoCompleteTags(
+              id: widget.id,
+              field: field,
+              initialValues: field.defaultValues ?? [],
+              expanded: field.fillArea,
+              fieldBuilder: field.fieldBuilder,
+            );
+
+            break;
+          case FormFieldType.widget:
+            outputWidget = field.child ?? Container();
+            break;
+
+          /* case FormFieldType.textField:
             final outputWidget = Column(
               mainAxisSize: MainAxisSize.max,
               children: [
@@ -563,11 +767,43 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
                 child: outputWidget,
               ));
             }
-            break;
+            break;*/
 
           default:
+            outputWidget = Container();
             break;
         }
+
+        // Lets add the new form field with our layout
+        output.add(
+          FormFieldWrapper(
+            expanded: field.fillArea,
+            width: field.width,
+            height: field.height,
+            flex: field.flex,
+            child: fieldLayout(
+              title: field.title != null
+                  ? FieldTextElement(
+                      color: fieldColor.titleColor,
+                      textStyle: field.titleStyle ?? widget.titleStyle,
+                      text: field.title!)
+                  : null,
+              description: field.description != null
+                  ? FieldTextElement(
+                      color: fieldColor.descriptionColor,
+                      textStyle:
+                          field.descriptionStyle ?? widget.descriptionStyle,
+                      text: field.description!)
+                  : null,
+              expanded: field.fillArea,
+              // TODO: Add Errors
+              fieldWrapper: field.fieldBuilder ?? widget.fieldBuilder,
+              icon: field.icon,
+              colors: fieldColor,
+              field: outputWidget,
+            ),
+          ),
+        );
 
         // Add spacer
 
@@ -593,7 +829,6 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
       width: widget.formWidth,
       height: widget.formHeight,
       child: LayoutBuilder(builder: (context, constraints) {
-        debugPrint("Form Builder Constraints: ${constraints.maxHeight}");
         return Column(
           mainAxisSize: MainAxisSize.max,
           children: output,
@@ -651,7 +886,7 @@ class FormBuilderValidatorErrors extends ConsumerWidget {
   }
 }
 
-class FormFieldWrapper extends ConsumerWidget {
+class FormFieldWrapper extends StatelessWidget {
   const FormFieldWrapper({
     super.key,
     required this.expanded,
@@ -667,7 +902,7 @@ class FormFieldWrapper extends ConsumerWidget {
   final int? flex;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     if (!expanded) {
       return child;
     }

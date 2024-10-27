@@ -27,6 +27,8 @@ class FieldColorScheme {
   final Color titleColor;
   final Color descriptionColor;
 
+  final Color iconColor;
+
   // Used for the chip field and selected dropdown field
   final Color? textBackgroundColor;
   final FieldGradientColors? textBackgroundGradient;
@@ -41,6 +43,7 @@ class FieldColorScheme {
     this.hintTextColor = Colors.black,
     this.titleColor = Colors.black,
     this.descriptionColor = Colors.black,
+    this.iconColor = Colors.white,
     this.textBackgroundColor,
     this.textBackgroundGradient,
   });

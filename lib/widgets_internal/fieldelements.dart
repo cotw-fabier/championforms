@@ -7,17 +7,17 @@ import 'package:flutter/material.dart';
 class FieldTextElement extends StatelessWidget {
   const FieldTextElement({
     super.key,
-    required this.colorScheme,
+    required this.color,
     required this.textStyle,
     required this.text,
   });
 
-  final FieldColorScheme colorScheme;
+  final Color color;
   final TextStyle textStyle;
   final String text;
 
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Text(text, style: textStyle.copyWith(color: color));
   }
 }

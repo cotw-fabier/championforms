@@ -4,23 +4,24 @@ import 'package:championforms/widgets_internal/formbuilder.dart';
 import 'package:flutter/material.dart';
 
 class ChampionForm extends StatelessWidget {
-  const ChampionForm({
-    super.key,
-    this.fields = const [],
-    required this.id,
-    this.spacing = 10,
-    this.formWidth,
-    this.formHeight,
-    this.colorScheme,
-    this.activeColorScheme,
-    this.errorColorScheme,
-    this.disabledColorScheme,
-    this.selectedColorScheme,
-    this.titleStyle,
-    this.descriptionStyle,
-    this.hintTextStyle,
-    this.chipTextStyle,
-  });
+  const ChampionForm(
+      {super.key,
+      this.fields = const [],
+      required this.id,
+      this.spacing = 10,
+      this.formWidth,
+      this.formHeight,
+      this.colorScheme,
+      this.activeColorScheme,
+      this.errorColorScheme,
+      this.disabledColorScheme,
+      this.selectedColorScheme,
+      this.titleStyle,
+      this.descriptionStyle,
+      this.hintTextStyle,
+      this.chipTextStyle,
+      this.fieldBuilder,
+      this.fieldLayoutBuilder});
 
   final List<FormFieldBase> fields;
   final String id;
@@ -41,6 +42,21 @@ class ChampionForm extends StatelessWidget {
   final TextStyle? hintTextStyle;
   final TextStyle? chipTextStyle;
 
+// Add a builder for defining the field style
+  final Widget Function({required Widget child})? fieldBuilder;
+
+  // This is the widget requirements for a widget layout other than the default.
+  final Widget Function({
+    Widget? title,
+    Widget? description,
+    Widget? errors,
+    Widget Function({required Widget child})? fieldWrapper,
+    Widget? icon,
+    bool? expanded,
+    FieldColorScheme? colors,
+    required Widget field,
+  })? fieldLayoutBuilder;
+
   @override
   Widget build(BuildContext context) {
     // Setup defaults for the colorscheme or use the objects that were passed.
@@ -58,6 +74,7 @@ class ChampionForm extends StatelessWidget {
           titleColor: colorInfo.primary,
           descriptionColor: colorInfo.primary,
           textBackgroundColor: colorInfo.secondaryContainer,
+          iconColor: colorInfo.tertiary,
         );
     // This is the error color state.
     final passErrorColorScheme = errorColorScheme ??
@@ -70,6 +87,7 @@ class ChampionForm extends StatelessWidget {
           titleColor: colorInfo.error,
           descriptionColor: colorInfo.primary,
           textBackgroundColor: colorInfo.secondaryContainer,
+          iconColor: colorInfo.error,
         );
     // This is the color scheme for disabled fields.
     final passDisabledColorScheme = errorColorScheme ??
@@ -82,6 +100,7 @@ class ChampionForm extends StatelessWidget {
           titleColor: colorInfo.primary,
           descriptionColor: colorInfo.primary,
           textBackgroundColor: colorInfo.secondaryContainer,
+          iconColor: colorInfo.primary,
         );
 
     // This is the color scheme for selected elements.
@@ -95,6 +114,7 @@ class ChampionForm extends StatelessWidget {
           titleColor: colorInfo.primary,
           descriptionColor: colorInfo.primary,
           textBackgroundColor: colorInfo.secondaryContainer,
+          iconColor: colorInfo.tertiary,
         );
 
     // This is the color scheme for fields which are currently active.
@@ -108,16 +128,32 @@ class ChampionForm extends StatelessWidget {
           titleColor: colorInfo.primary,
           descriptionColor: colorInfo.primary,
           textBackgroundColor: colorInfo.secondaryContainer,
+          iconColor: colorInfo.tertiary,
         );
 
     // Create some default text Styles in case we didn't define anything
-    final passTitleTextStyle = titleStyle ?? textInfo.titleMedium;
-    final passDescriptionTextStyle = descriptionStyle ?? textInfo.bodySmall;
-    final passHintTextStyle = hintTextStyle ?? textInfo.bodyMedium;
-    final passChipTextStyle = chipTextStyle ?? textInfo.bodySmall;
+    final passTitleTextStyle = titleStyle ??
+        textInfo.titleMedium ??
+        TextStyle(fontSize: 20, fontWeight: FontWeight.bold);
+    final passDescriptionTextStyle = descriptionStyle ??
+        textInfo.bodySmall ??
+        TextStyle(
+          fontSize: 12,
+        );
+    final passHintTextStyle = hintTextStyle ??
+        textInfo.bodyMedium ??
+        TextStyle(
+          fontSize: 12,
+        );
+    final passChipTextStyle = chipTextStyle ??
+        textInfo.bodySmall ??
+        TextStyle(
+          fontSize: 12,
+        );
 
     return FormBuilderWidget(
       fields: fields,
+      fieldLayoutBuilder: fieldLayoutBuilder,
       id: id,
       spacing: spacing,
       formWidth: formWidth,
@@ -127,6 +163,11 @@ class ChampionForm extends StatelessWidget {
       errorColorScheme: passErrorColorScheme,
       disabledColorScheme: passDisabledColorScheme,
       selectedColorScheme: passSelectedColorScheme,
+      titleStyle: passTitleTextStyle,
+      descriptionStyle: passDescriptionTextStyle,
+      hintTextStyle: passHintTextStyle,
+      chipTextStyle: passChipTextStyle,
+      fieldBuilder: fieldBuilder,
     );
   }
 }
