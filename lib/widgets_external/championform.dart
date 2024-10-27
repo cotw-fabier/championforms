@@ -16,6 +16,10 @@ class ChampionForm extends StatelessWidget {
     this.errorColorScheme,
     this.disabledColorScheme,
     this.selectedColorScheme,
+    this.titleStyle,
+    this.descriptionStyle,
+    this.hintTextStyle,
+    this.chipTextStyle,
   });
 
   final List<FormFieldBase> fields;
@@ -23,16 +27,25 @@ class ChampionForm extends StatelessWidget {
   final double spacing;
   final double? formWidth;
   final double? formHeight;
+
+  // Color Styles
   final FieldColorScheme? colorScheme;
   final FieldColorScheme? errorColorScheme;
   final FieldColorScheme? disabledColorScheme;
   final FieldColorScheme? selectedColorScheme;
   final FieldColorScheme? activeColorScheme;
 
+  // Text Styles
+  final TextStyle? titleStyle;
+  final TextStyle? descriptionStyle;
+  final TextStyle? hintTextStyle;
+  final TextStyle? chipTextStyle;
+
   @override
   Widget build(BuildContext context) {
     // Setup defaults for the colorscheme or use the objects that were passed.
     final colorInfo = Theme.of(context).colorScheme;
+    final textInfo = Theme.of(context).textTheme;
 
     // This is the main color scheme.
     final passColorScheme = colorScheme ??
@@ -96,6 +109,12 @@ class ChampionForm extends StatelessWidget {
           descriptionColor: colorInfo.primary,
           textBackgroundColor: colorInfo.secondaryContainer,
         );
+
+    // Create some default text Styles in case we didn't define anything
+    final passTitleTextStyle = titleStyle ?? textInfo.titleMedium;
+    final passDescriptionTextStyle = descriptionStyle ?? textInfo.bodySmall;
+    final passHintTextStyle = hintTextStyle ?? textInfo.bodyMedium;
+    final passChipTextStyle = chipTextStyle ?? textInfo.bodySmall;
 
     return FormBuilderWidget(
       fields: fields,

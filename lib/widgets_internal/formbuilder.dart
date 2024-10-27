@@ -34,6 +34,10 @@ class FormBuilderWidget extends ConsumerStatefulWidget {
     this.disabledColorScheme,
     this.errorColorScheme,
     this.selectedColorScheme,
+    this.titleStyle,
+    this.descriptionStyle,
+    this.hintTextStyle,
+    this.chipTextStyle,
   });
 
   final List<FormFieldBase> fields;
@@ -46,6 +50,12 @@ class FormBuilderWidget extends ConsumerStatefulWidget {
   final FieldColorScheme? selectedColorScheme;
   final FieldColorScheme? errorColorScheme;
   final FieldColorScheme? colorScheme;
+
+  // Text Styles
+  final TextStyle? titleStyle;
+  final TextStyle? descriptionStyle;
+  final TextStyle? hintTextStyle;
+  final TextStyle? chipTextStyle;
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() =>
