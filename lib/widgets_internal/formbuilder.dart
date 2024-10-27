@@ -285,6 +285,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
           case FormFieldType.textField:
             outputWidget = TextFieldWidget(
               id: "${widget.id}${field.id}",
+              field: field,
               formId: widget.id,
               fieldId: field.id,
               onDrop: field.onDrop,
@@ -292,6 +293,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
               draggable: field.draggable,
               height: field.height,
               onSubmitted: field.onSubmit,
+              onChanged: field.onChange,
               maxHeight: field.maxHeight,
               expanded: field.fillArea,
               password: field.password,
@@ -307,10 +309,12 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
           case FormFieldType.textArea:
             outputWidget = TextFieldWidget(
               formId: widget.id,
+              field: field,
               fieldId: field.id,
               keyboardType: TextInputType.multiline,
               onDrop: field.onDrop,
               onPaste: field.onPaste,
+              onChanged: field.onChange,
               draggable: field.draggable,
               height: field.height,
               maxHeight: field.maxHeight,
@@ -327,6 +331,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
             break;
           case FormFieldType.richText:
             outputWidget = QuillWidgetTextArea(
+              field: field,
               height: field.height,
               maxHeight: field.maxHeight,
               password: field.password,
@@ -334,6 +339,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
               fieldId: field.id,
               formId: widget.id,
               requestFocus: field.requestFocus,
+              onChanged: field.onChange,
               active: field.active,
               icon: field.icon,
               initialValue: field.deltaValue ?? Delta()
@@ -352,6 +358,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
               formId: widget.id,
               multiSelect: field.multiselect,
               height: field.height,
+              onChanged: field.onChange,
               maxHeight: field.maxHeight,
               expanded: field.fillArea,
             );
@@ -362,6 +369,9 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
               field: field,
               formId: widget.id,
               multiSelect: field.multiselect,
+              // TODO: Implement onSubmitted
+              //onSubmitted: field.onSubmit,
+              onChanged: field.onChange,
               height: field.height,
               maxHeight: field.maxHeight,
               expanded: field.fillArea,
@@ -373,6 +383,9 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
               field: field,
               formId: widget.id,
               multiSelect: field.multiselect,
+              // TODO: Implement onSubmitted
+              //onSubmitted: field.onSubmit,
+              onChanged: field.onChange,
               height: field.height,
               maxHeight: field.maxHeight,
               expanded: field.fillArea,
@@ -388,6 +401,9 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
               id: widget.id,
               field: field,
               initialValues: field.defaultValues ?? [],
+              // TODO: Implement OnSubmitted
+              //onSubmitted: field.onSubmit,
+              onChanged: field.onChange,
               expanded: field.fillArea,
               fieldBuilder: field.fieldBuilder,
             );

@@ -1,4 +1,5 @@
 import 'package:championforms/models/formfieldclass.dart';
+import 'package:championforms/models/formresults.dart';
 import 'package:championforms/providers/choicechipprovider.dart';
 import 'package:championforms/widgets_internal/fieldwrapperdefault.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ class FormFieldCheckboxWidgetField extends ConsumerWidget {
     super.key,
     required this.field,
     required this.formId,
+    this.onChanged,
     this.multiSelect = true,
     this.width,
     this.height,
@@ -20,6 +22,7 @@ class FormFieldCheckboxWidgetField extends ConsumerWidget {
 
   final FormFieldDef field;
   final Widget Function({required Widget child})? fieldBuilder;
+  final Function(String value, FormResults results)? onChanged;
   final String formId;
   final bool multiSelect;
   final double? width;
@@ -68,6 +71,10 @@ class FormFieldCheckboxWidgetField extends ConsumerWidget {
             maxHeight != null ? BoxConstraints(maxHeight: maxHeight!) : null,
         child: fieldBuilder!(
           child: buildCheckboxList(
+            ref: ref,
+            formId: formId,
+            field: field,
+            onChanged: onChanged,
             options: field.options,
             chipValues: chipValues,
             onCheckboxChanged: handleCheckboxChange,
@@ -80,6 +87,10 @@ class FormFieldCheckboxWidgetField extends ConsumerWidget {
 
 // This function creates the column list of checkboxes
 Widget buildCheckboxList({
+  required WidgetRef ref,
+  required FormFieldDef field,
+  required String formId,
+  final Function(String value, FormResults results)? onChanged,
   required List<FormFieldChoiceOption> options,
   required List<ChoiceChipValue> chipValues,
   required void Function(bool selected, String value) onCheckboxChanged,
@@ -97,6 +108,13 @@ Widget buildCheckboxList({
             onChanged: (bool? selected) {
               if (selected != null) {
                 onCheckboxChanged(selected, option.value);
+              }
+
+              if (onChanged != null) {
+                final FormResults results = FormResults.getResults(
+                    ref: ref, formId: formId, fields: [field]);
+
+                onChanged(results.grab(field.id).toString(), results);
               }
             },
             controlAffinity: ListTileControlAffinity.leading,

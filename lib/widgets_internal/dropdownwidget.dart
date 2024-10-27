@@ -1,4 +1,5 @@
 import 'package:championforms/models/formfieldclass.dart';
+import 'package:championforms/models/formresults.dart';
 import 'package:championforms/providers/choicechipprovider.dart';
 import 'package:championforms/widgets_internal/fieldwrapperdefault.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ class FormFieldDropDownField extends ConsumerWidget {
     super.key,
     required this.field,
     required this.formId,
+    this.onChanged,
     this.multiSelect = true,
     this.width,
     this.height,
@@ -20,6 +22,7 @@ class FormFieldDropDownField extends ConsumerWidget {
 
   final FormFieldDef field;
   final Widget Function({required Widget child})? fieldBuilder;
+  final Function(String value, FormResults results)? onChanged;
   final String formId;
   final bool multiSelect;
   final double? width;
@@ -65,6 +68,14 @@ class FormFieldDropDownField extends ConsumerWidget {
                     .read(choiceChipNotifierProvider("$formId${field.id}")
                         .notifier)
                     .addChoice(ChoiceChipValue(id: value, value: true));
+              }
+
+// Handle onchanged behavior
+              if (onChanged != null) {
+                final FormResults results = FormResults.getResults(
+                    ref: ref, formId: formId, fields: [field]);
+
+                onChanged!(results.grab(field.id).toString(), results);
               }
             },
           ),

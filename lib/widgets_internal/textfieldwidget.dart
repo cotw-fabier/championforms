@@ -1,3 +1,4 @@
+import 'package:championforms/models/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/providers/textformfieldbyid.dart';
 import 'package:championforms/widgets_internal/draggablewidget.dart';
@@ -14,6 +15,7 @@ class TextFieldWidget extends ConsumerStatefulWidget {
   const TextFieldWidget({
     super.key,
     required this.id,
+    required this.field,
     this.fieldId = "",
     this.formId = "",
     this.requestFocus = false,
@@ -37,11 +39,12 @@ class TextFieldWidget extends ConsumerStatefulWidget {
     Widget Function({required Widget child})? fieldBuilder,
   }) : fieldBuilder = fieldBuilder ?? defaultFieldBuilder;
   final String id;
+  final FormFieldDef field;
   final String fieldId;
   final String formId;
   final bool requestFocus;
   final bool password;
-  final Function(String value)? onChanged;
+  final Function(String value, FormResults results)? onChanged;
   final Function(String value, FormResults results)? onSubmitted;
   final Function(String value)? validate;
   final TextInputType keyboardType;
@@ -126,7 +129,12 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
   }
 
   void _onControllerChanged() {
-    if (widget.onChanged != null) widget.onChanged!(_controller.text);
+    if (widget.onChanged != null) {
+      widget.onChanged!(
+          _controller.text,
+          FormResults.getResults(
+              ref: ref, formId: widget.formId, fields: [widget.field]));
+    }
 
     ref.read(textFormFieldValueById(widget.id).notifier).state =
         _controller.text;

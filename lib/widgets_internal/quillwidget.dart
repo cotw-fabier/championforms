@@ -1,3 +1,5 @@
+import 'package:championforms/models/formfieldclass.dart';
+import 'package:championforms/models/formresults.dart';
 import 'package:championforms/providers/textformfieldbyid.dart';
 import 'package:fleather/fleather.dart';
 import 'package:flutter/foundation.dart';
@@ -20,6 +22,7 @@ class QuillWidgetTextArea extends ConsumerStatefulWidget {
     required this.id,
     this.fieldId = "",
     this.formId = "",
+    required this.field,
     this.requestFocus = false,
     this.active = true,
     this.password = false,
@@ -44,10 +47,11 @@ class QuillWidgetTextArea extends ConsumerStatefulWidget {
   final String id;
   final String fieldId;
   final String formId;
+  final FormFieldDef field;
   final bool requestFocus;
   final bool active;
   final bool password;
-  final Function(String value)? onChanged;
+  final Function(String value, FormResults results)? onChanged;
   final Function(String value)? onSubmitted;
   final Function(String value)? validate;
   final Delta? initialValue;
@@ -111,7 +115,23 @@ class _QuillWidgetTextAreaState extends ConsumerState<QuillWidgetTextArea> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final registerEmbeds = ref.watch(embedRegistryNotifierProvider.notifier);
       registerEmbeds.registerEmbed(YoutubeEmbed());
+
+      // Register listener on the controller
+      final controller = ref.watch(
+          quillControllerNotifierProvider(widget.formId, widget.fieldId));
+      controller.addListener(_onChangeListener);
     });
+  }
+
+  void _onChangeListener() {
+    final controller = ref
+        .read(quillControllerNotifierProvider(widget.formId, widget.fieldId));
+    if (widget.onChanged != null) {
+      widget.onChanged!(
+          controller.document.toPlainText(),
+          FormResults.getResults(
+              ref: ref, formId: widget.formId, fields: [widget.field]));
+    }
   }
 
   void _focusListener() {

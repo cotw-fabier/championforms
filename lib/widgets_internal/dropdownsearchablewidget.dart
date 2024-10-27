@@ -1,4 +1,5 @@
 import 'package:championforms/models/formfieldclass.dart';
+import 'package:championforms/models/formresults.dart';
 import 'package:championforms/providers/choicechipprovider.dart';
 import 'package:championforms/widgets_internal/fieldwrapperdefault.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
@@ -10,6 +11,7 @@ class FormFieldSearchableDropDownField extends ConsumerStatefulWidget {
     super.key,
     required this.field,
     required this.formId,
+    this.onChanged,
     this.multiSelect = true,
     this.width,
     this.height,
@@ -20,6 +22,7 @@ class FormFieldSearchableDropDownField extends ConsumerStatefulWidget {
 
   final FormFieldDef field;
   final Widget Function({required Widget child})? fieldBuilder;
+  final Function(String value, FormResults results)? onChanged;
   final String formId;
   final bool multiSelect;
   final double? width;
@@ -197,6 +200,17 @@ class _FormFieldSearchableDropDownFieldState
                   // Update the multiValueListenable to trigger a UI rebuild
                   multiValueListenable.value =
                       newList.map((e) => e.id).toList();
+
+                  // Handle onchanged behavior
+                  if (widget.onChanged != null) {
+                    final FormResults results = FormResults.getResults(
+                        ref: ref,
+                        formId: widget.formId,
+                        fields: [widget.field]);
+
+                    widget.onChanged!(
+                        results.grab(widget.field.id).toString(), results);
+                  }
                 },
                 buttonStyleData: const ButtonStyleData(
                   padding: EdgeInsets.only(left: 16, right: 8),
