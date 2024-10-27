@@ -276,28 +276,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
         if (widget.fieldLayoutBuilder != null) {
           fieldLayout = widget.fieldLayoutBuilder!;
         } else {
-          fieldLayout = ({
-            Widget? title,
-            Widget? description,
-            Widget? errors,
-            Widget Function({required Widget child})? fieldWrapper,
-            Widget? icon,
-            bool? expanded,
-            FieldColorScheme? colors,
-            required Widget field,
-          }) {
-            // Create and return the FieldVerticalLayout widget inline
-            return FieldVerticalLayout(
-              title: title,
-              description: description,
-              errors: errors,
-              fieldWrapper: fieldWrapper,
-              icon: icon,
-              expanded: expanded ?? false,
-              colors: colors ?? fieldColor,
-              field: field,
-            );
-          };
+          fieldLayout = fieldVerticalLayout;
         }
 
         Widget outputWidget;

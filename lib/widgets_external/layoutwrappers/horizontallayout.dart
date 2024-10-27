@@ -2,7 +2,7 @@ import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/widgets_internal/fieldexpanded.dart';
 import 'package:flutter/material.dart';
 
-Widget fieldVerticalLayout({
+Widget fieldHorizontalLayout({
   Widget? title,
   Widget? description,
   Widget? errors,
@@ -12,7 +12,7 @@ Widget fieldVerticalLayout({
   FieldColorScheme? colors,
   required Widget field,
 }) {
-  return FieldVerticalLayoutWidget(
+  return FieldHorizontalLayoutWidget(
     title: title,
     description: description,
     errors: errors,
@@ -24,8 +24,8 @@ Widget fieldVerticalLayout({
   );
 }
 
-class FieldVerticalLayoutWidget extends StatelessWidget {
-  const FieldVerticalLayoutWidget({
+class FieldHorizontalLayoutWidget extends StatelessWidget {
+  const FieldHorizontalLayoutWidget({
     super.key,
     this.title,
     this.description,
@@ -49,15 +49,19 @@ class FieldVerticalLayoutWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+    return Row(
       children: [
-        if (title != null) title!,
-        if (title != null) SizedBox(height: 10),
-        if (description != null) description!,
-        if (description != null) SizedBox(height: 10),
-        if (errors != null) errors!,
-        if (errors != null) SizedBox(height: 10),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (title != null) title!,
+            if (title != null) SizedBox(height: 10),
+            if (description != null) description!,
+            if (description != null) SizedBox(height: 10),
+            if (errors != null) errors!,
+            if (errors != null) SizedBox(height: 10),
+          ],
+        ),
         FieldExpanded(
           expanded: expanded,
           child: fieldWrapper != null
