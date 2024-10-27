@@ -62,20 +62,25 @@ class FieldHorizontalLayoutWidget extends StatelessWidget {
             if (errors != null) SizedBox(height: 10),
           ],
         ),
-        FieldExpanded(
-          expanded: expanded,
-          child: fieldWrapper != null
-              ? fieldWrapper!(
-                  child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    //if (icon != null) icon!,
-                    Expanded(
-                      child: field,
-                    ),
-                  ],
-                ))
-              : field,
+        const SizedBox(
+          width: 10,
+        ),
+        Expanded(
+          child: FieldExpanded(
+            expanded: expanded,
+            child: fieldWrapper != null
+                ? fieldWrapper!(
+                    child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      //if (icon != null) icon!,
+                      Expanded(
+                        child: field,
+                      ),
+                    ],
+                  ))
+                : field,
+          ),
         ),
       ],
     );
