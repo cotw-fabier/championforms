@@ -35,6 +35,7 @@ class TextFieldWidget extends ConsumerStatefulWidget {
     this.onDrop,
     this.formats,
     this.draggable = true,
+    this.inputDecorator,
     this.onPaste,
     Widget Function({required Widget child})? fieldBuilder,
   }) : fieldBuilder = fieldBuilder ?? defaultFieldBuilder;
@@ -56,6 +57,7 @@ class TextFieldWidget extends ConsumerStatefulWidget {
   final double? height;
   final double? maxHeight;
   final bool expanded;
+  final InputDecoration? inputDecorator;
   final Future<void> Function({
     FleatherController? fleatherController,
     TextEditingController? controller,
@@ -195,6 +197,33 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
     ref.listen(textFormFieldValueById(widget.id), _onRiverpodControllerUpdate);
     final ThemeData theme = Theme.of(context);
     final textValue = ref.watch(textFormFieldValueById(widget.id));
+
+    InputDecoration inputDecoration;
+    // Lets process the input decorator
+    if (widget.inputDecorator != null) {
+      if (widget.hintText != null || widget.hintText != "") {
+        inputDecoration =
+            widget.inputDecorator!.copyWith(hintText: widget.hintText);
+      } else {
+        inputDecoration = widget.inputDecorator!;
+      }
+    } else {
+      inputDecoration = InputDecoration(
+        prefixIcon: widget.icon,
+        filled: true,
+        fillColor: Colors.transparent, // To ensure the gradient is visible
+        border: OutlineInputBorder(
+          /*borderRadius: BorderRadius.circular(30.0),*/
+          borderSide: BorderSide.none, // No additional border needed
+        ),
+        /*contentPadding: const EdgeInsets.symmetric(
+                      vertical: 10.0, horizontal: 20.0),*/
+        hintText: widget.hintText,
+        hintStyle: theme.textTheme.bodyMedium
+            ?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.5)),
+      );
+    }
+
     return LayoutBuilder(builder: (context, constraints) {
       return Container(
         width: widget.width ??
@@ -257,21 +286,7 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
                   widget.onSubmitted!(value, formResults);
                 },
                 style: theme.textTheme.bodyMedium,
-                decoration: InputDecoration(
-                  prefixIcon: widget.icon,
-                  filled: true,
-                  fillColor:
-                      Colors.transparent, // To ensure the gradient is visible
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                    borderSide: BorderSide.none, // No additional border needed
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                      vertical: 10.0, horizontal: 20.0),
-                  hintText: widget.hintText,
-                  hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.5)),
-                ),
+                decoration: inputDecoration,
               ),
             ),
           ),

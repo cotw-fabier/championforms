@@ -1,6 +1,7 @@
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formresults.dart';
+import 'package:championforms/models/themes.dart';
 import 'package:championforms/providers/fieldactiveprovider.dart';
 import 'package:championforms/providers/formfieldsstorage.dart';
 import 'package:championforms/providers/textformfieldbyid.dart';
@@ -33,17 +34,7 @@ class FormBuilderWidget extends ConsumerStatefulWidget {
     this.spacing = 10,
     this.formWidth,
     this.formHeight,
-    required this.colorScheme,
-    required this.activeColorScheme,
-    required this.disabledColorScheme,
-    required this.errorColorScheme,
-    required this.selectedColorScheme,
-    required this.titleStyle,
-    required this.descriptionStyle,
-    required this.hintTextStyle,
-    required this.chipTextStyle,
-    this.fieldBuilder,
-    this.fieldLayoutBuilder,
+    required this.theme,
   });
 
   final List<FormFieldBase> fields;
@@ -51,33 +42,7 @@ class FormBuilderWidget extends ConsumerStatefulWidget {
   final double spacing;
   final double? formWidth;
   final double? formHeight;
-  final FieldColorScheme activeColorScheme;
-  final FieldColorScheme disabledColorScheme;
-  final FieldColorScheme selectedColorScheme;
-  final FieldColorScheme errorColorScheme;
-  final FieldColorScheme colorScheme;
-
-  // Text Styles
-  final TextStyle titleStyle;
-  final TextStyle descriptionStyle;
-  final TextStyle hintTextStyle;
-  final TextStyle chipTextStyle;
-
-// Add a builder for defining the field style
-  final Widget Function({required Widget child})? fieldBuilder;
-
-  // This is the widget requirements for a widget layout other than the default.
-  final Widget Function({
-    Widget? title,
-    Widget? description,
-    Widget? errors,
-    Widget Function({required Widget child})? fieldWrapper,
-    Widget? icon,
-    bool? expanded,
-    FieldColorScheme? colors,
-    required Widget field,
-  })? fieldLayoutBuilder;
-
+  final FormTheme theme;
   @override
   ConsumerState<ConsumerStatefulWidget> createState() =>
       _FormBuilderWidgetState();
@@ -248,17 +213,19 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
         FieldColorScheme fieldColor;
         if (errors.isNotEmpty) {
           fieldState = FieldState.error;
-          fieldColor = field.errorColorScheme ?? widget.errorColorScheme;
+          fieldColor = field.errorColorScheme ?? widget.theme.errorColorScheme!;
         } else if (field.disabled == true) {
           fieldState = FieldState.disabled;
-          fieldColor = field.disabledColorScheme ?? widget.disabledColorScheme;
+          fieldColor =
+              field.disabledColorScheme ?? widget.theme.disabledColorScheme!;
         } else if (ref.watch(fieldActiveNotifierProvider(widget.id)) ==
             field.id) {
           fieldState = FieldState.active;
-          fieldColor = field.activeColorScheme ?? widget.activeColorScheme;
+          fieldColor =
+              field.activeColorScheme ?? widget.theme.activeColorScheme!;
         } else {
           fieldState = FieldState.normal;
-          fieldColor = field.colorScheme ?? widget.colorScheme;
+          fieldColor = field.colorScheme ?? widget.theme.colorScheme!;
         }
 
         // Lets establish our field layout
@@ -266,17 +233,20 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
           Widget? title,
           Widget? description,
           Widget? errors,
-          Widget Function({required Widget child})? fieldWrapper,
           Widget? icon,
           bool? expanded,
-          FieldColorScheme? colors,
-          required Widget field,
+          FormTheme theme,
+          Widget layout,
+          Widget field,
         }) fieldLayout;
 
-        if (widget.fieldLayoutBuilder != null) {
-          fieldLayout = widget.fieldLayoutBuilder!;
+        if (widget.theme.layoutBuilder! != null) {
+          fieldLayout = widget.theme.layoutBuilder!;
         } else {
-          fieldLayout = fieldVerticalLayout;
+          fieldLayout = fieldVerticalLayoutBuilder(
+            field: field,
+            theme: field.theme ?? widget.theme,
+          );
         }
 
         Widget outputWidget;
@@ -776,27 +746,29 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
             width: field.width,
             height: field.height,
             flex: field.flex,
-            child: fieldLayout(
-              title: field.title != null
-                  ? FieldTextElement(
-                      color: fieldColor.titleColor,
-                      textStyle: field.titleStyle ?? widget.titleStyle,
-                      text: field.title!)
-                  : null,
-              description: field.description != null
-                  ? FieldTextElement(
-                      color: fieldColor.descriptionColor,
-                      textStyle:
-                          field.descriptionStyle ?? widget.descriptionStyle,
-                      text: field.description!)
-                  : null,
-              expanded: field.fillArea,
-              // TODO: Add Errors
-              fieldWrapper: field.fieldBuilder ?? widget.fieldBuilder,
-              icon: field.icon,
-              colors: fieldColor,
-              field: outputWidget,
-            ),
+            child: Builder(builder: (context) {
+              return fieldLayout(
+                title: field.title != null
+                    ? FieldTextElement(
+                        color: fieldColor.titleColor,
+                        textStyle: field.titleStyle ?? widget.theme.titleStyle!,
+                        text: field.title!)
+                    : null,
+                description: field.description != null
+                    ? FieldTextElement(
+                        color: fieldColor.descriptionColor,
+                        textStyle: field.descriptionStyle ??
+                            widget.theme.descriptionStyle!,
+                        text: field.description!)
+                    : null,
+                expanded: field.fillArea,
+                // TODO: Add Errors
+                fieldWrapper: field.fieldBuilder ?? widget.theme.fieldBuilder,
+                icon: field.icon,
+                colors: fieldColor,
+                field: outputWidget,
+              );
+            }),
           ),
         );
 

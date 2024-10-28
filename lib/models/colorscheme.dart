@@ -47,4 +47,35 @@ class FieldColorScheme {
     this.textBackgroundColor,
     this.textBackgroundGradient,
   });
+
+  FieldColorScheme copyWith({
+    Color? backgroundColor,
+    FieldGradientColors? backgroundGradient,
+    Color? borderColor,
+    FieldGradientColors? borderGradient,
+    int? borderSize,
+    Color? textColor,
+    Color? hintTextColor,
+    Color? titleColor,
+    Color? descriptionColor,
+    Color? iconColor,
+    Color? textBackgroundColor,
+    FieldGradientColors? textBackgroundGradient,
+  }) {
+    return FieldColorScheme(
+      backgroundColor: backgroundColor ?? this.backgroundColor,
+      backgroundGradient: backgroundGradient ?? this.backgroundGradient,
+      borderColor: borderColor ?? this.borderColor,
+      borderGradient: borderGradient ?? this.borderGradient,
+      borderSize: borderSize ?? this.borderSize,
+      textColor: textColor ?? this.textColor,
+      hintTextColor: hintTextColor ?? this.hintTextColor,
+      titleColor: titleColor ?? this.titleColor,
+      descriptionColor: descriptionColor ?? this.descriptionColor,
+      iconColor: iconColor ?? this.iconColor,
+      textBackgroundColor: textBackgroundColor ?? this.textBackgroundColor,
+      textBackgroundGradient:
+          textBackgroundGradient ?? this.textBackgroundGradient,
+    );
+  }
 }

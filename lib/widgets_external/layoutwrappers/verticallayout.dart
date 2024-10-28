@@ -1,25 +1,24 @@
-import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/models/themes.dart';
 import 'package:championforms/widgets_internal/fieldexpanded.dart';
 import 'package:flutter/material.dart';
 
-Widget fieldVerticalLayout({
+Widget fieldVerticalLayoutBuilder({
   Widget? title,
   Widget? description,
   Widget? errors,
-  Widget Function({required Widget child})? fieldWrapper,
   Widget? icon,
   bool? expanded,
-  FieldColorScheme? colors,
+  required FormTheme theme,
+  required Widget layout,
   required Widget field,
 }) {
   return FieldVerticalLayoutWidget(
     title: title,
     description: description,
     errors: errors,
-    fieldWrapper: fieldWrapper,
     icon: icon,
     expanded: expanded ?? false,
-    colors: colors,
+    theme: theme,
     field: field,
   );
 }
@@ -30,22 +29,20 @@ class FieldVerticalLayoutWidget extends StatelessWidget {
     this.title,
     this.description,
     this.errors,
-    this.fieldWrapper,
     this.icon,
     this.expanded = false,
-    this.colors,
+    required this.theme,
     required this.field,
   });
 
   final Widget? title;
   final Widget? description;
   final Widget? errors;
-  final Widget Function({required Widget child})? fieldWrapper;
 
   final Widget? icon;
   final bool expanded;
   final Widget field;
-  final FieldColorScheme? colors;
+  final FormTheme theme;
 
   @override
   Widget build(BuildContext context) {
@@ -60,8 +57,8 @@ class FieldVerticalLayoutWidget extends StatelessWidget {
         if (errors != null) SizedBox(height: 10),
         FieldExpanded(
           expanded: expanded,
-          child: fieldWrapper != null
-              ? fieldWrapper!(
+          child: theme.fieldBuilder! != null
+              ? theme.fieldBuilder!(
                   child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
