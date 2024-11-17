@@ -1,3 +1,4 @@
+import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/themes.dart';
 import 'package:championforms/widgets_internal/fieldexpanded.dart';
 import 'package:flutter/material.dart';
@@ -8,7 +9,7 @@ Widget fieldVerticalLayoutBuilder({
   Widget? errors,
   Widget? icon,
   bool? expanded,
-  required FormTheme theme,
+  required FieldColorScheme theme,
   required Widget layout,
   required Widget field,
 }) {

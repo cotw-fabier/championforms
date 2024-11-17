@@ -208,45 +208,27 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
           if (error != null) errors.add(error);
         }
 
+        // merge the theme from the field into the form theme.
+        final finalTheme = field.theme != null
+            ? widget.theme.copyWith(theme: field.theme)
+            : widget.theme;
+
         // Set the state
         FieldState fieldState;
         FieldColorScheme fieldColor;
         if (errors.isNotEmpty) {
           fieldState = FieldState.error;
-          fieldColor = field.errorColorScheme ?? widget.theme.errorColorScheme!;
+          fieldColor = finalTheme.errorColorScheme!;
         } else if (field.disabled == true) {
           fieldState = FieldState.disabled;
-          fieldColor =
-              field.disabledColorScheme ?? widget.theme.disabledColorScheme!;
+          fieldColor = finalTheme.disabledColorScheme!;
         } else if (ref.watch(fieldActiveNotifierProvider(widget.id)) ==
             field.id) {
           fieldState = FieldState.active;
-          fieldColor =
-              field.activeColorScheme ?? widget.theme.activeColorScheme!;
+          fieldColor = finalTheme.activeColorScheme!;
         } else {
           fieldState = FieldState.normal;
-          fieldColor = field.colorScheme ?? widget.theme.colorScheme!;
-        }
-
-        // Lets establish our field layout
-        Widget Function({
-          Widget? title,
-          Widget? description,
-          Widget? errors,
-          Widget? icon,
-          bool? expanded,
-          FormTheme theme,
-          Widget layout,
-          Widget field,
-        }) fieldLayout;
-
-        if (widget.theme.layoutBuilder! != null) {
-          fieldLayout = widget.theme.layoutBuilder!;
-        } else {
-          fieldLayout = fieldVerticalLayoutBuilder(
-            field: field,
-            theme: field.theme ?? widget.theme,
-          );
+          fieldColor = finalTheme.colorScheme!;
         }
 
         Widget outputWidget;
@@ -739,6 +721,26 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
             break;
         }
 
+        // Lets establish our field layout
+        Widget Function({
+          Widget? title,
+          Widget? description,
+          Widget? errors,
+          Widget? icon,
+          bool? expanded,
+          FormTheme theme,
+          Widget layout,
+          Widget field,
+        }) fieldLayout;
+
+        if (widget.theme.layoutBuilder! != null) {
+          fieldLayout = widget.theme.layoutBuilder!;
+        } else {
+          fieldLayout = fieldVerticalLayoutBuilder(
+            field: outputWidget,
+            theme: field.theme ?? widget.theme,
+          );
+        }
         // Lets add the new form field with our layout
         output.add(
           FormFieldWrapper(
