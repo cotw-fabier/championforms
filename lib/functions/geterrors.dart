@@ -25,7 +25,7 @@ List<FormBuilderError> getFormBuilderErrors(
     // skip validation if the field is hidden.
     if (field.hideField == true) continue;
     // skip validation if the field is locked.
-    if (field.active == false) continue;
+    if (field.disabled == true) continue;
 
     // Run the validators in order and add the results to the errors.
     int validatorPosition = 0;

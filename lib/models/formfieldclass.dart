@@ -34,13 +34,10 @@ class FormFieldChoiceOption {
   }) : name = name ?? value;
 }
 
-class FormFieldDef implements FormFieldBase {
-  // Define the type of field type
-  final FormFieldType type;
+abstract class FormFieldDef implements FormFieldBase {
+  // Add an ID
+  @override
   final String id;
-
-  // Add hint text if needed
-  final String hintText;
 
   // Add icon if needed
   final Icon? icon;
@@ -53,14 +50,6 @@ class FormFieldDef implements FormFieldBase {
   final bool disabled;
 
   final FormTheme? theme;
-  // Options for dropdown, radio, and chips
-  final List<FormFieldChoiceOption> options;
-
-  // Enable multi-select for checkboxes, chips, and dropdowns.
-  final bool multiselect;
-
-  // Enable search for dropdowns and chips
-  final bool searchable;
 
   // Hide this field and don't include it at all in the outputs or validators. Helpful for building dynamic forms.
   final bool hideField;
@@ -68,25 +57,8 @@ class FormFieldDef implements FormFieldBase {
   // This field will ask for focus. Best to only have one per form.
   final bool requestFocus;
 
-  final bool active;
-
-  // obfuscate the field
-  final bool password;
-
-  // These are the default values for the field. Use the specific one you need depending on the input required.
-  final bool isSet;
-  final String? defaultValue;
-  final Delta?
-      deltaValue; // specifically for Rich Text Field. Flutter Quill Delta.
-  final List<String>? defaultValues;
-
   final List<FormBuilderValidator>? validators;
-  final List<Map<String, String>>?
-      fieldOptions; // Special options about the field which we don't want to add a new param to the model for.
   final bool validateLive;
-
-  // children FormFieldDef so you can create rows, columns, tabs, and more.
-  final List<FormFieldDef>? children;
 
   // Functions
   // THis can be called on compatible fields. When you press enter or trigger a field submit it will trigger this function.
@@ -94,12 +66,6 @@ class FormFieldDef implements FormFieldBase {
 
   // This can be called on compatible fields. When the field changes, this function is run.
   final Function(String value, FormResults results)? onChange;
-
-  // THis function triggers.....?
-  final Function(String)? callBack;
-
-  // For quill fields, support custom embeds from this app.
-  //final List<EmbedBuilder> embeds;
 
   // This is layout specific.
   final double? height;
@@ -110,58 +76,20 @@ class FormFieldDef implements FormFieldBase {
   final int? flex;
   final bool fillArea;
 
-  // This works for only the "widget" form field type.
-  final Widget? child;
-
   // Add a builder for defining the field style
   final Widget Function({required Widget child})? fieldBuilder;
 
-  // We need to have a callback which will be called when drag and drop
-  final Future<void> Function({
-    FleatherController? fleatherController,
-    TextEditingController? controller,
-    required String formId,
-    required String fieldId,
-    required WidgetRef ref,
-  })? onDrop;
-
-  // Does this field support drag functionality?
-  final bool draggable;
-
-  // We need to have a callback which will be called when content is pasted
-  final Future<void> Function({
-    FleatherController? fleatherController,
-    TextEditingController? controller,
-    required String formId,
-    required String fieldId,
-    required WidgetRef ref,
-  })? onPaste;
-
-  FormFieldDef._internal({
-    this.type = FormFieldType.textField,
+  FormFieldDef({
     required this.id,
-    this.hintText = "",
     this.icon,
     this.theme,
     this.title,
     this.description,
     this.disabled = false,
-    this.options = const [],
     this.hideField = false,
-    this.active = true,
     this.requestFocus = false,
-    this.multiselect = false,
-    this.searchable = false,
-    this.password = false,
-    this.isSet = false,
-    this.defaultValue,
-    this.deltaValue,
-    this.defaultValues = const [],
-    this.fieldOptions = const [],
-    this.children,
     this.validators,
     this.validateLive = false,
-    this.callBack,
     this.onSubmit,
     this.onChange,
     //this.embeds = const [],
@@ -170,11 +98,7 @@ class FormFieldDef implements FormFieldBase {
     this.width,
     this.flex,
     this.fillArea = false,
-    this.child,
     this.fieldBuilder,
-    this.onDrop,
-    this.draggable = true,
-    this.onPaste,
   });
 
   // Factory constructors for each type of field.
@@ -265,29 +189,28 @@ class FormFieldDef implements FormFieldBase {
   // textField
   factory FormFieldDef.textField({
     required String id,
-    String hintText = "",
+    TextField? fieldOverride,
     Icon? icon,
+    Widget? leading,
+    Widget? trailing,
     String? title,
     String? description,
-    bool? disabled,
+    String hintText = "",
+    bool? disabled = false,
     FormTheme? theme,
     bool hideField = false,
-    bool active = true,
     bool requestFocus = false,
     bool password = false,
-    bool isSet = false,
     String? defaultValue,
-    List<Map<String, String>>? fieldOptions = const [],
     List<FormBuilderValidator>? validators,
     bool validateLive = false,
-    Function(String)? callBack,
     double? height,
     double? maxHeight,
     double? width,
+    bool fillArea = false,
     int? flex,
     Function(String value, FormResults results)? onSubmit,
     Function(String value, FormResults results)? onChange,
-    bool fillArea = false,
     Widget Function({required Widget child})? fieldBuilder,
     Future<void> Function({
       FleatherController? fleatherController,
@@ -305,27 +228,26 @@ class FormFieldDef implements FormFieldBase {
       required WidgetRef ref,
     })? onPaste,
   }) {
-    return FormFieldDef._internal(
-      type: FormFieldType.textField,
+    return FormFieldTextField(
       id: id,
+      fieldOverride: fieldOverride,
+      maxLines: 1,
       hintText: hintText,
       icon: icon,
+      leading: leading,
+      trailing: trailing,
       title: title,
       theme: theme,
       disabled: disabled ?? false,
       description: description,
       hideField: hideField,
-      active: active,
       requestFocus: requestFocus,
       password: password,
-      isSet: isSet,
       onSubmit: onSubmit,
       onChange: onChange,
       defaultValue: defaultValue,
-      fieldOptions: fieldOptions,
       validators: validators,
       validateLive: validateLive,
-      callBack: callBack,
       height: height,
       maxHeight: maxHeight,
       width: width,
@@ -337,31 +259,32 @@ class FormFieldDef implements FormFieldBase {
       onPaste: onPaste,
     );
   }
-
-  // textArea
+  // textField
   factory FormFieldDef.textArea({
     required String id,
-    String hintText = "",
+    TextField? fieldOverride,
     Icon? icon,
+    int? maxLines,
+    Widget? leading,
+    Widget? trailing,
     String? title,
     String? description,
-    bool? disabled,
+    String hintText = "",
+    bool? disabled = false,
     FormTheme? theme,
     bool hideField = false,
-    bool active = true,
     bool requestFocus = false,
-    bool isSet = false,
+    bool password = false,
     String? defaultValue,
-    Function(String value, FormResults results)? onChange,
-    List<Map<String, String>>? fieldOptions = const [],
     List<FormBuilderValidator>? validators,
     bool validateLive = false,
-    Function(String)? callBack,
     double? height,
     double? maxHeight,
     double? width,
-    int? flex,
     bool fillArea = false,
+    int? flex,
+    Function(String value, FormResults results)? onSubmit,
+    Function(String value, FormResults results)? onChange,
     Widget Function({required Widget child})? fieldBuilder,
     Future<void> Function({
       FleatherController? fleatherController,
@@ -379,24 +302,26 @@ class FormFieldDef implements FormFieldBase {
       required WidgetRef ref,
     })? onPaste,
   }) {
-    return FormFieldDef._internal(
-      type: FormFieldType.textArea,
+    return FormFieldTextField(
       id: id,
+      fieldOverride: fieldOverride,
+      maxLines: maxLines,
       hintText: hintText,
       icon: icon,
+      leading: leading,
+      trailing: trailing,
       title: title,
+      theme: theme,
       disabled: disabled ?? false,
       description: description,
-      theme: theme,
       hideField: hideField,
-      active: active,
-      isSet: isSet,
       requestFocus: requestFocus,
+      password: password,
+      onSubmit: onSubmit,
+      onChange: onChange,
       defaultValue: defaultValue,
-      fieldOptions: fieldOptions,
       validators: validators,
       validateLive: validateLive,
-      callBack: callBack,
       height: height,
       maxHeight: maxHeight,
       width: width,
@@ -406,10 +331,10 @@ class FormFieldDef implements FormFieldBase {
       onDrop: onDrop,
       draggable: draggable,
       onPaste: onPaste,
-      onChange: onChange,
     );
   }
 
+/*
   // richText
   factory FormFieldDef.richText({
     required String id,
@@ -818,5 +743,287 @@ class FormFieldDef implements FormFieldBase {
       draggable: draggable,
       onPaste: onPaste,
     );
-  }
+  }*/
 }
+
+class FormFieldTextField implements FormFieldDef {
+  // Define the type of field type
+  @override
+  final String id;
+
+  // Add a TextField override so we could write our own widget if we prefer. This will override the default field.
+  final TextField? fieldOverride;
+
+  final int? maxLines;
+
+  // Add hint text if needed
+  final String hintText;
+
+  // Add icon if needed
+  @override
+  final Icon? icon;
+
+  final Widget? leading;
+  final Widget? trailing;
+
+  // This is the field title and will be displayed next to the field.
+  @override
+  final String? title;
+  @override
+  final String? description;
+
+  // Is this field disabled?
+  @override
+  final bool disabled;
+
+  // Does this field have a max length?
+  final int? maxLength;
+
+  // Add the form theme for colors and text details
+  @override
+  final FormTheme? theme;
+
+  // Hide this field and don't include it at all in the outputs or validators. Helpful for building dynamic forms.
+  @override
+  final bool hideField;
+
+  // This field will ask for focus. Best to only have one per form.
+  @override
+  final bool requestFocus;
+
+  // obfuscate the field
+  final bool password;
+
+  // These are the default values for the field. Use the specific one you need depending on the input required.
+  final String? defaultValue;
+
+  // Use our built in validators
+  @override
+  final List<FormBuilderValidator>? validators;
+  @override
+  final bool validateLive;
+
+  // Functions
+  // THis can be called on compatible fields. When you press enter or trigger a field submit it will trigger this function.
+  @override
+  final Function(String value, FormResults results)? onSubmit;
+
+  // This can be called on compatible fields. When the field changes, this function is run.
+  @override
+  final Function(String value, FormResults results)? onChange;
+
+  // This is layout specific.
+  @override
+  final double? height;
+  @override
+  final double? maxHeight;
+  @override
+  final double? width;
+
+  // Do we want this field to attempt to fill available space. Layout controls above override this functionality.
+  @override
+  final int? flex;
+  @override
+  final bool fillArea;
+
+  // Add a builder for defining the field style
+  @override
+  final Widget Function({required Widget child})? fieldBuilder;
+
+  // We need to have a callback which will be called when drag and drop
+  final Future<void> Function({
+    TextEditingController controller,
+    required String formId,
+    required String fieldId,
+    required WidgetRef ref,
+  })? onDrop;
+
+  // Does this field support drag functionality?
+  final bool draggable;
+
+  // We need to have a callback which will be called when content is pasted
+  final Future<void> Function({
+    TextEditingController controller,
+    required String formId,
+    required String fieldId,
+    required WidgetRef ref,
+  })? onPaste;
+
+  FormFieldTextField({
+    required this.id,
+    this.fieldOverride,
+    this.maxLines,
+    this.hintText = "",
+    this.icon,
+    this.leading,
+    this.trailing,
+    this.theme,
+    this.title,
+    this.description,
+    this.maxLength,
+    this.disabled = false,
+    this.hideField = false,
+    this.requestFocus = false,
+    this.password = false,
+    this.defaultValue,
+    this.validators,
+    this.validateLive = false,
+    this.onSubmit,
+    this.onChange,
+    this.height,
+    this.maxHeight,
+    this.width,
+    this.flex,
+    this.fillArea = false,
+    this.fieldBuilder,
+    this.onDrop,
+    this.draggable = true,
+    this.onPaste,
+  });
+}
+
+/*
+class FormFieldChipsField implements FormFieldDef  {
+  // Define the type of field type
+  final FormFieldType type;
+  final String id;
+
+  // Add hint text if needed
+  final String hintText;
+
+  // Add icon if needed
+  final Icon? icon;
+
+  // This is the field title and will be displayed next to the field.
+  final String? title;
+  final String? description;
+
+  // Is this field disabled?
+  final bool disabled;
+
+  final FormTheme? theme;
+  // Options for dropdown, radio, and chips
+  final List<FormFieldChoiceOption> options;
+
+  // Enable multi-select for checkboxes, chips, and dropdowns.
+  final bool multiselect;
+
+  // Enable search for dropdowns and chips
+  final bool searchable;
+
+  // Hide this field and don't include it at all in the outputs or validators. Helpful for building dynamic forms.
+  final bool hideField;
+
+  // This field will ask for focus. Best to only have one per form.
+  final bool requestFocus;
+
+  final bool active;
+
+  // obfuscate the field
+  final bool password;
+
+  // These are the default values for the field. Use the specific one you need depending on the input required.
+  final bool isSet;
+  final String? defaultValue;
+  final Delta?
+      deltaValue; // specifically for Rich Text Field. Flutter Quill Delta.
+  final List<String>? defaultValues;
+
+  final List<FormBuilderValidator>? validators;
+  final List<Map<String, String>>?
+      fieldOptions; // Special options about the field which we don't want to add a new param to the model for.
+  final bool validateLive;
+
+  // children FormFieldDef so you can create rows, columns, tabs, and more.
+  final List<FormFieldDef>? children;
+
+  // Functions
+  // THis can be called on compatible fields. When you press enter or trigger a field submit it will trigger this function.
+  final Function(String value, FormResults results)? onSubmit;
+
+  // This can be called on compatible fields. When the field changes, this function is run.
+  final Function(String value, FormResults results)? onChange;
+
+  // THis function triggers.....?
+  final Function(String)? callBack;
+
+  // For quill fields, support custom embeds from this app.
+  //final List<EmbedBuilder> embeds;
+
+  // This is layout specific.
+  final double? height;
+  final double? maxHeight;
+  final double? width;
+
+  // Do we want this field to attempt to fill available space. Layout controls above override this functionality.
+  final int? flex;
+  final bool fillArea;
+
+  // This works for only the "widget" form field type.
+  final Widget? child;
+
+  // Add a builder for defining the field style
+  final Widget Function({required Widget child})? fieldBuilder;
+
+  // We need to have a callback which will be called when drag and drop
+  final Future<void> Function({
+    FleatherController? fleatherController,
+    TextEditingController? controller,
+    required String formId,
+    required String fieldId,
+    required WidgetRef ref,
+  })? onDrop;
+
+  // Does this field support drag functionality?
+  final bool draggable;
+
+  // We need to have a callback which will be called when content is pasted
+  final Future<void> Function({
+    FleatherController? fleatherController,
+    TextEditingController? controller,
+    required String formId,
+    required String fieldId,
+    required WidgetRef ref,
+  })? onPaste;
+
+  FormFieldDef._internal({
+    this.type = FormFieldType.textField,
+    required this.id,
+    this.hintText = "",
+    this.icon,
+    this.theme,
+    this.title,
+    this.description,
+    this.disabled = false,
+    this.options = const [],
+    this.hideField = false,
+    this.active = true,
+    this.requestFocus = false,
+    this.multiselect = false,
+    this.searchable = false,
+    this.password = false,
+    this.isSet = false,
+    this.defaultValue,
+    this.deltaValue,
+    this.defaultValues = const [],
+    this.fieldOptions = const [],
+    this.children,
+    this.validators,
+    this.validateLive = false,
+    this.callBack,
+    this.onSubmit,
+    this.onChange,
+    //this.embeds = const [],
+    this.height,
+    this.maxHeight,
+    this.width,
+    this.flex,
+    this.fillArea = false,
+    this.child,
+    this.fieldBuilder,
+    this.onDrop,
+    this.draggable = true,
+    this.onPaste,
+  });
+}
+*/

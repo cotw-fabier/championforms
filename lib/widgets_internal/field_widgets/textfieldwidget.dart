@@ -1,3 +1,6 @@
+import 'package:championforms/fieldbuilders/textfieldbuilder.dart';
+import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/providers/textformfieldbyid.dart';
@@ -18,6 +21,9 @@ class TextFieldWidget extends ConsumerStatefulWidget {
     required this.field,
     this.fieldId = "",
     this.formId = "",
+    this.colorScheme,
+    required this.fieldState,
+    this.fieldOverride,
     this.requestFocus = false,
     this.password = false,
     this.onChanged,
@@ -28,19 +34,17 @@ class TextFieldWidget extends ConsumerStatefulWidget {
     this.initialValue = "",
     this.hintText = '',
     this.maxLines,
-    this.width,
-    this.height,
-    this.maxHeight,
-    this.expanded = false,
     this.onDrop,
     this.formats,
     this.draggable = true,
-    this.inputDecorator,
     this.onPaste,
     Widget Function({required Widget child})? fieldBuilder,
   }) : fieldBuilder = fieldBuilder ?? defaultFieldBuilder;
   final String id;
   final FormFieldDef field;
+  final TextField? fieldOverride;
+  final FieldState fieldState;
+  final FieldColorScheme? colorScheme;
   final String fieldId;
   final String formId;
   final bool requestFocus;
@@ -53,14 +57,8 @@ class TextFieldWidget extends ConsumerStatefulWidget {
   final Icon? icon;
   final String hintText;
   final int? maxLines;
-  final double? width;
-  final double? height;
-  final double? maxHeight;
-  final bool expanded;
-  final InputDecoration? inputDecorator;
   final Future<void> Function({
-    FleatherController? fleatherController,
-    TextEditingController? controller,
+    TextEditingController controller,
     required String formId,
     required String fieldId,
     required WidgetRef ref,
@@ -68,8 +66,7 @@ class TextFieldWidget extends ConsumerStatefulWidget {
   final List<DataFormat<Object>>? formats;
   final bool draggable;
   final Future<void> Function({
-    FleatherController? fleatherController,
-    TextEditingController? controller,
+    TextEditingController controller,
     required String formId,
     required String fieldId,
     required WidgetRef ref,
@@ -198,95 +195,60 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
     final ThemeData theme = Theme.of(context);
     final textValue = ref.watch(textFormFieldValueById(widget.id));
 
-    InputDecoration inputDecoration;
-    // Lets process the input decorator
-    if (widget.inputDecorator != null) {
-      if (widget.hintText != null || widget.hintText != "") {
-        inputDecoration =
-            widget.inputDecorator!.copyWith(hintText: widget.hintText);
-      } else {
-        inputDecoration = widget.inputDecorator!;
-      }
-    } else {
-      inputDecoration = InputDecoration(
-        prefixIcon: widget.icon,
-        filled: true,
-        fillColor: Colors.transparent, // To ensure the gradient is visible
-        border: OutlineInputBorder(
-          /*borderRadius: BorderRadius.circular(30.0),*/
-          borderSide: BorderSide.none, // No additional border needed
-        ),
-        /*contentPadding: const EdgeInsets.symmetric(
-                      vertical: 10.0, horizontal: 20.0),*/
-        hintText: widget.hintText,
-        hintStyle: theme.textTheme.bodyMedium
-            ?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.5)),
-      );
-    }
-
     return LayoutBuilder(builder: (context, constraints) {
-      return Container(
-        width: widget.width ??
-            (constraints.maxWidth < double.infinity && widget.expanded
-                ? constraints.maxWidth
-                : null),
-        height: widget.height ??
-            (constraints.maxHeight < double.infinity && widget.expanded
-                ? constraints.maxHeight
-                : 50),
-        constraints: widget.maxHeight != null
-            ? BoxConstraints(maxHeight: widget.maxHeight!)
-            : null,
-        child: widget.fieldBuilder!(
-          child: ConditionalDraggableDropZone(
-            onDrop: widget.onDrop,
-            formats: widget.formats,
-            draggable: widget.draggable,
-            controller: _controller,
-            fieldId: widget.fieldId,
-            formId: widget.formId,
-            child: Focus(
-              focusNode: _pasteFocusNode,
-              onKeyEvent: (FocusNode node, KeyEvent event) {
-                final isPasteEvent = event is KeyDownEvent &&
-                    event.logicalKey == LogicalKeyboardKey.keyV &&
-                    (HardwareKeyboard.instance.logicalKeysPressed
-                            .contains(LogicalKeyboardKey.controlLeft) ||
-                        HardwareKeyboard.instance.logicalKeysPressed
-                            .contains(LogicalKeyboardKey.controlRight) ||
-                        HardwareKeyboard.instance.logicalKeysPressed
-                            .contains(LogicalKeyboardKey.metaLeft) ||
-                        HardwareKeyboard.instance.logicalKeysPressed
-                            .contains(LogicalKeyboardKey.metaRight));
+      return widget.fieldBuilder!(
+        child: ConditionalDraggableDropZone(
+          onDrop: widget.onDrop,
+          formats: widget.formats,
+          draggable: widget.draggable,
+          controller: _controller,
+          fieldId: widget.fieldId,
+          formId: widget.formId,
+          child: Focus(
+            focusNode: _pasteFocusNode,
+            onKeyEvent: (FocusNode node, KeyEvent event) {
+              final isPasteEvent = event is KeyDownEvent &&
+                  event.logicalKey == LogicalKeyboardKey.keyV &&
+                  (HardwareKeyboard.instance.logicalKeysPressed
+                          .contains(LogicalKeyboardKey.controlLeft) ||
+                      HardwareKeyboard.instance.logicalKeysPressed
+                          .contains(LogicalKeyboardKey.controlRight) ||
+                      HardwareKeyboard.instance.logicalKeysPressed
+                          .contains(LogicalKeyboardKey.metaLeft) ||
+                      HardwareKeyboard.instance.logicalKeysPressed
+                          .contains(LogicalKeyboardKey.metaRight));
 
-                if (isPasteEvent) {
-                  debugPrint("Paste Function: ${widget.onPaste.toString()}");
-                  widget.onPaste == null
-                      ? _handlePaste()
-                      : widget.onPaste!(
-                          controller: _controller,
-                          ref: ref,
-                          formId: widget.formId,
-                          fieldId: widget.fieldId,
-                        );
-                  return KeyEventResult.handled;
-                } else {
-                  return KeyEventResult.ignored;
-                }
-              },
-              child: TextFormField(
-                obscureText: widget.password,
+              if (isPasteEvent) {
+                debugPrint("Paste Function: ${widget.onPaste.toString()}");
+                widget.onPaste == null
+                    ? _handlePaste()
+                    : widget.onPaste!(
+                        controller: _controller,
+                        ref: ref,
+                        formId: widget.formId,
+                        fieldId: widget.fieldId,
+                      );
+                return KeyEventResult.handled;
+              } else {
+                return KeyEventResult.ignored;
+              }
+            },
+            child: overrideTextField(
+              context: context,
+              leading: widget.icon,
+              controller: _controller,
+              focusNode: _focusNode,
+              obscureText: widget.password,
+              colorScheme: widget.colorScheme,
+              baseField: TextField(
                 maxLines: widget.maxLines,
-                focusNode: _focusNode,
-                controller: _controller,
-                onFieldSubmitted: (value) {
+                onSubmitted: (value) {
                   if (widget.onSubmitted == null) return;
                   final formResults =
                       FormResults.getResults(ref: ref, formId: widget.formId);
                   widget.onSubmitted!(value, formResults);
                 },
                 style: theme.textTheme.bodyMedium,
-                decoration: inputDecoration,
               ),
             ),
           ),

@@ -23,8 +23,7 @@ class ConditionalDraggableDropZone extends ConsumerStatefulWidget {
   final Widget child;
   final bool draggable;
   final Future<void> Function({
-    fleather.FleatherController? fleatherController,
-    TextEditingController? controller,
+    TextEditingController controller,
     required String formId,
     required String fieldId,
     required WidgetRef ref,

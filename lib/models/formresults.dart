@@ -240,17 +240,18 @@ class FormResults {
       // Start by determining the field type so we can properly associate the data to the field.
 
       FieldType type;
-      if (field.type == FormFieldType.richText) {
+      if (field is FormFieldRichText) {
         type = FieldType.parchment;
-      } else if (field.type == FormFieldType.textArea ||
-          field.type == FormFieldType.textField ||
-          field.type == FormFieldType.tagField) {
+      } else if (field is FormFieldTextField || field is FormFieldTagField) {
         type = FieldType.string;
       } else {
         type = FieldType.bool;
       }
 
       // Now that we know what field type we're working with. Grab the data from the field and convert it into a FormFieldData object to be added to the FormField list of results.
+
+      // TODO Reintegrate chips and choice fields
+      /*
       if (field.type == FormFieldType.chips ||
           field.type == FormFieldType.dropdown ||
           field.type == FormFieldType.checkbox) {
@@ -308,14 +309,15 @@ class FormResults {
           type: type,
         ));
       } else {
-        final value = ref.read(textFormFieldValueById(formId + field.id));
+      */
+      final value = ref.read(textFormFieldValueById(formId + field.id));
 
-        results.add(FieldResults(
-          id: field.id,
-          values: [FieldResultData(value: value, id: value, type: type)],
-          type: type,
-        ));
-      }
+      results.add(FieldResults(
+        id: field.id,
+        values: [FieldResultData(value: value, id: value, type: type)],
+        type: type,
+      ));
+      //}
     }
     bool errorState;
     List<FormBuilderError> formErrors = [];
