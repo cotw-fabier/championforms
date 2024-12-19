@@ -1,8 +1,11 @@
 import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/models/fieldlayoutdefaults.dart';
 import 'package:championforms/models/formfieldbase.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/themes.dart';
 import 'package:championforms/models/validatorclass.dart';
+import 'package:championforms/widgets_external/field_backgrounds/simplewrapper.dart';
+import 'package:championforms/widgets_external/field_layouts/simple_layout.dart';
 import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -67,17 +70,15 @@ abstract class FormFieldDef implements FormFieldBase {
   // This can be called on compatible fields. When the field changes, this function is run.
   final Function(String value, FormResults results)? onChange;
 
-  // This is layout specific.
-  final double? height;
-  final double? maxHeight;
-  final double? width;
-
-  // Do we want this field to attempt to fill available space. Layout controls above override this functionality.
-  final int? flex;
-  final bool fillArea;
-
   // Add a builder for defining the field style
-  final Widget Function({required Widget child})? fieldBuilder;
+  final FieldLayoutDefault?
+      layoutDefaults; // This is a simple enum which we can use to select the layout and background without forcing the user to manually enter these items in.
+  final Widget Function(BuildContext context, FormFieldDef fieldDetails,
+          FieldColorScheme currentColors, Widget renderedField)
+      fieldLayout; // This is a wrapper around the entire field which adds things like title and description. You can override this with anything you want.
+  final Widget Function(BuildContext context, FormFieldDef fieldDetails,
+          FieldColorScheme currentColors, Widget renderedField)
+      fieldBackground; // This is the background around the field itself.
 
   FormFieldDef({
     required this.id,
@@ -93,12 +94,10 @@ abstract class FormFieldDef implements FormFieldBase {
     this.onSubmit,
     this.onChange,
     //this.embeds = const [],
-    this.height,
-    this.maxHeight,
-    this.width,
-    this.flex,
-    this.fillArea = false,
-    this.fieldBuilder,
+    this.layoutDefaults = FieldLayoutDefault.vertical,
+    this.fieldLayout = fieldSimpleLayout, // Default to the simple layout
+    this.fieldBackground =
+        fieldSimpleBackground, // Default to the simple (no) field background
   });
 
   // Factory constructors for each type of field.
@@ -185,7 +184,7 @@ abstract class FormFieldDef implements FormFieldBase {
       onPaste: onPaste,
     );
   } */
-
+/*
   // textField
   factory FormFieldDef.textField({
     required String id,
@@ -204,16 +203,12 @@ abstract class FormFieldDef implements FormFieldBase {
     String? defaultValue,
     List<FormBuilderValidator>? validators,
     bool validateLive = false,
-    double? height,
-    double? maxHeight,
-    double? width,
-    bool fillArea = false,
-    int? flex,
     Function(String value, FormResults results)? onSubmit,
     Function(String value, FormResults results)? onChange,
-    Widget Function({required Widget child})? fieldBuilder,
+    FieldLayoutDefault? layoutDefaults,
+    Widget? fieldLayout,
+    Widget? fieldBackground,
     Future<void> Function({
-      FleatherController? fleatherController,
       TextEditingController? controller,
       required String formId,
       required String fieldId,
@@ -221,7 +216,6 @@ abstract class FormFieldDef implements FormFieldBase {
     })? onDrop,
     bool draggable = true,
     Future<void> Function({
-      FleatherController? fleatherController,
       TextEditingController? controller,
       required String formId,
       required String fieldId,
@@ -248,12 +242,9 @@ abstract class FormFieldDef implements FormFieldBase {
       defaultValue: defaultValue,
       validators: validators,
       validateLive: validateLive,
-      height: height,
-      maxHeight: maxHeight,
-      width: width,
-      flex: flex,
-      fillArea: fillArea,
-      fieldBuilder: fieldBuilder,
+      layoutDefaults: layoutDefaults,
+      fieldBackground: fieldBackground,
+      fieldLayout: fieldLayout,
       onDrop: onDrop,
       draggable: draggable,
       onPaste: onPaste,
@@ -278,14 +269,11 @@ abstract class FormFieldDef implements FormFieldBase {
     String? defaultValue,
     List<FormBuilderValidator>? validators,
     bool validateLive = false,
-    double? height,
-    double? maxHeight,
-    double? width,
-    bool fillArea = false,
-    int? flex,
+    FieldLayoutDefault? layoutDefaults,
+    Widget? fieldLayout,
+    Widget? fieldBackground,
     Function(String value, FormResults results)? onSubmit,
     Function(String value, FormResults results)? onChange,
-    Widget Function({required Widget child})? fieldBuilder,
     Future<void> Function({
       FleatherController? fleatherController,
       TextEditingController? controller,
@@ -322,18 +310,15 @@ abstract class FormFieldDef implements FormFieldBase {
       defaultValue: defaultValue,
       validators: validators,
       validateLive: validateLive,
-      height: height,
-      maxHeight: maxHeight,
-      width: width,
-      flex: flex,
-      fillArea: fillArea,
-      fieldBuilder: fieldBuilder,
+      layoutDefaults: layoutDefaults,
+      fieldBackground: fieldBackground,
+      fieldLayout: fieldLayout,
       onDrop: onDrop,
       draggable: draggable,
       onPaste: onPaste,
     );
   }
-
+*/
 /*
   // richText
   factory FormFieldDef.richText({
@@ -746,10 +731,8 @@ abstract class FormFieldDef implements FormFieldBase {
   }*/
 }
 
-class FormFieldTextField implements FormFieldDef {
+class ChampionTextField extends FormFieldDef {
   // Define the type of field type
-  @override
-  final String id;
 
   // Add a TextField override so we could write our own widget if we prefer. This will override the default field.
   final TextField? fieldOverride;
@@ -759,37 +742,11 @@ class FormFieldTextField implements FormFieldDef {
   // Add hint text if needed
   final String hintText;
 
-  // Add icon if needed
-  @override
-  final Icon? icon;
-
   final Widget? leading;
   final Widget? trailing;
 
-  // This is the field title and will be displayed next to the field.
-  @override
-  final String? title;
-  @override
-  final String? description;
-
-  // Is this field disabled?
-  @override
-  final bool disabled;
-
   // Does this field have a max length?
   final int? maxLength;
-
-  // Add the form theme for colors and text details
-  @override
-  final FormTheme? theme;
-
-  // Hide this field and don't include it at all in the outputs or validators. Helpful for building dynamic forms.
-  @override
-  final bool hideField;
-
-  // This field will ask for focus. Best to only have one per form.
-  @override
-  final bool requestFocus;
 
   // obfuscate the field
   final bool password;
@@ -797,38 +754,7 @@ class FormFieldTextField implements FormFieldDef {
   // These are the default values for the field. Use the specific one you need depending on the input required.
   final String? defaultValue;
 
-  // Use our built in validators
-  @override
-  final List<FormBuilderValidator>? validators;
-  @override
-  final bool validateLive;
-
-  // Functions
-  // THis can be called on compatible fields. When you press enter or trigger a field submit it will trigger this function.
-  @override
-  final Function(String value, FormResults results)? onSubmit;
-
-  // This can be called on compatible fields. When the field changes, this function is run.
-  @override
-  final Function(String value, FormResults results)? onChange;
-
-  // This is layout specific.
-  @override
-  final double? height;
-  @override
-  final double? maxHeight;
-  @override
-  final double? width;
-
-  // Do we want this field to attempt to fill available space. Layout controls above override this functionality.
-  @override
-  final int? flex;
-  @override
-  final bool fillArea;
-
   // Add a builder for defining the field style
-  @override
-  final Widget Function({required Widget child})? fieldBuilder;
 
   // We need to have a callback which will be called when drag and drop
   final Future<void> Function({
@@ -849,36 +775,33 @@ class FormFieldTextField implements FormFieldDef {
     required WidgetRef ref,
   })? onPaste;
 
-  FormFieldTextField({
-    required this.id,
+  ChampionTextField({
+    required super.id,
     this.fieldOverride,
     this.maxLines,
     this.hintText = "",
-    this.icon,
+    super.icon,
     this.leading,
     this.trailing,
-    this.theme,
-    this.title,
-    this.description,
+    super.theme,
+    super.title,
+    super.description,
     this.maxLength,
-    this.disabled = false,
-    this.hideField = false,
-    this.requestFocus = false,
+    super.disabled,
+    super.hideField,
+    super.requestFocus,
     this.password = false,
     this.defaultValue,
-    this.validators,
-    this.validateLive = false,
-    this.onSubmit,
-    this.onChange,
-    this.height,
-    this.maxHeight,
-    this.width,
-    this.flex,
-    this.fillArea = false,
-    this.fieldBuilder,
+    super.validators,
+    super.validateLive,
+    super.onSubmit,
+    super.onChange,
     this.onDrop,
     this.draggable = true,
     this.onPaste,
+    super.layoutDefaults = null,
+    super.fieldLayout,
+    super.fieldBackground,
   });
 }
 

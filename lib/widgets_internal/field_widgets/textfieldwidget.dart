@@ -6,13 +6,44 @@ import 'package:championforms/models/formresults.dart';
 import 'package:championforms/providers/textformfieldbyid.dart';
 import 'package:championforms/widgets_internal/draggablewidget.dart';
 import 'package:championforms/widgets_internal/fieldwrapperdefault.dart';
-import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 import 'package:html2md/html2md.dart' as html2md;
+
+/* Widget textFieldWidgetBuilder(
+  BuildContext context,
+  ChampionTextField field,
+  String formId,
+  Function(String?) validate,
+  FieldState fieldState,
+  FieldColorScheme currentColorScheme,
+) {
+  return TextFieldWidget(
+    id: "$formId${field.id}",
+    field: field,
+    fieldOverride: field.fieldOverride,
+    fieldState: fieldState,
+    colorScheme: currentColorScheme,
+    formId: formId,
+    fieldId: field.id,
+    onDrop: field.onDrop,
+    onPaste: field.onPaste,
+    draggable: field.draggable,
+    onSubmitted: field.onSubmit,
+    onChanged: field.onChange,
+    password: field.password,
+    requestFocus: field.requestFocus,
+    validate: validate,
+    icon: field.icon,
+    initialValue: field.defaultValue,
+    hintText: field.hintText,
+    maxLines: field.maxLines,
+  );
+}
+*/
 
 class TextFieldWidget extends ConsumerStatefulWidget {
   const TextFieldWidget({
@@ -32,7 +63,8 @@ class TextFieldWidget extends ConsumerStatefulWidget {
     this.validate,
     this.icon,
     this.initialValue = "",
-    this.hintText = '',
+    this.labelText,
+    this.hintText,
     this.maxLines,
     this.onDrop,
     this.formats,
@@ -55,7 +87,8 @@ class TextFieldWidget extends ConsumerStatefulWidget {
   final TextInputType keyboardType;
   final String? initialValue;
   final Icon? icon;
-  final String hintText;
+  final String? labelText;
+  final String? hintText;
   final int? maxLines;
   final Future<void> Function({
     TextEditingController controller,
@@ -195,65 +228,78 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
     final ThemeData theme = Theme.of(context);
     final textValue = ref.watch(textFormFieldValueById(widget.id));
 
-    return LayoutBuilder(builder: (context, constraints) {
-      return widget.fieldBuilder!(
-        child: ConditionalDraggableDropZone(
-          onDrop: widget.onDrop,
-          formats: widget.formats,
-          draggable: widget.draggable,
-          controller: _controller,
-          fieldId: widget.fieldId,
-          formId: widget.formId,
-          child: Focus(
-            focusNode: _pasteFocusNode,
-            onKeyEvent: (FocusNode node, KeyEvent event) {
-              final isPasteEvent = event is KeyDownEvent &&
-                  event.logicalKey == LogicalKeyboardKey.keyV &&
-                  (HardwareKeyboard.instance.logicalKeysPressed
-                          .contains(LogicalKeyboardKey.controlLeft) ||
-                      HardwareKeyboard.instance.logicalKeysPressed
-                          .contains(LogicalKeyboardKey.controlRight) ||
-                      HardwareKeyboard.instance.logicalKeysPressed
-                          .contains(LogicalKeyboardKey.metaLeft) ||
-                      HardwareKeyboard.instance.logicalKeysPressed
-                          .contains(LogicalKeyboardKey.metaRight));
+    return widget.fieldBuilder!(
+      child: ConditionalDraggableDropZone(
+        onDrop: widget.onDrop,
+        formats: widget.formats,
+        draggable: widget.draggable,
+        controller: _controller,
+        fieldId: widget.fieldId,
+        formId: widget.formId,
+        child: Focus(
+          focusNode: _pasteFocusNode,
+          onKeyEvent: (FocusNode node, KeyEvent event) {
+            final isPasteEvent = event is KeyDownEvent &&
+                event.logicalKey == LogicalKeyboardKey.keyV &&
+                (HardwareKeyboard.instance.logicalKeysPressed
+                        .contains(LogicalKeyboardKey.controlLeft) ||
+                    HardwareKeyboard.instance.logicalKeysPressed
+                        .contains(LogicalKeyboardKey.controlRight) ||
+                    HardwareKeyboard.instance.logicalKeysPressed
+                        .contains(LogicalKeyboardKey.metaLeft) ||
+                    HardwareKeyboard.instance.logicalKeysPressed
+                        .contains(LogicalKeyboardKey.metaRight));
 
-              if (isPasteEvent) {
-                debugPrint("Paste Function: ${widget.onPaste.toString()}");
-                widget.onPaste == null
-                    ? _handlePaste()
-                    : widget.onPaste!(
-                        controller: _controller,
-                        ref: ref,
-                        formId: widget.formId,
-                        fieldId: widget.fieldId,
-                      );
-                return KeyEventResult.handled;
-              } else {
-                return KeyEventResult.ignored;
-              }
-            },
-            child: overrideTextField(
-              context: context,
-              leading: widget.icon,
-              controller: _controller,
-              focusNode: _focusNode,
-              obscureText: widget.password,
-              colorScheme: widget.colorScheme,
-              baseField: TextField(
-                maxLines: widget.maxLines,
-                onSubmitted: (value) {
-                  if (widget.onSubmitted == null) return;
-                  final formResults =
-                      FormResults.getResults(ref: ref, formId: widget.formId);
-                  widget.onSubmitted!(value, formResults);
-                },
-                style: theme.textTheme.bodyMedium,
-              ),
-            ),
+            if (isPasteEvent) {
+              debugPrint("Paste Function: ${widget.onPaste.toString()}");
+              widget.onPaste == null
+                  ? _handlePaste()
+                  : widget.onPaste!(
+                      controller: _controller,
+                      ref: ref,
+                      formId: widget.formId,
+                      fieldId: widget.fieldId,
+                    );
+              return KeyEventResult.handled;
+            } else {
+              return KeyEventResult.ignored;
+            }
+          },
+          child: overrideTextField(
+            context: context,
+            leading: widget.icon,
+            labelText: widget.labelText,
+            hintText: widget.hintText,
+            controller: _controller,
+            focusNode: _focusNode,
+            obscureText: widget.password,
+            colorScheme: widget.colorScheme,
+            baseField: widget.fieldOverride != null
+                ? widget.fieldOverride?.onSubmitted == null
+                    ? overrideTextField(
+                        context: context,
+                        onSubmitted: (value) {
+                          if (widget.onSubmitted == null) return;
+                          final formResults = FormResults.getResults(
+                              ref: ref, formId: widget.formId);
+                          widget.onSubmitted!(value, formResults);
+                        },
+                        baseField: widget.fieldOverride!,
+                      )
+                    : widget.fieldOverride!
+                : TextField(
+                    maxLines: widget.maxLines,
+                    onSubmitted: (value) {
+                      if (widget.onSubmitted == null) return;
+                      final formResults = FormResults.getResults(
+                          ref: ref, formId: widget.formId);
+                      widget.onSubmitted!(value, formResults);
+                    },
+                    style: theme.textTheme.bodyMedium,
+                  ),
           ),
         ),
-      );
-    });
+      ),
+    );
   }
 }

@@ -5,7 +5,6 @@ import 'package:championforms/models/themes.dart';
 import 'package:championforms/providers/fieldactiveprovider.dart';
 import 'package:championforms/providers/formfieldsstorage.dart';
 import 'package:championforms/providers/textformfieldbyid.dart';
-import 'package:championforms/widgets_external/layoutwrappers/verticallayout.dart';
 import 'package:championforms/widgets_internal/field_widgets/textfieldwidget.dart';
 import 'package:championforms/widgets_internal/fieldelements.dart';
 import 'package:flutter/material.dart';
@@ -22,17 +21,19 @@ class FormBuilderWidget extends ConsumerStatefulWidget {
     super.key,
     this.fields = const [],
     required this.id,
-    this.spacing = 10,
-    this.formWidth,
-    this.formHeight,
+    required this.formWrapper,
     required this.theme,
+    this.spacer,
   });
 
   final List<FormFieldBase> fields;
   final String id;
-  final double spacing;
-  final double? formWidth;
-  final double? formHeight;
+  final double? spacer;
+  final Widget Function(
+    BuildContext context,
+    List<Widget> form,
+  ) formWrapper;
+
   final FormTheme theme;
   @override
   ConsumerState<ConsumerStatefulWidget> createState() =>
@@ -56,7 +57,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
       for (final field in widget.fields) {
         if (field is FormFieldDef) {
           // populate default values for the text fields
-          if (field is FormFieldTextField) {
+          if (field is ChampionTextField) {
             ref
                 .read(
                     textFormFieldValueById("${widget.id}${field.id}").notifier)
@@ -178,8 +179,10 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
 
         Widget outputWidget;
 
+        // Determine the field layout and the field background
+
         switch (field) {
-          case FormFieldTextField():
+          case ChampionTextField():
             outputWidget = TextFieldWidget(
               id: "${widget.id}${field.id}",
               field: field,
@@ -296,64 +299,27 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
             break;
         }
 
-        // Lets establish our field layout
-        Widget Function({
-          Widget? title,
-          Widget? description,
-          Widget? errors,
-          Widget? icon,
-          bool? expanded,
-          FormTheme theme,
-          Widget layout,
-          Widget field,
-        }) fieldLayout;
-
-        if (widget.theme.layoutBuilder! != null) {
-          fieldLayout = widget.theme.layoutBuilder!;
-        } else {
-          fieldLayout = fieldVerticalLayoutBuilder(
-            field: outputWidget,
-            theme: field.theme ?? widget.theme,
-          );
-        }
         // Lets add the new form field with our layout
         output.add(
-          FormFieldWrapper(
-            expanded: field.fillArea,
-            width: field.width,
-            height: field.height,
-            flex: field.flex,
-            child: Builder(builder: (context) {
-              return fieldLayout(
-                title: field.title != null
-                    ? FieldTextElement(
-                        color: fieldColor.titleColor,
-                        textStyle: field.titleStyle ?? widget.theme.titleStyle!,
-                        text: field.title!)
-                    : null,
-                description: field.description != null
-                    ? FieldTextElement(
-                        color: fieldColor.descriptionColor,
-                        textStyle: field.descriptionStyle ??
-                            widget.theme.descriptionStyle!,
-                        text: field.description!)
-                    : null,
-                expanded: field.fillArea,
-                // TODO: Add Errors
-                fieldWrapper: field.fieldBuilder ?? widget.theme.fieldBuilder,
-                icon: field.icon,
-                colors: fieldColor,
-                field: outputWidget,
-              );
-            }),
+          field.fieldLayout(
+            context,
+            field,
+            fieldColor,
+            field.fieldBackground(
+              context,
+              field,
+              fieldColor,
+              outputWidget,
+            ),
           ),
         );
 
-        // Add spacer
-
-        output.add(SizedBox(
-          height: widget.spacing,
-        ));
+        // Add a simple spacer
+        if (widget.spacer != null) {
+          output.add(SizedBox(
+            height: widget.spacer!,
+          ));
+        }
       } else if (field is FormFieldToolbar) {
         // We're going to add the toolbar here
         final toolbar = QuillToolbarWidget(
@@ -369,15 +335,9 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
       }
     }
 
-    return Container(
-      width: widget.formWidth,
-      height: widget.formHeight,
-      child: LayoutBuilder(builder: (context, constraints) {
-        return Column(
-          mainAxisSize: MainAxisSize.max,
-          children: output,
-        );
-      }),
+    return widget.formWrapper(
+      context,
+      output,
     );
   }
 }
@@ -430,34 +390,7 @@ class FormBuilderValidatorErrors extends ConsumerWidget {
   }
 }
 
-class FormFieldWrapper extends StatelessWidget {
-  const FormFieldWrapper({
-    super.key,
-    required this.expanded,
-    this.width,
-    this.height,
-    required this.child,
-    this.flex,
-  });
-  final bool expanded;
-  final double? width;
-  final double? height;
-  final Widget child;
-  final int? flex;
 
-  @override
-  Widget build(BuildContext context) {
-    if (!expanded) {
-      return child;
-    }
-    return Expanded(
-      flex: flex ?? 1,
-      child: LayoutBuilder(builder: (context, constraints) {
-        return child;
-      }),
-    );
-  }
-}
 
 /* class FormBuilderWidget extends ConsumerWidget {
   const FormBuilderWidget({

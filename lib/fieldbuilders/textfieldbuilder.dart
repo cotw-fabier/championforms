@@ -5,10 +5,11 @@ import 'package:championforms/models/colorscheme.dart';
 import 'package:flutter/material.dart';
 
 // Take in a TextFormField and override specific values with important ones we want to include.
-Widget overrideTextField({
+TextField overrideTextField({
   required BuildContext context,
   required TextField baseField,
   FieldColorScheme? colorScheme,
+  Function(String value)? onSubmitted,
   String? labelText,
   String? hintText,
   Icon? leading,
@@ -47,12 +48,13 @@ Widget overrideTextField({
 
   final newTextStyle = themeTextStyle?.merge(textStyle);
 
-  return TextFormField(
+  return TextField(
     key: baseField.key,
     controller: controller ?? baseField.controller,
     focusNode: focusNode ?? baseField.focusNode,
     decoration: effectiveInputDecoration,
     keyboardType: baseField.keyboardType,
+    onSubmitted: onSubmitted ?? baseField.onSubmitted,
     textInputAction: baseField.textInputAction,
     textCapitalization: baseField.textCapitalization,
     style: newTextStyle,
