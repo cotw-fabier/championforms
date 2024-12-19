@@ -3,8 +3,8 @@ import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/themes.dart';
 import 'package:championforms/providers/fieldactiveprovider.dart';
+import 'package:championforms/providers/formfield_value_by_id.dart';
 import 'package:championforms/providers/formfieldsstorage.dart';
-import 'package:championforms/providers/textformfieldbyid.dart';
 import 'package:championforms/widgets_internal/field_widgets/textfieldwidget.dart';
 import 'package:championforms/widgets_internal/fieldelements.dart';
 import 'package:flutter/material.dart';
@@ -59,9 +59,9 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
           // populate default values for the text fields
           if (field is ChampionTextField) {
             ref
-                .read(
-                    textFormFieldValueById("${widget.id}${field.id}").notifier)
-                .state = field.defaultValue ?? "";
+                .read(textFormFieldValueByIdProvider("${widget.id}${field.id}")
+                    .notifier)
+                .updateValue(field.defaultValue ?? "");
           }
 
           // populate default values for chips
@@ -115,7 +115,6 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
   @override
   Widget build(BuildContext context) {
     List<Widget> output = [];
-    final theme = Theme.of(context);
 
     // Listen for the form fields as long as this form is active
     ref.listen(formFieldsStorageNotifierProvider(widget.id), (prev, next) {});

@@ -3,7 +3,7 @@ import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';
-import 'package:championforms/providers/textformfieldbyid.dart';
+import 'package:championforms/providers/formfield_value_by_id.dart';
 import 'package:championforms/widgets_internal/draggablewidget.dart';
 import 'package:championforms/widgets_internal/fieldwrapperdefault.dart';
 import 'package:flutter/material.dart';
@@ -136,8 +136,9 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
               ref: ref, formId: widget.formId, fields: [widget.field]));
     }
 
-    ref.read(textFormFieldValueById(widget.id).notifier).state =
-        _controller.text;
+    ref
+        .read(textFormFieldValueByIdProvider(widget.id).notifier)
+        .updateValue(_controller.text);
   }
 
   @override
@@ -192,9 +193,10 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(textFormFieldValueById(widget.id), _onRiverpodControllerUpdate);
+    ref.listen(
+        textFormFieldValueByIdProvider(widget.id), _onRiverpodControllerUpdate);
     final ThemeData theme = Theme.of(context);
-    final textValue = ref.watch(textFormFieldValueById(widget.id));
+    final textValue = ref.watch(textFormFieldValueByIdProvider(widget.id));
 
     return widget.fieldBuilder!(
       child: ConditionalDraggableDropZone(

@@ -2,11 +2,13 @@
 import 'package:championforms/functions/geterrors.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formfieldclass.dart';
+import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/providers/choicechipprovider.dart';
+import 'package:championforms/providers/formfield_value_by_id.dart';
 import 'package:championforms/providers/formfieldsstorage.dart';
 import 'package:championforms/providers/formliststringsprovider.dart';
+import 'package:championforms/providers/multiselect_provider.dart';
 import 'package:championforms/providers/quillcontrollerprovider.dart';
-import 'package:championforms/providers/textformfieldbyid.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:parchment/parchment.dart';
 import 'package:parchment_delta/parchment_delta.dart';
@@ -164,6 +166,20 @@ class FieldResults {
     return {};
   }
 
+  // As MultiSelect
+  MultiselectOption? asMultiselectSingle({String? id}) {
+    final item = values.firstWhereOrNull((data) => data.id == id);
+
+    return item?.optionValue?.first;
+  }
+
+  // As MultiSelect List
+  List<MultiselectOption> asMultiselectList({String? id}) {
+    final item = values.firstWhereOrNull((data) => data.id == id);
+
+    return item?.optionValue ?? [];
+  }
+
   // SingleBool. Returns the first bool value.
 
   // As Map
@@ -195,11 +211,13 @@ class FieldResultData {
   final FieldType type;
   final String id;
   final String? value;
+  final List<MultiselectOption>? optionValue;
   final Delta? deltaValue;
   final bool active;
   const FieldResultData({
     this.type = FieldType.string,
     this.id = "noid",
+    this.optionValue,
     this.value,
     this.active = false,
     this.deltaValue,
@@ -240,12 +258,44 @@ class FormResults {
       // Start by determining the field type so we can properly associate the data to the field.
 
       FieldType type;
-      if (field is FormFieldRichText) {
-        type = FieldType.parchment;
-      } else if (field is FormFieldTextField || field is FormFieldTagField) {
-        type = FieldType.string;
-      } else {
-        type = FieldType.bool;
+      switch (field) {
+        case ChampionTextField():
+          type = FieldType.string;
+          final value =
+              ref.read(textFormFieldValueByIdProvider(formId + field.id));
+
+          results.add(FieldResults(
+            id: field.id,
+            values: [
+              FieldResultData(value: value, id: formId + field.id, type: type)
+            ],
+            type: type,
+          ));
+          break;
+        case ChampionOptionSelect():
+          type = FieldType.bool;
+          final value =
+              ref.read(multiSelectOptionNotifierProvider(formId + field.id));
+
+          results.add(FieldResults(
+            id: field.id,
+            values: [
+              FieldResultData(
+                  value: value.map((option) => option.value.toString()).join(
+                      ", "), // Merge all the options into a comma seperated list
+                  optionValue:
+                      value, // This is the actual list of values which we can access in our field results.
+                  id: formId + field.id,
+                  active: true,
+                  type: type)
+            ],
+            type: type,
+          ));
+
+          break;
+
+        default:
+          type = FieldType.string;
       }
 
       // Now that we know what field type we're working with. Grab the data from the field and convert it into a FormFieldData object to be added to the FormField list of results.
@@ -310,13 +360,7 @@ class FormResults {
         ));
       } else {
       */
-      final value = ref.read(textFormFieldValueById(formId + field.id));
 
-      results.add(FieldResults(
-        id: field.id,
-        values: [FieldResultData(value: value, id: value, type: type)],
-        type: type,
-      ));
       //}
     }
     bool errorState;

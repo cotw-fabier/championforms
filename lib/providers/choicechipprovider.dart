@@ -2,6 +2,11 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'choicechipprovider.g.dart';
 
+///////////////
+//////////////
+//////// DEPECRITIATED.
+/////// See Mutiselect_provider.dart
+
 class ChoiceChipValue {
   final String id;
   final bool value;

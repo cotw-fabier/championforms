@@ -7,7 +7,7 @@ part of 'fieldactiveprovider.dart';
 // **************************************************************************
 
 String _$fieldActiveNotifierHash() =>
-    r'ba9924ea395675ea6013483aa41cd2591e5dc75f';
+    r'62d384b0245e8746b030245d54363f476846712d';
 
 /// Copied from Dart SDK
 class _SystemHash {
