@@ -1,5 +1,4 @@
 import 'package:championforms/models/colorscheme.dart';
-import 'package:championforms/models/fieldlayoutdefaults.dart';
 import 'package:championforms/models/formfieldbase.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/themes.dart';
@@ -70,9 +69,6 @@ abstract class FormFieldDef implements FormFieldBase {
   // This can be called on compatible fields. When the field changes, this function is run.
   final Function(String value, FormResults results)? onChange;
 
-  // Add a builder for defining the field style
-  final FieldLayoutDefault?
-      layoutDefaults; // This is a simple enum which we can use to select the layout and background without forcing the user to manually enter these items in.
   final Widget Function(BuildContext context, FormFieldDef fieldDetails,
           FieldColorScheme currentColors, Widget renderedField)
       fieldLayout; // This is a wrapper around the entire field which adds things like title and description. You can override this with anything you want.
@@ -94,7 +90,6 @@ abstract class FormFieldDef implements FormFieldBase {
     this.onSubmit,
     this.onChange,
     //this.embeds = const [],
-    this.layoutDefaults = FieldLayoutDefault.vertical,
     this.fieldLayout = fieldSimpleLayout, // Default to the simple layout
     this.fieldBackground =
         fieldSimpleBackground, // Default to the simple (no) field background
@@ -799,7 +794,6 @@ class ChampionTextField extends FormFieldDef {
     this.onDrop,
     this.draggable = true,
     this.onPaste,
-    super.layoutDefaults = null,
     super.fieldLayout,
     super.fieldBackground,
   });

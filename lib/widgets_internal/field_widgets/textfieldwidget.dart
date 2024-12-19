@@ -13,38 +13,6 @@ import 'package:super_clipboard/super_clipboard.dart';
 import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 import 'package:html2md/html2md.dart' as html2md;
 
-/* Widget textFieldWidgetBuilder(
-  BuildContext context,
-  ChampionTextField field,
-  String formId,
-  Function(String?) validate,
-  FieldState fieldState,
-  FieldColorScheme currentColorScheme,
-) {
-  return TextFieldWidget(
-    id: "$formId${field.id}",
-    field: field,
-    fieldOverride: field.fieldOverride,
-    fieldState: fieldState,
-    colorScheme: currentColorScheme,
-    formId: formId,
-    fieldId: field.id,
-    onDrop: field.onDrop,
-    onPaste: field.onPaste,
-    draggable: field.draggable,
-    onSubmitted: field.onSubmit,
-    onChanged: field.onChange,
-    password: field.password,
-    requestFocus: field.requestFocus,
-    validate: validate,
-    icon: field.icon,
-    initialValue: field.defaultValue,
-    hintText: field.hintText,
-    maxLines: field.maxLines,
-  );
-}
-*/
-
 class TextFieldWidget extends ConsumerStatefulWidget {
   const TextFieldWidget({
     super.key,
