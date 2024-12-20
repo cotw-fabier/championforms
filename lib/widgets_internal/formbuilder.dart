@@ -1,20 +1,19 @@
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formresults.dart';
+import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/models/themes.dart';
 import 'package:championforms/providers/fieldactiveprovider.dart';
 import 'package:championforms/providers/formfield_value_by_id.dart';
 import 'package:championforms/providers/formfieldsstorage.dart';
+import 'package:championforms/providers/multiselect_provider.dart';
 import 'package:championforms/widgets_internal/field_widgets/textfieldwidget.dart';
-import 'package:championforms/widgets_internal/fieldelements.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formfieldbase.dart';
 import 'package:championforms/models/formfieldclass.dart';
-import 'package:championforms/models/formfieldtoolbar.dart';
 import 'package:championforms/providers/formerrorprovider.dart';
-import 'package:championforms/widgets_internal/quilltoolbar.dart';
 
 class FormBuilderWidget extends ConsumerStatefulWidget {
   const FormBuilderWidget({
@@ -206,6 +205,32 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
 
             break;
 
+          case ChampionOptionSelect():
+            outputWidget = field.fieldBuilder(
+                context,
+                ref,
+                widget.id,
+                field.options,
+                field,
+                fieldState,
+                fieldColor, (MultiselectOption? selectedOption) {
+              if (selectedOption != null) {
+                ref
+                    .read(multiSelectOptionNotifierProvider(
+                            "${widget.id}${field.id}")
+                        .notifier)
+                    .addChoice(selectedOption, field.multiselect);
+              } else {
+                ref
+                    .read(multiSelectOptionNotifierProvider(
+                            ("${widget.id}${field.id}"))
+                        .notifier)
+                    .resetChoices();
+              }
+            });
+
+            break;
+
           // TODO Reimplement other field types
           /*
           case FormFieldType.richText:
@@ -319,7 +344,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
             height: widget.spacer!,
           ));
         }
-      } else if (field is FormFieldToolbar) {
+      } /*else if (field is FormFieldToolbar) {
         // We're going to add the toolbar here
         final toolbar = QuillToolbarWidget(
           fieldId: field.editorId,
@@ -331,7 +356,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
         );
 
         output.add(toolbar);
-      }
+      } */
     }
 
     return widget.formWrapper(

@@ -3,6 +3,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'formliststringsprovider.g.dart';
 
+// Depricated. See MultiSelect provider.
+
 @riverpod
 class FormListStringsNotifier extends _$FormListStringsNotifier {
   @override

@@ -1,6 +1,5 @@
 // This widget allows to dynamically insert drag and drop functionality.
 import 'package:dotted_border/dotted_border.dart';
-import 'package:fleather/fleather.dart' as fleather;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:parchment/codecs.dart';
@@ -15,7 +14,7 @@ class ConditionalDraggableDropZone extends ConsumerStatefulWidget {
     this.onDrop,
     this.formats,
     this.controller,
-    this.fletherController,
+    //this.fletherController,
     this.formId = "",
     this.fieldId = "",
   });
@@ -30,7 +29,7 @@ class ConditionalDraggableDropZone extends ConsumerStatefulWidget {
   })? onDrop;
   final List<DataFormat<Object>>? formats;
 
-  final fleather.FleatherController? fletherController;
+  //final fleather.FleatherController? fletherController;
   final TextEditingController? controller;
   final String formId;
   final String fieldId;
@@ -57,7 +56,7 @@ class _ConditionalDraggableDropZoneState
       return;
     }
 
-    if (widget.fletherController != null) {
+    /*if (widget.fletherController != null) {
       widget.fletherController?.replaceText(
         widget.fletherController!.selection.baseOffset,
         widget.fletherController!.selection.extentOffset -
@@ -67,7 +66,7 @@ class _ConditionalDraggableDropZoneState
             offset: widget.fletherController!.selection.baseOffset +
                 (delta?.length ?? text?.length ?? 0)),
       );
-    }
+    } */
   }
 
   void updateTextField(String text) {
@@ -92,7 +91,7 @@ class _ConditionalDraggableDropZoneState
         onPerformDrop: (event) async {
           if (widget.onDrop != null) {
             widget.onDrop!(
-              fleatherController: widget.fletherController,
+              //fleatherController: widget.fletherController,
               formId: widget.formId,
               fieldId: widget.fieldId,
               ref: ref,

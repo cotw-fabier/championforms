@@ -9,11 +9,10 @@ export 'package:championforms/models/formfieldtoolbar.dart';
 export 'package:championforms/models/validatorclass.dart';
 
 // Export functions to get results and validate forms
-export 'package:championforms/functions/getresults.dart';
 export 'package:championforms/functions/geterrors.dart';
 
-// export this type so you can work with form results such as building custom validation.
-export 'package:championforms/models/formresultstype.dart';
+// This is the list of default validators you can use for field validation
+export 'package:championforms/functions/defaultvalidators/defaultvalidators.dart';
 
 // Export some default validators
 export 'package:championforms/functions/defaultvalidators/defaultvalidators.dart';
@@ -22,10 +21,6 @@ export 'package:fleather/fleather.dart';
 export 'package:parchment/parchment.dart';
 export 'package:parchment_delta/parchment_delta.dart';
 
-// Export field wrappers for easy access
-export 'package:championforms/widgets_external/fieldwrappers/coloredbox.dart';
 
-export 'package:championforms/widgets_external/layoutwrappers/horizontallayout.dart';
-export 'package:championforms/widgets_external/layoutwrappers/verticallayout.dart';
 
 // TODO: Build some basic form styles to use in light or dark mode

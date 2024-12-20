@@ -1,5 +1,6 @@
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:collection/collection.dart';
 
 part 'multiselect_provider.g.dart';
 
@@ -13,7 +14,16 @@ class MultiSelectOptionNotifier extends _$MultiSelectOptionNotifier {
   List<MultiselectOption> addChoice(
       MultiselectOption choice, bool? multiSelect) {
     List<MultiselectOption> newValues = multiSelect == true ? [...state] : [];
-    newValues.add(choice);
+
+    // Remove the choice if it already exists.
+    if (newValues.firstWhereOrNull(
+            (MultiselectOption option) => option.value == choice.value) !=
+        null) {
+      newValues = newValues.where((val) => val.value != choice.value).toList();
+    } else {
+      newValues.add(choice);
+    }
+
     state = newValues;
     return newValues;
   }

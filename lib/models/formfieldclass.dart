@@ -1,4 +1,5 @@
 import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formfieldbase.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
@@ -66,10 +67,10 @@ abstract class FormFieldDef implements FormFieldBase {
 
   // Functions
   // THis can be called on compatible fields. When you press enter or trigger a field submit it will trigger this function.
-  final Function(String value, FormResults results)? onSubmit;
+  final Function(FormResults results)? onSubmit;
 
   // This can be called on compatible fields. When the field changes, this function is run.
-  final Function(String value, FormResults results)? onChange;
+  final Function(FormResults results)? onChange;
 
   final Widget Function(BuildContext context, FormFieldDef fieldDetails,
           FieldColorScheme currentColors, Widget renderedField)
@@ -822,10 +823,13 @@ class ChampionOptionSelect extends FormFieldDef {
   // Add a builder for defining the field style
   Widget Function(
     BuildContext context,
-    FormFieldDef field,
+    WidgetRef ref,
+    String formId,
+    List<MultiselectOption> choices,
+    ChampionOptionSelect field,
     FieldState currentState,
     FieldColorScheme currentColors,
-    Function(String? val) onChanged,
+    Function(MultiselectOption? selectedOption) updateSelectedOption,
   ) fieldBuilder;
 
   ChampionOptionSelect({

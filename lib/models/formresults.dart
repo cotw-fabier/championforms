@@ -3,12 +3,10 @@ import 'package:championforms/functions/geterrors.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formfieldclass.dart';
 import 'package:championforms/models/multiselect_option.dart';
-import 'package:championforms/providers/choicechipprovider.dart';
 import 'package:championforms/providers/formfield_value_by_id.dart';
 import 'package:championforms/providers/formfieldsstorage.dart';
-import 'package:championforms/providers/formliststringsprovider.dart';
 import 'package:championforms/providers/multiselect_provider.dart';
-import 'package:championforms/providers/quillcontrollerprovider.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:parchment/parchment.dart';
 import 'package:parchment_delta/parchment_delta.dart';
@@ -367,6 +365,7 @@ class FormResults {
     List<FormBuilderError> formErrors = [];
     // Check for errors and set the error state
     if (checkForErrors) {
+      debugPrint("Checking for errors");
       formErrors.addAll(
           getFormBuilderErrors(results: results, formId: formId, ref: ref));
       if (formErrors.isNotEmpty) {

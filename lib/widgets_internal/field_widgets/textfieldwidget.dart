@@ -49,8 +49,8 @@ class TextFieldWidget extends ConsumerStatefulWidget {
   final String formId;
   final bool requestFocus;
   final bool password;
-  final Function(String value, FormResults results)? onChanged;
-  final Function(String value, FormResults results)? onSubmitted;
+  final Function(FormResults results)? onChanged;
+  final Function(FormResults results)? onSubmitted;
   final Function(String value)? validate;
   final TextInputType keyboardType;
   final String? initialValue;
@@ -130,10 +130,8 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
 
   void _onControllerChanged() {
     if (widget.onChanged != null) {
-      widget.onChanged!(
-          _controller.text,
-          FormResults.getResults(
-              ref: ref, formId: widget.formId, fields: [widget.field]));
+      widget.onChanged!(FormResults.getResults(
+          ref: ref, formId: widget.formId, fields: [widget.field]));
     }
 
     ref
@@ -199,75 +197,67 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
     final textValue = ref.watch(textFormFieldValueByIdProvider(widget.id));
 
     return widget.fieldBuilder!(
-      child: ConditionalDraggableDropZone(
-        onDrop: widget.onDrop,
-        formats: widget.formats,
-        draggable: widget.draggable,
-        controller: _controller,
-        fieldId: widget.fieldId,
-        formId: widget.formId,
-        child: Focus(
-          focusNode: _pasteFocusNode,
-          onKeyEvent: (FocusNode node, KeyEvent event) {
-            final isPasteEvent = event is KeyDownEvent &&
-                event.logicalKey == LogicalKeyboardKey.keyV &&
-                (HardwareKeyboard.instance.logicalKeysPressed
-                        .contains(LogicalKeyboardKey.controlLeft) ||
-                    HardwareKeyboard.instance.logicalKeysPressed
-                        .contains(LogicalKeyboardKey.controlRight) ||
-                    HardwareKeyboard.instance.logicalKeysPressed
-                        .contains(LogicalKeyboardKey.metaLeft) ||
-                    HardwareKeyboard.instance.logicalKeysPressed
-                        .contains(LogicalKeyboardKey.metaRight));
+      child: Focus(
+        focusNode: _pasteFocusNode,
+        onKeyEvent: (FocusNode node, KeyEvent event) {
+          final isPasteEvent = event is KeyDownEvent &&
+              event.logicalKey == LogicalKeyboardKey.keyV &&
+              (HardwareKeyboard.instance.logicalKeysPressed
+                      .contains(LogicalKeyboardKey.controlLeft) ||
+                  HardwareKeyboard.instance.logicalKeysPressed
+                      .contains(LogicalKeyboardKey.controlRight) ||
+                  HardwareKeyboard.instance.logicalKeysPressed
+                      .contains(LogicalKeyboardKey.metaLeft) ||
+                  HardwareKeyboard.instance.logicalKeysPressed
+                      .contains(LogicalKeyboardKey.metaRight));
 
-            if (isPasteEvent) {
-              debugPrint("Paste Function: ${widget.onPaste.toString()}");
-              widget.onPaste == null
-                  ? _handlePaste()
-                  : widget.onPaste!(
-                      controller: _controller,
-                      ref: ref,
-                      formId: widget.formId,
-                      fieldId: widget.fieldId,
-                    );
-              return KeyEventResult.handled;
-            } else {
-              return KeyEventResult.ignored;
-            }
-          },
-          child: overrideTextField(
-            context: context,
-            leading: widget.icon,
-            labelText: widget.labelText,
-            hintText: widget.hintText,
-            controller: _controller,
-            focusNode: _focusNode,
-            obscureText: widget.password,
-            colorScheme: widget.colorScheme,
-            baseField: widget.fieldOverride != null
-                ? widget.fieldOverride?.onSubmitted == null
-                    ? overrideTextField(
-                        context: context,
-                        onSubmitted: (value) {
-                          if (widget.onSubmitted == null) return;
-                          final formResults = FormResults.getResults(
-                              ref: ref, formId: widget.formId);
-                          widget.onSubmitted!(value, formResults);
-                        },
-                        baseField: widget.fieldOverride!,
-                      )
-                    : widget.fieldOverride!
-                : TextField(
-                    maxLines: widget.maxLines,
-                    onSubmitted: (value) {
-                      if (widget.onSubmitted == null) return;
-                      final formResults = FormResults.getResults(
-                          ref: ref, formId: widget.formId);
-                      widget.onSubmitted!(value, formResults);
-                    },
-                    style: theme.textTheme.bodyMedium,
-                  ),
-          ),
+          if (isPasteEvent) {
+            debugPrint("Paste Function: ${widget.onPaste.toString()}");
+            widget.onPaste == null
+                ? _handlePaste()
+                : widget.onPaste!(
+                    controller: _controller,
+                    ref: ref,
+                    formId: widget.formId,
+                    fieldId: widget.fieldId,
+                  );
+            return KeyEventResult.handled;
+          } else {
+            return KeyEventResult.ignored;
+          }
+        },
+        child: overrideTextField(
+          context: context,
+          leading: widget.icon,
+          labelText: widget.labelText,
+          hintText: widget.hintText,
+          controller: _controller,
+          focusNode: _focusNode,
+          obscureText: widget.password,
+          colorScheme: widget.colorScheme,
+          baseField: widget.fieldOverride != null
+              ? widget.fieldOverride?.onSubmitted == null
+                  ? overrideTextField(
+                      context: context,
+                      onSubmitted: (value) {
+                        if (widget.onSubmitted == null) return;
+                        final formResults = FormResults.getResults(
+                            ref: ref, formId: widget.formId);
+                        widget.onSubmitted!(formResults);
+                      },
+                      baseField: widget.fieldOverride!,
+                    )
+                  : widget.fieldOverride!
+              : TextField(
+                  maxLines: widget.maxLines,
+                  onSubmitted: (value) {
+                    if (widget.onSubmitted == null) return;
+                    final formResults =
+                        FormResults.getResults(ref: ref, formId: widget.formId);
+                    widget.onSubmitted!(formResults);
+                  },
+                  style: theme.textTheme.bodyMedium,
+                ),
         ),
       ),
     );

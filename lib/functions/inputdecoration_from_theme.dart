@@ -34,7 +34,7 @@ InputDecoration? getInputDecorationFromScheme(FieldColorScheme? scheme) {
     }
     return OutlineInputBorder(
       borderSide: BorderSide(color: color, width: borderSize.toDouble()),
-      borderRadius: BorderRadius.circular(borderSize.toDouble()),
+      borderRadius: scheme.borderRadius ?? BorderRadius.all(Radius.circular(8)),
     );
   }
 
