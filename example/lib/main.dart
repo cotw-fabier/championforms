@@ -112,9 +112,6 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
       ),
       ChampionTextField(
         id: "Text Field 1",
-        icon: const Icon(Icons.title),
-        leading: const MouseRegion(
-            cursor: SystemMouseCursors.click, child: Icon(Icons.mic)),
         trailing: const Icon(Icons.search),
       ),
       ChampionOptionSelect(
@@ -170,7 +167,7 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             ChampionForm(
-              //theme: softBlueColorTheme(context),
+              theme: softBlueColorTheme(context),
               id: "myForm",
               spacing: 10,
               fields: fields,

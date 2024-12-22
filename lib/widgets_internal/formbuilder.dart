@@ -383,9 +383,12 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
       } */
     }
 
-    return widget.formWrapper(
-      context,
-      output,
+    return FocusTraversalGroup(
+      policy: OrderedTraversalPolicy(),
+      child: widget.formWrapper(
+        context,
+        output,
+      ),
     );
   }
 }
