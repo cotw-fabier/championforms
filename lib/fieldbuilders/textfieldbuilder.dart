@@ -12,8 +12,9 @@ TextField overrideTextField({
   Function(String value)? onSubmitted,
   String? labelText,
   String? hintText,
-  Icon? leading,
-  Icon? trailing,
+  Widget? leading,
+  Widget? trailing,
+  Widget? icon,
   InputDecoration? inputDecoration,
   TextStyle? textStyle,
   TextEditingController? controller,
@@ -34,10 +35,12 @@ TextField overrideTextField({
   final newInputDecoration = themeDecoration?.merge(inputDecoration);
 
   final effectiveInputDecoration = newInputDecoration?.copyWith(
-      hintText: hintText,
-      labelText: labelText,
-      prefixIcon: leading,
-      suffixIcon: trailing);
+    hintText: hintText,
+    labelText: labelText,
+    prefixIcon: leading,
+    suffixIcon: trailing,
+    icon: icon,
+  );
 
   // Fold down the text style
   final originalTextStyle = baseField.style;

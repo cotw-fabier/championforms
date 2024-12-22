@@ -60,7 +60,7 @@ class DefaultValidators {
         String value = data.value?.trim() ?? "";
 // Use a RegExp to check if the string contains only digits
 
-        if ((!EmailValidator.validate(value)) == false) return false;
+        if ((EmailValidator.validate(value)) == false) return false;
       }
     }
     return true;

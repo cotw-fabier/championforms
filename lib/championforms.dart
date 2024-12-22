@@ -8,6 +8,9 @@ export 'package:championforms/models/formfieldclass.dart';
 export 'package:championforms/models/formfieldtoolbar.dart';
 export 'package:championforms/models/validatorclass.dart';
 
+// export themes for use
+export 'package:championforms/themes/export_themes.dart';
+
 // Export functions to get results and validate forms
 export 'package:championforms/functions/geterrors.dart';
 

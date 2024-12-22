@@ -1,3 +1,4 @@
+import 'package:championforms/championforms.dart';
 import 'package:championforms/functions/defaultvalidators/defaultvalidators.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formfieldclass.dart';
@@ -94,16 +95,37 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
       ChampionTextField(
         id: "Text Field",
         validateLive: true,
+        hintText: "Type here",
+        title: "My field",
+        textFieldTitle: "My Field",
+        description: "Fill in this field for glory",
         validators: [
           FormBuilderValidator(
             validator: (results) => DefaultValidators().isEmpty(results),
-            reason: "",
+            reason: "Field is empty",
+          ),
+          FormBuilderValidator(
+            validator: (results) => DefaultValidators().isEmail(results),
+            reason: "This isn't an email address",
           ),
         ],
       ),
-      ChampionTextField(id: "Text Field 1"),
+      ChampionTextField(
+        id: "Text Field 1",
+        icon: const Icon(Icons.title),
+        leading: const MouseRegion(
+            cursor: SystemMouseCursors.click, child: Icon(Icons.mic)),
+        trailing: const Icon(Icons.search),
+      ),
       ChampionOptionSelect(
         id: "Dropdown",
+
+        title: "Choose your weapon",
+        //defaultValue: ["Hiya"],icon: const Icon(Icons.title),
+        leading: const MouseRegion(
+            cursor: SystemMouseCursors.click, child: Icon(Icons.mic)),
+        trailing: const Icon(Icons.search),
+
         options: [
           MultiselectOption(value: "Hi", label: "Hello"),
           MultiselectOption(value: "Hiya", label: "Wat"),
@@ -148,6 +170,7 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             ChampionForm(
+              //theme: softBlueColorTheme(context),
               id: "myForm",
               spacing: 10,
               fields: fields,

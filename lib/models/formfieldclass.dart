@@ -1,5 +1,6 @@
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/fieldstate.dart';
+import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formfieldbase.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
@@ -43,7 +44,7 @@ abstract class FormFieldDef implements FormFieldBase {
   final String id;
 
   // Add icon if needed
-  final Icon? icon;
+  final Widget? icon;
 
   // This is the field title and will be displayed next to the field.
   final String? title;
@@ -70,8 +71,12 @@ abstract class FormFieldDef implements FormFieldBase {
   // This can be called on compatible fields. When the field changes, this function is run.
   final Function(FormResults results)? onChange;
 
-  final Widget Function(BuildContext context, FormFieldDef fieldDetails,
-          FieldColorScheme currentColors, Widget renderedField)
+  final Widget Function(
+          BuildContext context,
+          FormFieldDef fieldDetails,
+          FieldColorScheme currentColors,
+          List<FormBuilderError> errors,
+          Widget renderedField)
       fieldLayout; // This is a wrapper around the entire field which adds things like title and description. You can override this with anything you want.
   final Widget Function(BuildContext context, FormFieldDef fieldDetails,
           FieldColorScheme currentColors, Widget renderedField)
@@ -735,6 +740,9 @@ class ChampionTextField extends FormFieldDef {
 
   final int? maxLines;
 
+  // Add a title to the text field itself if desired
+  final String? textFieldTitle;
+
   // Add hint text if needed
   final String hintText;
 
@@ -775,6 +783,7 @@ class ChampionTextField extends FormFieldDef {
     required super.id,
     this.fieldOverride,
     this.maxLines,
+    this.textFieldTitle,
     this.hintText = "",
     super.icon,
     this.leading,
@@ -827,6 +836,7 @@ class ChampionOptionSelect extends FormFieldDef {
     ChampionOptionSelect field,
     FieldState currentState,
     FieldColorScheme currentColors,
+    List<String>? defaultValue,
     Function(MultiselectOption? selectedOption) updateSelectedOption,
   ) fieldBuilder;
 

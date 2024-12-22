@@ -29,7 +29,6 @@ class TextFieldWidget extends ConsumerStatefulWidget {
     this.onSubmitted,
     this.keyboardType = TextInputType.text,
     this.validate,
-    this.icon,
     this.initialValue = "",
     this.labelText,
     this.hintText,
@@ -41,7 +40,7 @@ class TextFieldWidget extends ConsumerStatefulWidget {
     Widget Function({required Widget child})? fieldBuilder,
   }) : fieldBuilder = fieldBuilder ?? defaultFieldBuilder;
   final String id;
-  final FormFieldDef field;
+  final ChampionTextField field;
   final TextField? fieldOverride;
   final FieldState fieldState;
   final FieldColorScheme? colorScheme;
@@ -54,7 +53,6 @@ class TextFieldWidget extends ConsumerStatefulWidget {
   final Function(String value)? validate;
   final TextInputType keyboardType;
   final String? initialValue;
-  final Icon? icon;
   final String? labelText;
   final String? hintText;
   final int? maxLines;
@@ -228,7 +226,9 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
         },
         child: overrideTextField(
           context: context,
-          leading: widget.icon,
+          leading: widget.field.leading,
+          trailing: widget.field.trailing,
+          icon: widget.field.icon,
           labelText: widget.labelText,
           hintText: widget.hintText,
           controller: _controller,

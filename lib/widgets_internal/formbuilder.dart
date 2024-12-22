@@ -210,8 +210,8 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
               password: field.password,
               requestFocus: field.requestFocus,
               validate: validate,
-              icon: field.icon,
               initialValue: field.defaultValue,
+              labelText: field.textFieldTitle,
               hintText: field.hintText,
               maxLines: field.maxLines,
             );
@@ -221,31 +221,36 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
           case ChampionOptionSelect():
 
             // Because we are using a builder instead of a widget we need to listen to the value provider here
-            final fieldValues = ref.watch(
-                multiSelectOptionNotifierProvider("${widget.id}${field.id}"));
+
+            ref.listen(
+                multiSelectOptionNotifierProvider("${widget.id}${field.id}"),
+                (prev, next) {});
 
             outputWidget = field.fieldBuilder(
-                context,
-                ref,
-                widget.id,
-                field.options,
-                field,
-                fieldState,
-                fieldColor, (MultiselectOption? selectedOption) {
-              if (selectedOption != null) {
-                ref
-                    .read(multiSelectOptionNotifierProvider(
-                            "${widget.id}${field.id}")
-                        .notifier)
-                    .addChoice(selectedOption, field.multiselect);
-              } else {
-                ref
-                    .read(multiSelectOptionNotifierProvider(
-                            ("${widget.id}${field.id}"))
-                        .notifier)
-                    .resetChoices();
-              }
-            });
+              context,
+              ref,
+              widget.id,
+              field.options,
+              field,
+              fieldState,
+              fieldColor,
+              field.defaultValue,
+              (MultiselectOption? selectedOption) {
+                if (selectedOption != null) {
+                  ref
+                      .read(multiSelectOptionNotifierProvider(
+                              "${widget.id}${field.id}")
+                          .notifier)
+                      .addChoice(selectedOption, field.multiselect);
+                } else {
+                  ref
+                      .read(multiSelectOptionNotifierProvider(
+                              ("${widget.id}${field.id}"))
+                          .notifier)
+                      .resetChoices();
+                }
+              },
+            );
 
             break;
 
@@ -347,6 +352,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
             context,
             field,
             fieldColor,
+            errors,
             field.fieldBackground(
               context,
               field,
