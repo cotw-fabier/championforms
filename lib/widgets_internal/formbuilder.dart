@@ -261,6 +261,11 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
                           .notifier)
                       .resetChoices();
                 }
+                if (field.validateLive == true) {
+                  // Run validation
+                  final results = FormResults.getResults(
+                      ref: ref, formId: widget.id, fields: [field]);
+                }
               },
             );
 

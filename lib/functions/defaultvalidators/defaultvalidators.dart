@@ -1,6 +1,7 @@
 import 'package:championforms/championforms.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:email_validator/email_validator.dart';
+import 'package:flutter/material.dart';
 
 class DefaultValidators {
   bool isEmpty(FieldResults result) {
