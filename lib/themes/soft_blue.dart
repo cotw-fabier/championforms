@@ -54,16 +54,16 @@ FormTheme softBlueColorTheme(BuildContext context) {
 
   // Active color scheme
   final activeColorScheme = FieldColorScheme(
-    backgroundColor: secondaryColor,
+    backgroundColor: lightColor,
     borderColor: primaryColor,
     borderSize: 2,
     borderRadius: BorderRadius.circular(8),
-    textColor: hintColor,
+    textColor: primaryColor,
     hintTextColor: lightColor.withOpacity(0.8),
     titleColor: primaryColor,
     descriptionColor: primaryColor,
     textBackgroundColor: hintColor,
-    iconColor: lightColor,
+    iconColor: primaryColor,
   );
 
   // Selected color scheme

@@ -837,6 +837,7 @@ class ChampionOptionSelect extends FormFieldDef {
     FieldState currentState,
     FieldColorScheme currentColors,
     List<String>? defaultValue,
+    Function(bool focused) updateFocus,
     Function(MultiselectOption? selectedOption) updateSelectedOption,
   ) fieldBuilder;
 

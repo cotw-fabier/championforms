@@ -7,7 +7,7 @@ part of 'multiselect_provider.dart';
 // **************************************************************************
 
 String _$multiSelectOptionNotifierHash() =>
-    r'96f6b94a704d2a6bd762ea96a764eebe83025632';
+    r'3a6a79d1e8a0c35ffe5d2e0df0856b0da841cb22';
 
 /// Copied from Dart SDK
 class _SystemHash {

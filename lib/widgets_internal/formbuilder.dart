@@ -3,6 +3,7 @@ import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/models/themes.dart';
+import 'package:championforms/providers/field_focus.dart';
 import 'package:championforms/providers/fieldactiveprovider.dart';
 import 'package:championforms/providers/formfield_value_by_id.dart';
 import 'package:championforms/providers/formfieldsstorage.dart';
@@ -171,6 +172,8 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
             : widget.theme;
 
         // Set the state
+        final fieldFocused =
+            ref.watch(fieldFocusNotifierProvider(widget.id + field.id));
         FieldState fieldState;
         FieldColorScheme fieldColor;
         if (errors.isNotEmpty) {
@@ -179,8 +182,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
         } else if (field.disabled == true) {
           fieldState = FieldState.disabled;
           fieldColor = finalTheme.disabledColorScheme!;
-        } else if (ref.watch(fieldActiveNotifierProvider(widget.id)) ==
-            field.id) {
+        } else if (fieldFocused) {
           fieldState = FieldState.active;
           fieldColor = finalTheme.activeColorScheme!;
         } else {
@@ -235,6 +237,12 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
               fieldState,
               fieldColor,
               field.defaultValue,
+              (focus) {
+                ref
+                    .read(fieldFocusNotifierProvider(widget.id + field.id)
+                        .notifier)
+                    .setFocus(focus);
+              },
               (MultiselectOption? selectedOption) {
                 if (selectedOption != null) {
                   ref

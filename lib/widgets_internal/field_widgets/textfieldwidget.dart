@@ -3,6 +3,7 @@ import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';
+import 'package:championforms/providers/field_focus.dart';
 import 'package:championforms/providers/formfield_value_by_id.dart';
 import 'package:championforms/widgets_internal/draggablewidget.dart';
 import 'package:championforms/widgets_internal/fieldwrapperdefault.dart';
@@ -107,6 +108,11 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
   }
 
   void _onLoseFocus() {
+    // transmit focus state to provider
+    ref
+        .read(fieldFocusNotifierProvider(widget.id).notifier)
+        .setFocus(_focusNode.hasFocus);
+
     setState(() {
       _gotFocus = true;
     });

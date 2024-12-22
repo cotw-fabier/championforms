@@ -95,6 +95,7 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
       ChampionTextField(
         id: "Text Field",
         validateLive: true,
+        maxLines: 1,
         hintText: "Type here",
         title: "My field",
         textFieldTitle: "My Field",
@@ -112,6 +113,7 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
       ),
       ChampionTextField(
         id: "Text Field 1",
+        maxLines: 1,
         trailing: const Icon(Icons.search),
       ),
       ChampionOptionSelect(
