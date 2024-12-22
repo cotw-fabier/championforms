@@ -116,8 +116,10 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
         maxLines: 1,
         trailing: const Icon(Icons.search),
       ),
-      ChampionOptionSelect(
+      ChampionCheckboxSelect(
         id: "Dropdown",
+        requestFocus: true,
+        multiselect: true,
 
         title: "Choose your weapon",
         //defaultValue: ["Hiya"],icon: const Icon(Icons.title),

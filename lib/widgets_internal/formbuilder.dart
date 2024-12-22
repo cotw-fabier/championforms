@@ -236,7 +236,11 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
               field,
               fieldState,
               fieldColor,
-              field.defaultValue,
+              ref
+                  .watch(multiSelectOptionNotifierProvider(
+                      "${widget.id}${field.id}"))
+                  .map((option) => option.value)
+                  .toList(),
               (focus) {
                 ref
                     .read(fieldFocusNotifierProvider(widget.id + field.id)

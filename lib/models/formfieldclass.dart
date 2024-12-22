@@ -7,6 +7,7 @@ import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/models/themes.dart';
 import 'package:championforms/models/validatorclass.dart';
 import 'package:championforms/widgets_external/field_backgrounds/simplewrapper.dart';
+import 'package:championforms/widgets_external/field_builders/checkboxfield_builder.dart';
 import 'package:championforms/widgets_external/field_builders/dropdownfield_builder.dart';
 import 'package:championforms/widgets_external/field_layouts/simple_layout.dart';
 import 'package:flutter/material.dart';
@@ -865,6 +866,47 @@ class ChampionOptionSelect extends FormFieldDef {
     this.fieldBuilder = dropdownFieldBuilder,
   });
 }
+
+class ChampionCheckboxSelect extends ChampionOptionSelect {
+  // Add a builder for defining the field style
+  Widget Function(
+    BuildContext context,
+    WidgetRef ref,
+    String formId,
+    List<MultiselectOption> choices,
+    ChampionOptionSelect field,
+    FieldState currentState,
+    FieldColorScheme currentColors,
+    List<String>? defaultValue,
+    Function(bool focused) updateFocus,
+    Function(MultiselectOption? selectedOption) updateSelectedOption,
+  ) fieldBuilder;
+  ChampionCheckboxSelect({
+    required super.id,
+    super.icon,
+    required super.options,
+    super.multiselect = false,
+    super.leading,
+    super.trailing,
+    super.theme,
+    super.title,
+    super.description,
+    super.disabled,
+    super.hideField,
+    super.requestFocus,
+    super.defaultValue = const [],
+    super.caseSensitiveDefaultValue = true,
+    super.validators,
+    super.validateLive,
+    super.onSubmit,
+    super.onChange,
+    super.fieldLayout,
+    super.fieldBackground,
+    this.fieldBuilder = checkboxFieldBuilder,
+  });
+}
+
+
 
 /*
 class FormFieldChipsField implements FormFieldDef  {

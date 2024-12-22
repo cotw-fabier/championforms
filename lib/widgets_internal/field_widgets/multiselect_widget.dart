@@ -1,6 +1,9 @@
+import 'package:championforms/functions/find_focus_scope_by_key.dart';
+import 'package:championforms/functions/geterrors.dart';
 import 'package:championforms/providers/field_focus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:collection/collection.dart';
 
 class MultiselectWidget extends ConsumerStatefulWidget {
   const MultiselectWidget({
@@ -20,10 +23,13 @@ class MultiselectWidget extends ConsumerStatefulWidget {
 class _MultiselectWidgetState extends ConsumerState<MultiselectWidget> {
   late FocusNode _focusNode;
   late bool _gotFocus;
+  late ValueKey<String> _focusKey;
 
   @override
   void initState() {
     super.initState();
+
+    _focusKey = ValueKey("${widget.id}traversalgroup");
 
     _gotFocus = false;
 
@@ -31,7 +37,17 @@ class _MultiselectWidgetState extends ConsumerState<MultiselectWidget> {
 
     _focusNode.addListener(_onLoseFocus);
 
-    if (widget.requestFocus) _focusNode.requestFocus();
+    if (widget.requestFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _requestFocusOnFirstChild();
+      });
+    }
+  }
+
+  void _requestFocusOnFirstChild() {
+    // Replace 'myFocusScope' with the actual ValueKey string for your FocusScope
+    _focusNode.requestFocus();
+    FocusScope.of(context).nextFocus();
   }
 
   void _onLoseFocus() {
@@ -52,6 +68,22 @@ class _MultiselectWidgetState extends ConsumerState<MultiselectWidget> {
     }*/
   }
 
+  BuildContext? _findContextByKey(ValueKey key) {
+    BuildContext? targetContext;
+
+    void visit(Element element) {
+      if (element.widget.key == key) {
+        debugPrint(element.widget.key.toString());
+        targetContext = element;
+      } else {
+        element.visitChildren(visit);
+      }
+    }
+
+    WidgetsBinding.instance.rootElement?.visitChildren(visit);
+    return targetContext;
+  }
+
   @override
   void dispose() {
     _focusNode.dispose();
@@ -61,11 +93,11 @@ class _MultiselectWidgetState extends ConsumerState<MultiselectWidget> {
   @override
   Widget build(BuildContext context) {
     return Focus(
+      key: _focusKey,
       descendantsAreTraversable: true,
       descendantsAreFocusable: true,
       skipTraversal: true,
       focusNode: _focusNode,
-      canRequestFocus: true,
       child: widget.child,
     );
   }
