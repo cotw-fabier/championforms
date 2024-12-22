@@ -120,6 +120,12 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
         id: "Dropdown",
         requestFocus: true,
         multiselect: true,
+        validateLive: true,
+        validators: [
+          FormBuilderValidator(
+              validator: (results) => DefaultValidators().isEmpty(results),
+              reason: "Nothing is checked"),
+        ],
 
         title: "Choose your weapon",
         //defaultValue: ["Hiya"],icon: const Icon(Icons.title),

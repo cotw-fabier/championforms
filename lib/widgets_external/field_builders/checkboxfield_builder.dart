@@ -1,4 +1,3 @@
-import 'package:championforms/functions/inputdecoration_from_theme.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formfieldclass.dart';
@@ -43,8 +42,9 @@ Widget checkboxFieldBuilder(
                 option.label,
                 style: TextStyle(color: currentColors.textColor),
               ),
-              activeColor:
-                  currentColors.titleColor, // or whatever color you want
+              activeColor: currentColors.textColor,
+              hoverColor: currentColors.hintTextColor,
+              tileColor: currentColors.backgroundColor,
               value: isChecked,
               onChanged: (bool? value) {
                 // The user checked this box
