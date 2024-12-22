@@ -195,7 +195,43 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
     final textValue = ref.watch(textFormFieldValueByIdProvider(widget.id));
 
     return widget.fieldBuilder!(
-      child: Focus(
+      child: overrideTextField(
+        context: context,
+        leading: widget.field.leading,
+        trailing: widget.field.trailing,
+        icon: widget.field.icon,
+        labelText: widget.labelText,
+        hintText: widget.hintText,
+        controller: _controller,
+        focusNode: _focusNode,
+        obscureText: widget.password,
+        colorScheme: widget.colorScheme,
+        baseField: widget.fieldOverride != null
+            ? widget.fieldOverride?.onSubmitted == null
+                ? overrideTextField(
+                    context: context,
+                    onSubmitted: (value) {
+                      if (widget.onSubmitted == null) return;
+                      final formResults = FormResults.getResults(
+                          ref: ref, formId: widget.formId);
+                      widget.onSubmitted!(formResults);
+                    },
+                    baseField: widget.fieldOverride!,
+                  )
+                : widget.fieldOverride!
+            : TextField(
+                maxLines: widget.maxLines,
+                onSubmitted: (value) {
+                  if (widget.onSubmitted == null) return;
+                  final formResults =
+                      FormResults.getResults(ref: ref, formId: widget.formId);
+                  widget.onSubmitted!(formResults);
+                },
+                style: theme.textTheme.bodyMedium,
+              ),
+      ),
+
+      /*child: Focus(
         focusNode: _pasteFocusNode,
         onKeyEvent: (FocusNode node, KeyEvent event) {
           final isPasteEvent = event is KeyDownEvent &&
@@ -259,7 +295,7 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
                   style: theme.textTheme.bodyMedium,
                 ),
         ),
-      ),
+      ), */
     );
   }
 }
