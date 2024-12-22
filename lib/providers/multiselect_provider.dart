@@ -1,4 +1,5 @@
 import 'package:championforms/models/multiselect_option.dart';
+import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:collection/collection.dart';
 
@@ -14,6 +15,8 @@ class MultiSelectOptionNotifier extends _$MultiSelectOptionNotifier {
   List<MultiselectOption> addChoice(
       MultiselectOption choice, bool? multiSelect) {
     List<MultiselectOption> newValues = multiSelect == true ? [...state] : [];
+
+    debugPrint("Adding choice: ${choice.value}");
 
     // Remove the choice if it already exists.
     if (newValues.firstWhereOrNull(

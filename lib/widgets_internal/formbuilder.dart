@@ -14,6 +14,7 @@ import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formfieldbase.dart';
 import 'package:championforms/models/formfieldclass.dart';
 import 'package:championforms/providers/formerrorprovider.dart';
+import 'package:collection/collection.dart';
 
 class FormBuilderWidget extends ConsumerStatefulWidget {
   const FormBuilderWidget({
@@ -61,10 +62,22 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
                 .read(textFormFieldValueByIdProvider("${widget.id}${field.id}")
                     .notifier)
                 .updateValue(field.defaultValue ?? "");
+          } else if (field is ChampionOptionSelect) {
+            for (final defaultValue in field.defaultValue) {
+              final defaultOption = field.options
+                  .firstWhereOrNull((option) => option.value == defaultValue);
+
+              if (defaultOption != null) {
+                ref
+                    .read(multiSelectOptionNotifierProvider(
+                            "${widget.id}${field.id}")
+                        .notifier)
+                    .addChoice(defaultOption, field.multiselect);
+              }
+            }
           }
 
           // populate default values for chips
-          // TODO: Implement Choice Fields
           /*
           if (field.type == FormFieldType.chips ||
               field.type == FormFieldType.checkbox ||
@@ -206,6 +219,11 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
             break;
 
           case ChampionOptionSelect():
+
+            // Because we are using a builder instead of a widget we need to listen to the value provider here
+            final fieldValues = ref.watch(
+                multiSelectOptionNotifierProvider("${widget.id}${field.id}"));
+
             outputWidget = field.fieldBuilder(
                 context,
                 ref,

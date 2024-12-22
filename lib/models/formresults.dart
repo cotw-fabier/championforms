@@ -32,10 +32,10 @@ class FieldResults {
       if (id != null) {
         // Return a single subvalue. We're checking if it exists.
         final item = values.firstWhereOrNull((data) => data.id == id);
-        output = item?.active ?? false ? item?.id ?? "" : "";
+        output = item?.active ?? false ? item?.value ?? "" : "";
       } else {
         // We're going to merge this all together into one long string of values
-        output = values.map((item) => item.id).join(delimiter);
+        output = values.map((item) => item.value).join(delimiter);
       }
     } else if (type == FieldType.string) {
       if (id != null) {
@@ -168,14 +168,17 @@ class FieldResults {
   MultiselectOption? asMultiselectSingle({String? id}) {
     final item = values.firstWhereOrNull((data) => data.id == id);
 
-    return item?.optionValue?.first;
+    return item?.optionValue;
   }
 
   // As MultiSelect List
   List<MultiselectOption> asMultiselectList({String? id}) {
-    final item = values.firstWhereOrNull((data) => data.id == id);
+    final items = values
+        .where((data) => data.id == id)
+        .map((data) => data.optionValue!)
+        .toList();
 
-    return item?.optionValue ?? [];
+    return items;
   }
 
   // SingleBool. Returns the first bool value.
@@ -209,7 +212,7 @@ class FieldResultData {
   final FieldType type;
   final String id;
   final String? value;
-  final List<MultiselectOption>? optionValue;
+  final MultiselectOption? optionValue;
   final Delta? deltaValue;
   final bool active;
   const FieldResultData({
@@ -277,16 +280,16 @@ class FormResults {
 
           results.add(FieldResults(
             id: field.id,
-            values: [
-              FieldResultData(
-                  value: value.map((option) => option.value.toString()).join(
-                      ", "), // Merge all the options into a comma seperated list
-                  optionValue:
-                      value, // This is the actual list of values which we can access in our field results.
-                  id: formId + field.id,
-                  active: true,
-                  type: type)
-            ],
+            values: value
+                .map((val) => FieldResultData(
+                    value: val.value
+                        .toString(), // Merge all the options into a comma seperated list
+                    optionValue:
+                        val, // This is the actual list of values which we can access in our field results.
+                    id: formId + field.id,
+                    active: true,
+                    type: type))
+                .toList(),
             type: type,
           ));
 

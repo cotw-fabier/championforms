@@ -2,7 +2,9 @@ import 'package:championforms/functions/defaultvalidators/defaultvalidators.dart
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';
+import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/models/validatorclass.dart';
+import 'package:championforms/providers/multiselect_provider.dart';
 import 'package:championforms/widgets_external/championform.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -81,6 +83,7 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
         debugPrint(results.formErrors.map((error) => error.reason).join(", "));
       }
       debugPrint(results.grab("Text Field").asString());
+      debugPrint(results.grab("Dropdown").asString());
     });
   }
 
@@ -94,11 +97,19 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
         validators: [
           FormBuilderValidator(
             validator: (results) => DefaultValidators().isEmpty(results),
-            reason: "Not an Email",
+            reason: "",
           ),
         ],
       ),
       ChampionTextField(id: "Text Field 1"),
+      ChampionOptionSelect(
+        id: "Dropdown",
+        options: [
+          MultiselectOption(value: "Hi", label: "Hello"),
+          MultiselectOption(value: "Hiya", label: "Wat"),
+          MultiselectOption(value: "Yoz", label: "Sup"),
+        ],
+      ),
     ];
 
     // This method is rerun every time setState is called, for instance as done

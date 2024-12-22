@@ -8,10 +8,8 @@ import 'package:championforms/models/validatorclass.dart';
 import 'package:championforms/widgets_external/field_backgrounds/simplewrapper.dart';
 import 'package:championforms/widgets_external/field_builders/dropdownfield_builder.dart';
 import 'package:championforms/widgets_external/field_layouts/simple_layout.dart';
-import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:parchment_delta/parchment_delta.dart';
 
 enum FormFieldType {
   textField,
@@ -815,7 +813,7 @@ class ChampionOptionSelect extends FormFieldDef {
   final bool multiselect;
 
   // These are the default values for the field. Use the specific one you need depending on the input required.
-  final String? defaultValue;
+  final List<String> defaultValue;
 
   // match default value case sensitive?
   final bool caseSensitiveDefaultValue;
@@ -845,7 +843,7 @@ class ChampionOptionSelect extends FormFieldDef {
     super.disabled,
     super.hideField,
     super.requestFocus,
-    this.defaultValue,
+    this.defaultValue = const [],
     this.caseSensitiveDefaultValue = true,
     super.validators,
     super.validateLive,
