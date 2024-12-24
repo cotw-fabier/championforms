@@ -93,13 +93,12 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
     // Time to build a sample form:
     final List<FormFieldDef> fields = [
       ChampionTextField(
-        id: "Text Field",
+        id: "Email",
         validateLive: true,
         maxLines: 1,
-        hintText: "Type here",
-        title: "My field",
-        textFieldTitle: "My Field",
-        description: "Fill in this field for glory",
+        hintText: "Email",
+        textFieldTitle: "Email",
+        description: "Enter your email Address",
         validators: [
           FormBuilderValidator(
             validator: (results) => DefaultValidators().isEmpty(results),
@@ -110,12 +109,21 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
             reason: "This isn't an email address",
           ),
         ],
+        leading: const Icon(Icons.verified_user),
       ),
       ChampionTextField(
-        id: "Text Field 1",
-        maxLines: 1,
-        trailing: const Icon(Icons.search),
-      ),
+          id: "Text Field 1",
+          textFieldTitle: "Password",
+          maxLines: 1,
+          password: true,
+          validateLive: true,
+          onSubmit: (results) => debugPrint("Login"),
+          validators: [
+            FormBuilderValidator(
+                validator: (results) => DefaultValidators().isEmpty(results),
+                reason: "Password is Empty"),
+          ],
+          leading: const Icon(Icons.password)),
       ChampionCheckboxSelect(
         id: "Dropdown",
         requestFocus: true,
