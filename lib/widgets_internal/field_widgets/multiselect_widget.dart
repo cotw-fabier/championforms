@@ -1,4 +1,3 @@
-import 'package:championforms/functions/find_focus_scope_by_key.dart';
 import 'package:championforms/functions/geterrors.dart';
 import 'package:championforms/providers/field_focus.dart';
 import 'package:flutter/material.dart';

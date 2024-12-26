@@ -4,7 +4,6 @@ import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/models/themes.dart';
 import 'package:championforms/providers/field_focus.dart';
-import 'package:championforms/providers/fieldactiveprovider.dart';
 import 'package:championforms/providers/formfield_value_by_id.dart';
 import 'package:championforms/providers/formfieldsstorage.dart';
 import 'package:championforms/providers/multiselect_provider.dart';

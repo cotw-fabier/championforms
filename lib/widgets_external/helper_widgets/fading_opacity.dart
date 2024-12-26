@@ -27,10 +27,7 @@ class _FadingWidgetState extends State<FadingWidget>
   @override
   void dispose() {
     // Trigger fade-out animation before disposal
-    setState(() {
-      _opacity = 0.0;
-    });
-    Future.delayed(const Duration(milliseconds: 300), super.dispose);
+    super.dispose();
   }
 
   @override

@@ -16,8 +16,6 @@ class MultiSelectOptionNotifier extends _$MultiSelectOptionNotifier {
       MultiselectOption choice, bool? multiSelect) {
     List<MultiselectOption> newValues = multiSelect == true ? [...state] : [];
 
-    debugPrint("Adding choice: ${choice.value}");
-
     // Remove the choice if it already exists.
     if (newValues.firstWhereOrNull(
             (MultiselectOption option) => option.value == choice.value) !=
