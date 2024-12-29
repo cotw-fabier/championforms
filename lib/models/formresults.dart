@@ -364,7 +364,7 @@ class FormResults {
 
       //}
     }
-    bool errorState;
+    bool errorState = false;
     List<FormBuilderError> formErrors = [];
     // Check for errors and set the error state
     if (checkForErrors) {
@@ -375,7 +375,6 @@ class FormResults {
         errorState = true;
       }
     }
-    errorState = false;
     return FormResults(
       formId: formId,
       formErrors: formErrors,
