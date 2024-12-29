@@ -150,14 +150,14 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
   }
 
   void _onControllerChanged() {
+    ref
+        .read(textFormFieldValueByIdProvider(widget.id).notifier)
+        .updateValue(_controller.text);
+
     if (widget.onChanged != null) {
       widget.onChanged!(FormResults.getResults(
           ref: ref, formId: widget.formId, fields: [widget.field]));
     }
-
-    ref
-        .read(textFormFieldValueByIdProvider(widget.id).notifier)
-        .updateValue(_controller.text);
   }
 
   @override
