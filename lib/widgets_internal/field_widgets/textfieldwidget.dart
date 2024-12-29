@@ -97,7 +97,24 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
 
     _gotFocus = false;
 
-    _focusNode = FocusNode();
+    _focusNode = FocusNode(
+    // This code attaches shift + enter functionality for
+    // new lines if there is an onsubmitted function
+    // present in the form field
+    onKeyEvent: (FocusNode node, KeyEvent evt) {
+        if (!HardwareKeyboard.instance.isShiftPressed &&
+            evt.logicalKey.keyLabel == 'Enter') {
+          if (evt is KeyDownEvent) {
+            if (widget.onSubmitted == null) return KeyEventResult.ignored;
+            final formResults =
+                FormResults.getResults(ref: ref, formId: widget.formId);
+            widget.onSubmitted!(formResults);
+          }
+          return KeyEventResult.handled;
+        } else {
+          return KeyEventResult.ignored;
+        }
+    );
     _pasteFocusNode = FocusNode();
 
     _controller.addListener(_onControllerChanged);
