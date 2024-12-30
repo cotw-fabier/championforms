@@ -1,4 +1,5 @@
 // Lets build a model for holding a single field's results, including error information
+import 'package:championforms/championforms.dart';
 import 'package:championforms/functions/geterrors.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formfieldclass.dart';
@@ -8,7 +9,6 @@ import 'package:championforms/providers/formfieldsstorage.dart';
 import 'package:championforms/providers/multiselect_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:parchment/parchment.dart';
 import 'package:parchment_delta/parchment_delta.dart';
 import 'package:collection/collection.dart';
 

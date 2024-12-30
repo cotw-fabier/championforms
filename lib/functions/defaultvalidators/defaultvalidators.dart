@@ -52,8 +52,35 @@ class DefaultValidators {
     return true;
   }
 
+  bool isDoubleOrNull(FieldResults result) {
+    if (result.asString() == "") return true;
+    if (result.type == FieldType.string) {
+      for (final data in result.values) {
+        String value = data.value?.trim() ?? "";
+// Use a RegExp to check if the string contains only digits and possibly decimal points
+
+        if ((!RegExp(r'^\d*\.?\d+$').hasMatch(value)) == false) return false;
+      }
+    }
+    return true;
+  }
+
   // Validator to check if the input is not an integer
   bool isInteger(FieldResults result) {
+    if (result.type == FieldType.string) {
+      for (final data in result.values) {
+        String value = data.value?.trim() ?? "";
+// Use a RegExp to check if the string contains only digits
+
+        if ((!RegExp(r'^\d+$').hasMatch(value)) == false) return false;
+      }
+    }
+    return true;
+  }
+
+  // Validator to check if the input is not an integer
+  bool isIntegerOrNull(FieldResults result) {
+    if (result.asString() == "") return true;
     if (result.type == FieldType.string) {
       for (final data in result.values) {
         String value = data.value?.trim() ?? "";
