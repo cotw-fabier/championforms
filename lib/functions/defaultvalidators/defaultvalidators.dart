@@ -4,6 +4,13 @@ import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 
 class DefaultValidators {
+  final int? start;
+  final int? end;
+  DefaultValidators({
+    this.start,
+    this.end,
+  });
+
   bool isEmpty(FieldResults result) {
     if (result.type == FieldType.string) {
       for (final FieldResultData data in result.values) {
@@ -19,12 +26,15 @@ class DefaultValidators {
   }
 
   // Validator to check if the text length is not between min and max length
-  bool isLengthNotInRange(FieldResults result, int minLength, int maxLength) {
+  bool isLengthNotInRange(
+    FieldResults result,
+  ) {
     if (result.type == FieldType.string) {
       for (final data in result.values) {
         final String value = data.value?.trim() ?? "";
         final int length = value.length;
-        if ((length < minLength || length > maxLength) == false) return false;
+        if ((length < (start ?? 0) || length > (end ?? 0)) == false)
+          return false;
       }
     }
     return true;
