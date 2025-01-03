@@ -1,8 +1,5 @@
-// Lets build a model for holding a single field's results, including error information
 import 'package:championforms/championforms.dart';
-import 'package:championforms/functions/geterrors.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
-import 'package:championforms/models/formfieldclass.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/providers/formfield_value_by_id.dart';
 import 'package:championforms/providers/formfieldsstorage.dart';
