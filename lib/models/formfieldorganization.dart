@@ -1,8 +1,11 @@
 import 'package:championforms/models/formfieldbase.dart';
 
 class FormFieldRow implements FormFieldBase {
+  @override
   final String id;
+  @override
   final String? title;
+  @override
   final String? description;
   final bool fullWidth;
 
@@ -15,8 +18,11 @@ class FormFieldRow implements FormFieldBase {
 }
 
 class FormFieldColumn implements FormFieldBase {
+  @override
   final String id;
+  @override
   final String? title;
+  @override
   final String? description;
   final bool fullWidth;
 

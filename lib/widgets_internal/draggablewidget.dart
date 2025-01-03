@@ -2,8 +2,6 @@
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:parchment/codecs.dart';
-import 'package:parchment_delta/parchment_delta.dart';
 import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 
 class ConditionalDraggableDropZone extends ConsumerStatefulWidget {
@@ -14,7 +12,6 @@ class ConditionalDraggableDropZone extends ConsumerStatefulWidget {
     this.onDrop,
     this.formats,
     this.controller,
-    //this.fletherController,
     this.formId = "",
     this.fieldId = "",
   });
@@ -46,27 +43,6 @@ class _ConditionalDraggableDropZoneState
   void initState() {
     super.initState();
     _dropReturn = false;
-  }
-
-  void updateQuillField({
-    String? text,
-    Delta? delta,
-  }) {
-    if (text == null && delta == null) {
-      return;
-    }
-
-    /*if (widget.fletherController != null) {
-      widget.fletherController?.replaceText(
-        widget.fletherController!.selection.baseOffset,
-        widget.fletherController!.selection.extentOffset -
-            widget.fletherController!.selection.baseOffset,
-        delta ?? text ?? "",
-        selection: TextSelection.collapsed(
-            offset: widget.fletherController!.selection.baseOffset +
-                (delta?.length ?? text?.length ?? 0)),
-      );
-    } */
   }
 
   void updateTextField(String text) {
@@ -114,10 +90,6 @@ class _ConditionalDraggableDropZoneState
 
                     // Return plain text to the controller.
                     if (value != null) {
-                      final richTextDocument =
-                          const ParchmentHtmlCodec().decode(value);
-                      final richText = richTextDocument.toDelta() as Delta;
-                      updateQuillField(delta: richText);
                       updateTextField(value.toString());
                     }
                   });
@@ -126,10 +98,6 @@ class _ConditionalDraggableDropZoneState
                   reader.getValue(Formats.htmlText, (value) {
                     // Return plain text to the controller.
                     if (value != null) {
-                      final richTextDocument =
-                          const ParchmentHtmlCodec().decode(value);
-                      final richText = richTextDocument.toDelta() as Delta;
-                      updateQuillField(delta: richText);
                       updateTextField(value.toString());
                     }
                   });
@@ -144,7 +112,6 @@ class _ConditionalDraggableDropZoneState
                     debugPrint("Plain Text: $value");
                     // Return plain text to the controller.
                     if (value != null) {
-                      updateQuillField(text: value);
                       updateTextField(value);
                     }
                   });
@@ -152,7 +119,6 @@ class _ConditionalDraggableDropZoneState
                   reader.getValue(Formats.plainText, (value) {
                     // Return plain text to the controller.
                     if (value != null) {
-                      updateQuillField(text: value);
                       updateTextField(value);
                     }
                   });

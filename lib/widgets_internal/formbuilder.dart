@@ -76,49 +76,6 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
               }
             }
           }
-
-          // populate default values for chips
-          /*
-          if (field.type == FormFieldType.chips ||
-              field.type == FormFieldType.checkbox ||
-              field.type == FormFieldType.dropdown) {
-            for (final defaultValue in field.defaultValues ?? []) {
-              final defaultChipValue =
-                  ChoiceChipValue(id: defaultValue, value: true);
-              ref
-                  .read(choiceChipNotifierProvider("${widget.id}${field.id}")
-                      .notifier)
-                  .addChoice(defaultChipValue);
-            }
-          }
-          */
-
-          // populate default values for tag field
-          // TODO Implement tag Field
-          /*
-          if (field.type == FormFieldType.tagField) {
-            ref
-                .read(formListStringsNotifierProvider("${widget.id}${field.id}")
-                    .notifier)
-                .populate(field.defaultValues);
-          }
-          */
-
-          // Populate the rich text field controller
-          // TODO Implement Rich Text Field
-          /*
-          if (field.type == FormFieldType.richText) {
-            ref
-                .read(quillControllerNotifierProvider(
-                  widget.id,
-                  field.id,
-                ).notifier)
-                .setValue(
-                  (field.deltaValue ?? Delta()
-                    ..insert(field.defaultValue ?? "")),
-                );
-          }
-          */
         }
       }
     });
@@ -262,100 +219,13 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
                 }
                 if (field.validateLive == true) {
                   // Run validation
-                  final results = FormResults.getResults(
+                  FormResults.getResults(
                       ref: ref, formId: widget.id, fields: [field]);
                 }
               },
             );
 
             break;
-
-          // TODO Reimplement other field types
-          /*
-          case FormFieldType.richText:
-            outputWidget = QuillWidgetTextArea(
-              field: field,
-              height: field.height,
-              maxHeight: field.maxHeight,
-              password: field.password,
-              id: "${widget.id}${field.id}",
-              fieldId: field.id,
-              formId: widget.id,
-              requestFocus: field.requestFocus,
-              onChanged: field.onChange,
-              active: field.active,
-              icon: field.icon,
-              initialValue: field.deltaValue ?? Delta()
-                ..insert(field.defaultValue ?? ""),
-              hintText: field.hintText,
-              maxLines: null,
-              onDrop: field.onDrop,
-              onPaste: field.onPaste,
-              draggable: field.draggable,
-            );
-
-            break;
-          case FormFieldType.chips:
-            outputWidget = FormFieldChipField(
-              field: field,
-              formId: widget.id,
-              multiSelect: field.multiselect,
-              height: field.height,
-              onChanged: field.onChange,
-              maxHeight: field.maxHeight,
-              expanded: field.fillArea,
-            );
-
-            break;
-          case FormFieldType.dropdown:
-            outputWidget = FormFieldSearchableDropDownField(
-              field: field,
-              formId: widget.id,
-              multiSelect: field.multiselect,
-              // TODO: Implement onSubmitted
-              //onSubmitted: field.onSubmit,
-              onChanged: field.onChange,
-              height: field.height,
-              maxHeight: field.maxHeight,
-              expanded: field.fillArea,
-            );
-
-            break;
-          case FormFieldType.checkbox:
-            outputWidget = FormFieldCheckboxWidgetField(
-              field: field,
-              formId: widget.id,
-              multiSelect: field.multiselect,
-              // TODO: Implement onSubmitted
-              //onSubmitted: field.onSubmit,
-              onChanged: field.onChange,
-              height: field.height,
-              maxHeight: field.maxHeight,
-              expanded: field.fillArea,
-            );
-
-            break;
-          case FormFieldType.tagField:
-            // Watch this provider to keep it alive while the form is active
-            final tagValues = ref.watch(
-                formListStringsNotifierProvider("${widget.id}${field.id}"));
-
-            outputWidget = FormBuilderStringAutoCompleteTags(
-              id: widget.id,
-              field: field,
-              initialValues: field.defaultValues ?? [],
-              // TODO: Implement OnSubmitted
-              //onSubmitted: field.onSubmit,
-              //onChanged: field.onChange,
-              expanded: field.fillArea,
-              fieldBuilder: field.fieldBuilder,
-            );
-
-            break;
-          case FormFieldType.widget:
-            outputWidget = field.child ?? Container();
-            break;
-          */
 
           default:
             outputWidget = Container();
@@ -384,19 +254,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
             height: widget.spacer!,
           ));
         }
-      } /*else if (field is FormFieldToolbar) {
-        // We're going to add the toolbar here
-        final toolbar = QuillToolbarWidget(
-          fieldId: field.editorId,
-          formId: field.formId ?? widget.id,
-          hideField: field.hideField,
-          followLastActiveQuill: field.followLastActiveQuill,
-          disableField: field.disableField,
-          toolbarBuilder: field.toolbarBuilder,
-        );
-
-        output.add(toolbar);
-      } */
+      }
     }
 
     return FocusTraversalGroup(
@@ -456,36 +314,3 @@ class FormBuilderValidatorErrors extends ConsumerWidget {
     );
   }
 }
-
-
-
-/* class FormBuilderWidget extends ConsumerWidget {
-  const FormBuilderWidget({
-    super.key,
-    this.fields = const [],
-    required this.id,
-  });
-
-  final List<FormFieldDef> fields;
-  final String id;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    List<Widget> output = [];
-
-    for (final field in fields) {
-      switch (field.type) {
-        case FormFieldType.textField:
-          // TODO: Handle this case.
-
-          break;
-
-        default:
-          break;
-      }
-    }
-
-    return Container();
-  }
-}
- */

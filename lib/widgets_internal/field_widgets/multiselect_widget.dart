@@ -1,4 +1,3 @@
-import 'package:championforms/functions/geterrors.dart';
 import 'package:championforms/providers/field_focus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

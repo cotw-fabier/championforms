@@ -1,7 +1,5 @@
-import 'package:championforms/championforms.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:email_validator/email_validator.dart';
-import 'package:flutter/material.dart';
 
 class DefaultValidators {
   final int? start;
@@ -18,8 +16,6 @@ class DefaultValidators {
       }
     } else if (result.type == FieldType.bool) {
       if (result.values.isEmpty) return false;
-    } else if (result.type == FieldType.parchment) {
-      if (result.values.first.deltaValue == Delta()) return false;
     }
 
     return true;

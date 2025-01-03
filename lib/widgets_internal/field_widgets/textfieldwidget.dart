@@ -12,7 +12,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import 'package:super_drag_and_drop/super_drag_and_drop.dart';
-import 'package:html2md/html2md.dart' as html2md;
 
 class TextFieldWidget extends ConsumerStatefulWidget {
   const TextFieldWidget({
@@ -168,47 +167,9 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
     super.dispose();
   }
 
-  void _handlePaste() async {
-    final clipboard = SystemClipboard.instance;
-    final reader = await clipboard?.read();
-    final plainTextData = reader?.canProvide(Formats.plainText) ?? false
-        ? await reader!.readValue(Formats.plainText)
-        : null;
-    final htmlData = reader?.canProvide(Formats.htmlText) ?? false
-        ? await reader!.readValue(Formats.htmlText)
-        : null;
-
-    debugPrint("Can Provide HTML: ${reader?.canProvide(Formats.htmlText)}");
-    debugPrint("Can Provide Text: ${reader?.canProvide(Formats.plainText)}");
-    //debugPrint(htmlData ?? "No HTML Data");
-
-    if (htmlData != null) {
-      //final document = Document.fromHtml(htmlData);
-      //final delta = document.toDelta();
-      final text = html2md.convert(htmlData);
-
-      final selection = _controller.selection;
-      final newText =
-          _controller.text.replaceRange(selection.start, selection.end, text);
-      _controller.text = newText;
-      _controller.selection =
-          TextSelection.collapsed(offset: selection.start + text.length);
-
-      /* controller.compose(
-        delta,
-        controller.selection,
-        ChangeSource.local,
-      ); */
-    } else if (plainTextData != null) {
-      //print('Pasting plain text');
-      final selection = _controller.selection;
-      final newText = _controller.text
-          .replaceRange(selection.start, selection.end, plainTextData);
-      _controller.text = newText;
-      _controller.selection = TextSelection.collapsed(
-          offset: selection.start + plainTextData.length);
-    }
-  }
+  // TODO: Handle pasting in content into the field
+  // Middleware for dealing with paste events
+  void _handlePaste() async {}
 
   @override
   Widget build(BuildContext context) {
@@ -253,72 +214,6 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
                 style: theme.textTheme.bodyMedium,
               ),
       ),
-
-      /*child: Focus(
-        focusNode: _pasteFocusNode,
-        onKeyEvent: (FocusNode node, KeyEvent event) {
-          final isPasteEvent = event is KeyDownEvent &&
-              event.logicalKey == LogicalKeyboardKey.keyV &&
-              (HardwareKeyboard.instance.logicalKeysPressed
-                      .contains(LogicalKeyboardKey.controlLeft) ||
-                  HardwareKeyboard.instance.logicalKeysPressed
-                      .contains(LogicalKeyboardKey.controlRight) ||
-                  HardwareKeyboard.instance.logicalKeysPressed
-                      .contains(LogicalKeyboardKey.metaLeft) ||
-                  HardwareKeyboard.instance.logicalKeysPressed
-                      .contains(LogicalKeyboardKey.metaRight));
-
-          if (isPasteEvent) {
-            debugPrint("Paste Function: ${widget.onPaste.toString()}");
-            widget.onPaste == null
-                ? _handlePaste()
-                : widget.onPaste!(
-                    controller: _controller,
-                    ref: ref,
-                    formId: widget.formId,
-                    fieldId: widget.fieldId,
-                  );
-            return KeyEventResult.handled;
-          } else {
-            return KeyEventResult.ignored;
-          }
-        },
-        child: overrideTextField(
-          context: context,
-          leading: widget.field.leading,
-          trailing: widget.field.trailing,
-          icon: widget.field.icon,
-          labelText: widget.labelText,
-          hintText: widget.hintText,
-          controller: _controller,
-          focusNode: _focusNode,
-          obscureText: widget.password,
-          colorScheme: widget.colorScheme,
-          baseField: widget.fieldOverride != null
-              ? widget.fieldOverride?.onSubmitted == null
-                  ? overrideTextField(
-                      context: context,
-                      onSubmitted: (value) {
-                        if (widget.onSubmitted == null) return;
-                        final formResults = FormResults.getResults(
-                            ref: ref, formId: widget.formId);
-                        widget.onSubmitted!(formResults);
-                      },
-                      baseField: widget.fieldOverride!,
-                    )
-                  : widget.fieldOverride!
-              : TextField(
-                  maxLines: widget.maxLines,
-                  onSubmitted: (value) {
-                    if (widget.onSubmitted == null) return;
-                    final formResults =
-                        FormResults.getResults(ref: ref, formId: widget.formId);
-                    widget.onSubmitted!(formResults);
-                  },
-                  style: theme.textTheme.bodyMedium,
-                ),
-        ),
-      ), */
     );
   }
 }

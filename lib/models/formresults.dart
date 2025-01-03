@@ -9,7 +9,6 @@ import 'package:championforms/providers/formfieldsstorage.dart';
 import 'package:championforms/providers/multiselect_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:parchment_delta/parchment_delta.dart';
 import 'package:collection/collection.dart';
 
 class FieldResults {
@@ -46,11 +45,6 @@ class FieldResults {
         // We're going to merge this all together into one long string of values
         output = values.map((item) => item.value).join(delimiter);
       }
-    } else if (type == FieldType.parchment) {
-      output = values
-          .map((item) => ParchmentDocument.fromDelta(item.deltaValue ?? Delta())
-              .toPlainText())
-          .join(delimiter);
     }
     return output != "" ? output : fallback;
   }
@@ -75,11 +69,6 @@ class FieldResults {
         // We're going to merge this all together into one long string of values
         output.addAll(values.map((item) => item.value ?? "").toList());
       }
-    } else if (type == FieldType.parchment) {
-      output.addAll(values
-          .map((item) => ParchmentDocument.fromDelta(item.deltaValue ?? Delta())
-              .toPlainText())
-          .toList());
     }
     return output != [] ? output : fallback;
   }
@@ -107,14 +96,6 @@ class FieldResults {
         // We're going to merge this all together into one long string of values
         return values.map((item) => item.value != "" ? true : false).toList();
       }
-    } else if (type == FieldType.parchment) {
-      return values
-          .map((item) => ParchmentDocument.fromDelta(item.deltaValue ?? Delta())
-                      .toPlainText() !=
-                  ""
-              ? true
-              : false)
-          .toList();
     }
     return [];
   }
@@ -149,17 +130,6 @@ class FieldResults {
         };
         return myMap;
       }
-    } else if (type == FieldType.parchment) {
-      Map<String, bool> myMap = {
-        for (var item in values)
-          ParchmentDocument.fromDelta(item.deltaValue ?? Delta()).toPlainText():
-              ParchmentDocument.fromDelta(item.deltaValue ?? Delta())
-                          .toPlainText() !=
-                      ""
-                  ? true
-                  : false
-      };
-      return myMap;
     }
     return {};
   }
@@ -180,26 +150,6 @@ class FieldResults {
 
     return items;
   }
-
-  // SingleBool. Returns the first bool value.
-
-  // As Map
-
-  // As Delta. Returns the delta of the field.
-
-  Delta asDelta({String delimiter = ", "}) {
-    if (type == FieldType.parchment) {
-      values.first.deltaValue ?? Delta();
-    } else if (type == FieldType.string) {
-      //return Delta.from(values.map((item) => item.value).join(delimiter));
-      // TODO: Convert strings to delta
-      return Delta();
-    }
-
-    return Delta();
-  }
-
-  //
 }
 
 enum FieldType {
@@ -213,7 +163,6 @@ class FieldResultData {
   final String id;
   final String? value;
   final MultiselectOption? optionValue;
-  final Delta? deltaValue;
   final bool active;
   const FieldResultData({
     this.type = FieldType.string,
@@ -221,7 +170,6 @@ class FieldResultData {
     this.optionValue,
     this.value,
     this.active = false,
-    this.deltaValue,
   });
 }
 
