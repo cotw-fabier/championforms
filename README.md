@@ -2,7 +2,7 @@
 
 **ChampionForms** is a Flutter plugin that enables you to build robust, declarative, and accessible forms with minimal boilerplate. It leverages [Riverpod](https://riverpod.dev/) for state management and validation, while offering an extensible API for custom field builders, layouts, and theming.
 
-> **Important**: Since **ChampionForms** depends on Riverpod for data flow and state, make sure you wrap your application in a `ProviderScope` from `flutter_riverpod`. ChampionForms also relies in material theme for widgets.
+> **Important**: Since **ChampionForms** depends on Riverpod for data flow and state, make sure you wrap your application in a `ProviderScope` from `flutter_riverpod`. ChampionForms also relies on material theme for widgets.
 
 ## Table of Contents
 
@@ -357,7 +357,7 @@ Contributions, issues, and feature requests are welcome! Feel free to open a PR 
 
 ## License
 
-[MIT License](LICENSE) © 2023 *Your Name or Organization*
+[MIT License](LICENSE) © 2025 *Champions of the Web*
 
 ChampionForms is free and open-source. See [LICENSE](LICENSE) for more details.
 
