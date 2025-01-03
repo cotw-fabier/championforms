@@ -21,6 +21,7 @@ class FieldColorScheme {
   final Color borderColor;
   final FieldGradientColors? borderGradient;
   final int borderSize;
+  final BorderRadius? borderRadius;
 
   final Color textColor;
   final Color hintTextColor;
@@ -39,6 +40,7 @@ class FieldColorScheme {
     this.borderColor = Colors.grey,
     this.borderGradient,
     this.borderSize = 1,
+    this.borderRadius = const BorderRadius.all(Radius.circular(8)),
     this.textColor = Colors.black,
     this.hintTextColor = Colors.black,
     this.titleColor = Colors.black,

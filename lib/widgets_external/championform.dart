@@ -1,5 +1,6 @@
 import 'package:championforms/models/formfieldbase.dart';
 import 'package:championforms/models/themes.dart';
+import 'package:championforms/widgets_external/form_wrappers/simple_wrapper.dart';
 import 'package:championforms/widgets_internal/formbuilder.dart';
 import 'package:flutter/material.dart';
 
@@ -8,18 +9,23 @@ class ChampionForm extends StatelessWidget {
     super.key,
     this.fields = const [],
     required this.id,
-    this.spacing = 10,
+    this.spacing,
     this.formWidth,
     this.formHeight,
     this.theme,
+    this.formWrapper = simpleWrapper,
   });
 
   final List<FormFieldBase> fields;
   final String id;
-  final double spacing;
+  final double? spacing;
   final double? formWidth;
   final double? formHeight;
 
+  final Widget Function(
+    BuildContext context,
+    List<Widget> form,
+  ) formWrapper;
   final FormTheme? theme;
 
   @override
@@ -34,12 +40,11 @@ class ChampionForm extends StatelessWidget {
     );
 
     return FormBuilderWidget(
+      spacer: spacing,
       fields: fields,
       id: id,
-      spacing: spacing,
-      formWidth: formWidth,
-      formHeight: formHeight,
       theme: formTheme,
+      formWrapper: formWrapper,
     );
   }
 }

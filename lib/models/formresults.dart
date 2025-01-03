@@ -1,14 +1,14 @@
 // Lets build a model for holding a single field's results, including error information
+import 'package:championforms/championforms.dart';
 import 'package:championforms/functions/geterrors.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formfieldclass.dart';
-import 'package:championforms/providers/choicechipprovider.dart';
+import 'package:championforms/models/multiselect_option.dart';
+import 'package:championforms/providers/formfield_value_by_id.dart';
 import 'package:championforms/providers/formfieldsstorage.dart';
-import 'package:championforms/providers/formliststringsprovider.dart';
-import 'package:championforms/providers/quillcontrollerprovider.dart';
-import 'package:championforms/providers/textformfieldbyid.dart';
+import 'package:championforms/providers/multiselect_provider.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:parchment/parchment.dart';
 import 'package:parchment_delta/parchment_delta.dart';
 import 'package:collection/collection.dart';
 
@@ -32,10 +32,10 @@ class FieldResults {
       if (id != null) {
         // Return a single subvalue. We're checking if it exists.
         final item = values.firstWhereOrNull((data) => data.id == id);
-        output = item?.active ?? false ? item?.id ?? "" : "";
+        output = item?.active ?? false ? item?.value ?? "" : "";
       } else {
         // We're going to merge this all together into one long string of values
-        output = values.map((item) => item.id).join(delimiter);
+        output = values.map((item) => item.value).join(delimiter);
       }
     } else if (type == FieldType.string) {
       if (id != null) {
@@ -164,6 +164,23 @@ class FieldResults {
     return {};
   }
 
+  // As MultiSelect
+  MultiselectOption? asMultiselectSingle({String? id}) {
+    final item = values.firstWhereOrNull((data) => data.id == id);
+
+    return item?.optionValue;
+  }
+
+  // As MultiSelect List
+  List<MultiselectOption> asMultiselectList({String? id}) {
+    final items = values
+        .where((data) => data.id == id)
+        .map((data) => data.optionValue!)
+        .toList();
+
+    return items;
+  }
+
   // SingleBool. Returns the first bool value.
 
   // As Map
@@ -195,11 +212,13 @@ class FieldResultData {
   final FieldType type;
   final String id;
   final String? value;
+  final MultiselectOption? optionValue;
   final Delta? deltaValue;
   final bool active;
   const FieldResultData({
     this.type = FieldType.string,
     this.id = "noid",
+    this.optionValue,
     this.value,
     this.active = false,
     this.deltaValue,
@@ -240,17 +259,50 @@ class FormResults {
       // Start by determining the field type so we can properly associate the data to the field.
 
       FieldType type;
-      if (field.type == FormFieldType.richText) {
-        type = FieldType.parchment;
-      } else if (field.type == FormFieldType.textArea ||
-          field.type == FormFieldType.textField ||
-          field.type == FormFieldType.tagField) {
-        type = FieldType.string;
-      } else {
-        type = FieldType.bool;
+      switch (field) {
+        case ChampionTextField():
+          type = FieldType.string;
+          final value =
+              ref.read(textFormFieldValueByIdProvider(formId + field.id));
+
+          results.add(FieldResults(
+            id: field.id,
+            values: [
+              FieldResultData(value: value, id: formId + field.id, type: type)
+            ],
+            type: type,
+          ));
+          break;
+        case ChampionOptionSelect():
+          type = FieldType.bool;
+          final value =
+              ref.read(multiSelectOptionNotifierProvider(formId + field.id));
+
+          results.add(FieldResults(
+            id: field.id,
+            values: value
+                .map((val) => FieldResultData(
+                    value: val.value
+                        .toString(), // Merge all the options into a comma seperated list
+                    optionValue:
+                        val, // This is the actual list of values which we can access in our field results.
+                    id: formId + field.id,
+                    active: true,
+                    type: type))
+                .toList(),
+            type: type,
+          ));
+
+          break;
+
+        default:
+          type = FieldType.string;
       }
 
       // Now that we know what field type we're working with. Grab the data from the field and convert it into a FormFieldData object to be added to the FormField list of results.
+
+      // TODO Reintegrate chips and choice fields
+      /*
       if (field.type == FormFieldType.chips ||
           field.type == FormFieldType.dropdown ||
           field.type == FormFieldType.checkbox) {
@@ -308,26 +360,21 @@ class FormResults {
           type: type,
         ));
       } else {
-        final value = ref.read(textFormFieldValueById(formId + field.id));
+      */
 
-        results.add(FieldResults(
-          id: field.id,
-          values: [FieldResultData(value: value, id: value, type: type)],
-          type: type,
-        ));
-      }
+      //}
     }
-    bool errorState;
+    bool errorState = false;
     List<FormBuilderError> formErrors = [];
     // Check for errors and set the error state
     if (checkForErrors) {
+      debugPrint("Checking for errors");
       formErrors.addAll(
           getFormBuilderErrors(results: results, formId: formId, ref: ref));
       if (formErrors.isNotEmpty) {
         errorState = true;
       }
     }
-    errorState = false;
     return FormResults(
       formId: formId,
       formErrors: formErrors,

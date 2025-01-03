@@ -1,0 +1,10 @@
+targets:
+  $default:
+    sources:
+      include:
+        - lib/**
+        - web/**
+        - test/**
+        - bin/**
+      exclude:
+        - example/**

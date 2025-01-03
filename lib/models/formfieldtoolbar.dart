@@ -2,6 +2,11 @@ import 'package:championforms/models/formfieldbase.dart';
 import 'package:fleather/fleather.dart';
 
 class FormFieldToolbar implements FormFieldBase {
+  // ID of the toolbar
+  @override
+  final String id;
+  final String? title;
+  final String? description;
   // This should match the ID of the field that it is associated with.
   final String editorId;
   // This should match the ID of the form that it is associated with. If left blank the form builder will insert the form ID its a part of.
@@ -19,6 +24,9 @@ class FormFieldToolbar implements FormFieldBase {
   final bool disableField;
 
   FormFieldToolbar({
+    required this.id,
+    this.title,
+    this.description,
     required this.editorId,
     this.formId,
     this.followLastActiveQuill = false,

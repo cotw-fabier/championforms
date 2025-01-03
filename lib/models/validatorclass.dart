@@ -1,5 +1,4 @@
 import 'package:championforms/models/formresults.dart';
-import 'package:championforms/models/formresultstype.dart';
 
 class FormBuilderValidator {
   final bool Function(FieldResults results) validator;

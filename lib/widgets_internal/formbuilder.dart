@@ -1,47 +1,39 @@
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formresults.dart';
+import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/models/themes.dart';
-import 'package:championforms/providers/fieldactiveprovider.dart';
+import 'package:championforms/providers/field_focus.dart';
+import 'package:championforms/providers/formfield_value_by_id.dart';
 import 'package:championforms/providers/formfieldsstorage.dart';
-import 'package:championforms/providers/textformfieldbyid.dart';
-import 'package:championforms/widgets_external/layoutwrappers/verticallayout.dart';
-import 'package:championforms/widgets_internal/dropdownsearchablewidget.dart';
-import 'package:championforms/widgets_internal/fieldelements.dart';
+import 'package:championforms/providers/multiselect_provider.dart';
+import 'package:championforms/widgets_internal/field_widgets/textfieldwidget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:parchment_delta/parchment_delta.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formfieldbase.dart';
 import 'package:championforms/models/formfieldclass.dart';
-import 'package:championforms/models/formfieldtoolbar.dart';
-import 'package:championforms/providers/choicechipprovider.dart';
 import 'package:championforms/providers/formerrorprovider.dart';
-import 'package:championforms/providers/formliststringsprovider.dart';
-import 'package:championforms/providers/quillcontrollerprovider.dart';
-import 'package:championforms/widgets_internal/checkboxwidget.dart';
-import 'package:championforms/widgets_internal/chipwidget.dart';
-import 'package:championforms/widgets_internal/quilltoolbar.dart';
-import 'package:championforms/widgets_internal/quillwidget.dart';
-import 'package:championforms/widgets_internal/tagfield.dart';
-import 'package:championforms/widgets_internal/textfieldwidget.dart';
+import 'package:collection/collection.dart';
 
 class FormBuilderWidget extends ConsumerStatefulWidget {
   const FormBuilderWidget({
     super.key,
     this.fields = const [],
     required this.id,
-    this.spacing = 10,
-    this.formWidth,
-    this.formHeight,
+    required this.formWrapper,
     required this.theme,
+    this.spacer,
   });
 
   final List<FormFieldBase> fields;
   final String id;
-  final double spacing;
-  final double? formWidth;
-  final double? formHeight;
+  final double? spacer;
+  final Widget Function(
+    BuildContext context,
+    List<Widget> form,
+  ) formWrapper;
+
   final FormTheme theme;
   @override
   ConsumerState<ConsumerStatefulWidget> createState() =>
@@ -65,15 +57,28 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
       for (final field in widget.fields) {
         if (field is FormFieldDef) {
           // populate default values for the text fields
-          if (field.type == FormFieldType.textField ||
-              field.type == FormFieldType.textArea) {
+          if (field is ChampionTextField) {
             ref
-                .read(
-                    textFormFieldValueById("${widget.id}${field.id}").notifier)
-                .state = field.defaultValue ?? "";
+                .read(textFormFieldValueByIdProvider("${widget.id}${field.id}")
+                    .notifier)
+                .updateValue(field.defaultValue ?? "");
+          } else if (field is ChampionOptionSelect) {
+            for (final defaultValue in field.defaultValue) {
+              final defaultOption = field.options
+                  .firstWhereOrNull((option) => option.value == defaultValue);
+
+              if (defaultOption != null) {
+                ref
+                    .read(multiSelectOptionNotifierProvider(
+                            "${widget.id}${field.id}")
+                        .notifier)
+                    .addChoice(defaultOption, field.multiselect);
+              }
+            }
           }
 
           // populate default values for chips
+          /*
           if (field.type == FormFieldType.chips ||
               field.type == FormFieldType.checkbox ||
               field.type == FormFieldType.dropdown) {
@@ -86,16 +91,22 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
                   .addChoice(defaultChipValue);
             }
           }
+          */
 
           // populate default values for tag field
+          // TODO Implement tag Field
+          /*
           if (field.type == FormFieldType.tagField) {
             ref
                 .read(formListStringsNotifierProvider("${widget.id}${field.id}")
                     .notifier)
                 .populate(field.defaultValues);
           }
+          */
 
           // Populate the rich text field controller
+          // TODO Implement Rich Text Field
+          /*
           if (field.type == FormFieldType.richText) {
             ref
                 .read(quillControllerNotifierProvider(
@@ -107,6 +118,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
                     ..insert(field.defaultValue ?? "")),
                 );
           }
+          */
         }
       }
     });
@@ -115,7 +127,6 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
   @override
   Widget build(BuildContext context) {
     List<Widget> output = [];
-    final theme = Theme.of(context);
 
     // Listen for the form fields as long as this form is active
     ref.listen(formFieldsStorageNotifierProvider(widget.id), (prev, next) {});
@@ -125,7 +136,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
         //debugPrint("Field ${field.id} is hidden: ${field.hideField}");
         if (field.hideField) continue;
 
-// If we have validators and we're doing live validation lets setup the function now
+        // If we have validators and we're doing live validation lets setup the function now
         Function(String value)? validate;
         if (field.validateLive) {
           validate = (value) {
@@ -137,60 +148,6 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
               fields: [field],
               ref: ref,
             );
-
-            // This should happen automatically when we call results for the field.
-            /* if (fieldResults.errorState) {
-              for (final fieldError in fieldResults.formErrors) {
-                ref
-                    .read(formBuilderErrorNotifierProvider(
-                            widget.id, field.id, validatorPosition)
-                        .notifier)
-                    .setError(fieldError);
-
-                validatorPosition++;
-              }
-            }*/
-
-            // This is depreciated to use the new form results API
-
-            // We basically loop through each validator, check if it matched anything, and add it to
-            /*for (final FormBuilderValidator validator
-                in field.validators ?? []) {
-              // loop through the validators and we're going to execute each one at a time
-              final FormResults formValue = StringItem(value);
-
-              // skip validation if the field is hidden.
-              if (field.hideField == true) continue;
-              // skip validation if the field is locked.
-              if (field.active == false) continue;
-
-              // Lets start by invalidating any previous error
-              ref
-                  .read(formBuilderErrorNotifierProvider(
-                          widget.id, field.id, validatorPosition)
-                      .notifier)
-                  .clearError();
-
-              // Returns true if there is an error. If false then there is no error.
-              final errorResult = validator.validator(formValue);
-
-              if (errorResult) {
-                final errorOutput = FormBuilderError(
-                  fieldId: field.id,
-                  formId: widget.id,
-                  reason: validator.reason,
-                  validatorPosition: validatorPosition,
-                );
-
-                ref
-                    .read(formBuilderErrorNotifierProvider(
-                            widget.id, field.id, validatorPosition)
-                        .notifier)
-                    .setError(errorOutput);
-              }
-
-              validatorPosition++;
-            } */
           };
         }
 
@@ -214,6 +171,8 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
             : widget.theme;
 
         // Set the state
+        final fieldFocused =
+            ref.watch(fieldFocusNotifierProvider(widget.id + field.id));
         FieldState fieldState;
         FieldColorScheme fieldColor;
         if (errors.isNotEmpty) {
@@ -222,8 +181,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
         } else if (field.disabled == true) {
           fieldState = FieldState.disabled;
           fieldColor = finalTheme.disabledColorScheme!;
-        } else if (ref.watch(fieldActiveNotifierProvider(widget.id)) ==
-            field.id) {
+        } else if (fieldFocused) {
           fieldState = FieldState.active;
           fieldColor = finalTheme.activeColorScheme!;
         } else {
@@ -233,54 +191,87 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
 
         Widget outputWidget;
 
-        switch (field.type) {
-          case FormFieldType.textField:
+        // Determine the field layout and the field background
+
+        switch (field) {
+          case ChampionTextField():
             outputWidget = TextFieldWidget(
               id: "${widget.id}${field.id}",
               field: field,
+              fieldOverride: field.fieldOverride,
+              fieldState: fieldState,
+              colorScheme: fieldColor,
               formId: widget.id,
               fieldId: field.id,
               onDrop: field.onDrop,
               onPaste: field.onPaste,
               draggable: field.draggable,
-              height: field.height,
               onSubmitted: field.onSubmit,
               onChanged: field.onChange,
-              maxHeight: field.maxHeight,
-              expanded: field.fillArea,
               password: field.password,
               requestFocus: field.requestFocus,
               validate: validate,
-              icon: field.icon,
               initialValue: field.defaultValue,
+              labelText: field.textFieldTitle,
               hintText: field.hintText,
-              maxLines: 1,
+              maxLines: field.maxLines,
             );
 
             break;
-          case FormFieldType.textArea:
-            outputWidget = TextFieldWidget(
-              formId: widget.id,
-              field: field,
-              fieldId: field.id,
-              keyboardType: TextInputType.multiline,
-              onDrop: field.onDrop,
-              onPaste: field.onPaste,
-              onChanged: field.onChange,
-              draggable: field.draggable,
-              height: field.height,
-              maxHeight: field.maxHeight,
-              expanded: field.fillArea,
-              password: field.password,
-              id: "${widget.id}${field.id}",
-              requestFocus: field.requestFocus,
-              icon: field.icon,
-              initialValue: field.defaultValue,
-              hintText: field.hintText,
-              maxLines: null,
+
+          case ChampionOptionSelect():
+
+            // Because we are using a builder instead of a widget we need to listen to the value provider here
+
+            ref.listen(
+                multiSelectOptionNotifierProvider("${widget.id}${field.id}"),
+                (prev, next) {});
+
+            outputWidget = field.fieldBuilder(
+              context,
+              ref,
+              widget.id,
+              field.options,
+              field,
+              fieldState,
+              fieldColor,
+              ref
+                  .watch(multiSelectOptionNotifierProvider(
+                      "${widget.id}${field.id}"))
+                  .map((option) => option.value)
+                  .toList(),
+              (focus) {
+                ref
+                    .read(fieldFocusNotifierProvider(widget.id + field.id)
+                        .notifier)
+                    .setFocus(focus);
+              },
+              (MultiselectOption? selectedOption) {
+                if (selectedOption != null) {
+                  ref
+                      .read(multiSelectOptionNotifierProvider(
+                              "${widget.id}${field.id}")
+                          .notifier)
+                      .addChoice(selectedOption, field.multiselect);
+                } else {
+                  ref
+                      .read(multiSelectOptionNotifierProvider(
+                              ("${widget.id}${field.id}"))
+                          .notifier)
+                      .resetChoices();
+                }
+                if (field.validateLive == true) {
+                  // Run validation
+                  final results = FormResults.getResults(
+                      ref: ref, formId: widget.id, fields: [field]);
+                }
+              },
             );
 
             break;
+
+          // TODO Reimplement other field types
+          /*
           case FormFieldType.richText:
             outputWidget = QuillWidgetTextArea(
               field: field,
@@ -364,422 +355,36 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
           case FormFieldType.widget:
             outputWidget = field.child ?? Container();
             break;
-
-          /* case FormFieldType.textField:
-            final outputWidget = Column(
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                field.title != null
-                    ? Text(field.title!, style: theme.textTheme.labelLarge)
-                    : Container(),
-                const SizedBox(height: 7),
-                FormBuilderValidatorErrors(id: widget.id, field: field),
-                TextFieldWidget(
-                  id: "${widget.id}${field.id}",
-                  formId: widget.id,
-                  fieldId: field.id,
-                  onDrop: field.onDrop,
-                  onPaste: field.onPaste,
-                  draggable: field.draggable,
-                  height: field.height,
-                  onSubmitted: field.onSubmit,
-                  maxHeight: field.maxHeight,
-                  expanded: field.fillArea,
-                  password: field.password,
-                  requestFocus: field.requestFocus,
-                  validate: validate,
-                  icon: field.icon,
-                  initialValue: field.defaultValue,
-                  hintText: field.hintText,
-                  maxLines: 1,
-                  fieldBuilder: field.fieldBuilder,
-                ),
-              ],
-            );
-            output.add(FormFieldWrapper(
-              expanded: field.fillArea,
-              width: field.width,
-              height: field.height,
-              flex: field.flex,
-              child: outputWidget,
-            ));
-
-            break;
-
-          case FormFieldType.textArea:
-            final outputWidget = Column(
-              mainAxisSize:
-                  field.fillArea ? MainAxisSize.max : MainAxisSize.min,
-              children: [
-                field.title != null
-                    ? Text(field.title!, style: theme.textTheme.labelLarge)
-                    : Container(),
-                const SizedBox(height: 7),
-                field.fillArea
-                    ? Expanded(
-                        child: TextFieldWidget(
-                          formId: widget.id,
-                          fieldId: field.id,
-                          keyboardType: TextInputType.multiline,
-                          onDrop: field.onDrop,
-                          onPaste: field.onPaste,
-                          draggable: field.draggable,
-                          height: field.height,
-                          maxHeight: field.maxHeight,
-                          expanded: field.fillArea,
-                          password: field.password,
-                          id: "${widget.id}${field.id}",
-                          requestFocus: field.requestFocus,
-                          icon: field.icon,
-                          initialValue: field.defaultValue,
-                          hintText: field.hintText,
-                          maxLines: null,
-                          fieldBuilder: field.fieldBuilder,
-                        ),
-                      )
-                    : TextFieldWidget(
-                        formId: widget.id,
-                        fieldId: field.id,
-                        keyboardType: TextInputType.multiline,
-                        onDrop: field.onDrop,
-                        onPaste: field.onPaste,
-                        draggable: field.draggable,
-                        height: field.height,
-                        maxHeight: field.maxHeight,
-                        expanded: field.fillArea,
-                        password: field.password,
-                        id: "${widget.id}${field.id}",
-                        requestFocus: field.requestFocus,
-                        icon: field.icon,
-                        initialValue: field.defaultValue,
-                        hintText: field.hintText,
-                        maxLines: null,
-                        fieldBuilder: field.fieldBuilder,
-                      ),
-              ],
-            );
-            output.add(FormFieldWrapper(
-              expanded: field.fillArea,
-              width: field.width,
-              height: field.height,
-              flex: field.flex,
-              child: outputWidget,
-            ));
-
-            break;
-
-          // Powered by
-          case FormFieldType.richText:
-            final outputWidget = Column(
-              mainAxisSize:
-                  field.fillArea ? MainAxisSize.max : MainAxisSize.min,
-              children: [
-                field.title != null
-                    ? Text(field.title!, style: theme.textTheme.labelLarge)
-                    : Container(),
-                const SizedBox(height: 7),
-                field.fillArea
-                    ? Expanded(
-                        child: QuillWidgetTextArea(
-                          height: field.height,
-                          maxHeight: field.maxHeight,
-                          password: field.password,
-                          id: "${widget.id}${field.id}",
-                          fieldId: field.id,
-                          formId: widget.id,
-                          requestFocus: field.requestFocus,
-                          active: field.active,
-                          icon: field.icon,
-                          initialValue: field.deltaValue ?? Delta()
-                            ..insert(field.defaultValue ?? ""),
-                          hintText: field.hintText,
-                          maxLines: null,
-                          fieldBuilder: field.fieldBuilder,
-                          onDrop: field.onDrop,
-                          onPaste: field.onPaste,
-                          draggable: field.draggable,
-                        ),
-                      )
-                    : QuillWidgetTextArea(
-                        height: field.height,
-                        maxHeight: field.maxHeight,
-                        password: field.password,
-                        id: "${widget.id}${field.id}",
-                        requestFocus: field.requestFocus,
-                        icon: field.icon,
-                        initialValue: field.deltaValue ?? Delta()
-                          ..insert(field.defaultValue ?? ""),
-                        hintText: field.hintText,
-                        maxLines: null,
-                        fieldBuilder: field.fieldBuilder,
-                        onDrop: field.onDrop,
-                        onPaste: field.onPaste,
-                        draggable: field.draggable,
-                      ),
-              ],
-            );
-            output.add(FormFieldWrapper(
-              expanded: field.fillArea,
-              width: field.width,
-              height: field.height,
-              flex: field.flex,
-              child: outputWidget,
-            ));
-
-            break;
-
-          case FormFieldType.chips:
-
-            // We're setting default values for the chips
-
-            Widget outputWidget = Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                field.title != null
-                    ? Text(field.title!, style: theme.textTheme.labelLarge)
-                    : Container(),
-                const SizedBox(height: 7),
-                field.fillArea
-                    ? Expanded(
-                        child: SingleChildScrollView(
-                          child: FormFieldChipField(
-                            field: field,
-                            formId: widget.id,
-                            multiSelect: field.multiselect,
-                            height: field.height,
-                            maxHeight: field.maxHeight,
-                            expanded: field.fillArea,
-                            fieldBuilder: field.fieldBuilder,
-                          ),
-                        ),
-                      )
-                    : FormFieldChipField(
-                        field: field,
-                        formId: widget.id,
-                        multiSelect: field.multiselect,
-                        height: field.height,
-                        maxHeight: field.maxHeight,
-                        expanded: field.fillArea,
-                        fieldBuilder: field.fieldBuilder,
-                      )
-              ],
-            );
-            output.add(FormFieldWrapper(
-              expanded: field.fillArea,
-              width: field.width,
-              height: field.height,
-              flex: field.flex,
-              child: outputWidget,
-            ));
-
-            break;
-
-          case FormFieldType.dropdown:
-
-            // We're setting default values for the chips
-
-            Widget outputWidget = Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                field.title != null
-                    ? Text(field.title!, style: theme.textTheme.labelLarge)
-                    : Container(),
-                const SizedBox(height: 7),
-                field.fillArea
-                    ? Expanded(
-                        child: FormFieldSearchableDropDownField(
-                          field: field,
-                          formId: widget.id,
-                          multiSelect: field.multiselect,
-                          height: field.height,
-                          maxHeight: field.maxHeight,
-                          expanded: field.fillArea,
-                          fieldBuilder: field.fieldBuilder,
-                        ),
-                      )
-                    : FormFieldSearchableDropDownField(
-                        field: field,
-                        formId: widget.id,
-                        multiSelect: field.multiselect,
-                        height: field.height,
-                        maxHeight: field.maxHeight,
-                        expanded: field.fillArea,
-                        fieldBuilder: field.fieldBuilder,
-                      )
-              ],
-            );
-            output.add(FormFieldWrapper(
-              expanded: field.fillArea,
-              width: field.width,
-              height: field.height,
-              flex: field.flex,
-              child: outputWidget,
-            ));
-
-            break;
-
-          case FormFieldType.checkbox:
-
-            // We're setting default values for the chips
-
-            Widget outputWidget = Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                field.title != null
-                    ? Text(field.title!, style: theme.textTheme.labelLarge)
-                    : Container(),
-                const SizedBox(height: 7),
-                field.fillArea
-                    ? Expanded(
-                        child: FormFieldCheckboxWidgetField(
-                          field: field,
-                          formId: widget.id,
-                          multiSelect: field.multiselect,
-                          height: field.height,
-                          maxHeight: field.maxHeight,
-                          expanded: field.fillArea,
-                          fieldBuilder: field.fieldBuilder,
-                        ),
-                      )
-                    : FormFieldCheckboxWidgetField(
-                        field: field,
-                        formId: widget.id,
-                        multiSelect: field.multiselect,
-                        height: field.height,
-                        maxHeight: field.maxHeight,
-                        expanded: field.fillArea,
-                        fieldBuilder: field.fieldBuilder,
-                      )
-              ],
-            );
-            output.add(FormFieldWrapper(
-              expanded: field.fillArea,
-              width: field.width,
-              height: field.height,
-              flex: field.flex,
-              child: outputWidget,
-            ));
-
-            break;
-
-          case FormFieldType.tagField:
-            final tagValues = ref.watch(
-                formListStringsNotifierProvider("${widget.id}${field.id}"));
-            final outputWidget = Column(
-              mainAxisSize:
-                  field.fillArea ? MainAxisSize.max : MainAxisSize.min,
-              children: [
-                field.title != null
-                    ? Text(field.title!, style: theme.textTheme.labelLarge)
-                    : Container(),
-                const SizedBox(height: 7),
-                field.fillArea
-                    ? Expanded(
-                        child: FormBuilderStringAutoCompleteTags(
-                          id: widget.id,
-                          field: field,
-                          initialValues: field.defaultValues ?? [],
-                          expanded: field.fillArea,
-                          fieldBuilder: field.fieldBuilder,
-                        ),
-                      )
-                    : FormBuilderStringAutoCompleteTags(
-                        id: widget.id,
-                        field: field,
-                        initialValues: field.defaultValues ?? [],
-                        expanded: field.fillArea,
-                        fieldBuilder: field.fieldBuilder,
-                      ),
-              ],
-            );
-
-            output.add(FormFieldWrapper(
-              expanded: field.fillArea,
-              width: field.width,
-              height: field.height,
-              flex: field.flex,
-              child: outputWidget,
-            ));
-
-            break;
-
-          case FormFieldType.widget:
-            final outputWidget = field.child;
-            if (outputWidget != null) {
-              output.add(FormFieldWrapper(
-                expanded: field.fillArea,
-                width: field.width,
-                height: field.height,
-                flex: field.flex,
-                child: outputWidget,
-              ));
-            }
-            break;*/
+          */
 
           default:
             outputWidget = Container();
             break;
         }
 
-        // Lets establish our field layout
-        Widget Function({
-          Widget? title,
-          Widget? description,
-          Widget? errors,
-          Widget? icon,
-          bool? expanded,
-          FormTheme theme,
-          Widget layout,
-          Widget field,
-        }) fieldLayout;
-
-        if (widget.theme.layoutBuilder! != null) {
-          fieldLayout = widget.theme.layoutBuilder!;
-        } else {
-          fieldLayout = fieldVerticalLayoutBuilder(
-            field: outputWidget,
-            theme: field.theme ?? widget.theme,
-          );
-        }
         // Lets add the new form field with our layout
         output.add(
-          FormFieldWrapper(
-            expanded: field.fillArea,
-            width: field.width,
-            height: field.height,
-            flex: field.flex,
-            child: Builder(builder: (context) {
-              return fieldLayout(
-                title: field.title != null
-                    ? FieldTextElement(
-                        color: fieldColor.titleColor,
-                        textStyle: field.titleStyle ?? widget.theme.titleStyle!,
-                        text: field.title!)
-                    : null,
-                description: field.description != null
-                    ? FieldTextElement(
-                        color: fieldColor.descriptionColor,
-                        textStyle: field.descriptionStyle ??
-                            widget.theme.descriptionStyle!,
-                        text: field.description!)
-                    : null,
-                expanded: field.fillArea,
-                // TODO: Add Errors
-                fieldWrapper: field.fieldBuilder ?? widget.theme.fieldBuilder,
-                icon: field.icon,
-                colors: fieldColor,
-                field: outputWidget,
-              );
-            }),
+          field.fieldLayout(
+            context,
+            field,
+            fieldColor,
+            errors,
+            field.fieldBackground(
+              context,
+              field,
+              fieldColor,
+              outputWidget,
+            ),
           ),
         );
 
-        // Add spacer
-
-        output.add(SizedBox(
-          height: widget.spacing,
-        ));
-      } else if (field is FormFieldToolbar) {
+        // Add a simple spacer
+        if (widget.spacer != null) {
+          output.add(SizedBox(
+            height: widget.spacer!,
+          ));
+        }
+      } /*else if (field is FormFieldToolbar) {
         // We're going to add the toolbar here
         final toolbar = QuillToolbarWidget(
           fieldId: field.editorId,
@@ -791,18 +396,15 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
         );
 
         output.add(toolbar);
-      }
+      } */
     }
 
-    return Container(
-      width: widget.formWidth,
-      height: widget.formHeight,
-      child: LayoutBuilder(builder: (context, constraints) {
-        return Column(
-          mainAxisSize: MainAxisSize.max,
-          children: output,
-        );
-      }),
+    return FocusTraversalGroup(
+      policy: OrderedTraversalPolicy(),
+      child: widget.formWrapper(
+        context,
+        output,
+      ),
     );
   }
 }
@@ -855,34 +457,7 @@ class FormBuilderValidatorErrors extends ConsumerWidget {
   }
 }
 
-class FormFieldWrapper extends StatelessWidget {
-  const FormFieldWrapper({
-    super.key,
-    required this.expanded,
-    this.width,
-    this.height,
-    required this.child,
-    this.flex,
-  });
-  final bool expanded;
-  final double? width;
-  final double? height;
-  final Widget child;
-  final int? flex;
 
-  @override
-  Widget build(BuildContext context) {
-    if (!expanded) {
-      return child;
-    }
-    return Expanded(
-      flex: flex ?? 1,
-      child: LayoutBuilder(builder: (context, constraints) {
-        return child;
-      }),
-    );
-  }
-}
 
 /* class FormBuilderWidget extends ConsumerWidget {
   const FormBuilderWidget({
