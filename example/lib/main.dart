@@ -1,4 +1,5 @@
 import 'package:championforms/championforms.dart';
+import 'package:championforms/models/formfieldbase.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:flutter/material.dart';
@@ -94,7 +95,7 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     // Time to build a sample form:
-    final List<FormFieldDef> fields = [
+    final List<FormFieldBase> fields = [
       ChampionTextField(
         id: "Email", // To ID the field, must be unique per form
         validateLive:

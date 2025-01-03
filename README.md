@@ -146,7 +146,7 @@ Below is a breakdown of how to declare and use different field types and retriev
 `ChampionForm` is the main widget to which you supply:
 
 - `id`: A **unique** identifier for the form.
-- `fields`: A **List** of `FormFieldDef` objects.
+- `fields`: A **List** of `FormFieldBase` objects.
 - `theme` (optional): A custom `FormTheme`.
 - `spacing` (optional): Vertical spacing between fields.
 
