@@ -17,7 +17,7 @@ dependencies:
   super_clipboard: ^0.8.17
   super_drag_and_drop: ^0.8.16
   dotted_border: ^2.1.0
-
+  collection:
   textfield_tags: ^3.0.1
 
 dev_dependencies:
