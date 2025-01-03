@@ -124,7 +124,7 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "0.0.2"
+    version: "0.0.3"
   characters:
     dependency: transitive
     description:
@@ -197,14 +197,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.6"
-  csslib:
-    dependency: transitive
-    description:
-      name: csslib
-      sha256: "09bad715f418841f976c77db72d5398dc1253c21fb9c0c7f0b0b985860b2d58e"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.2"
   cupertino_icons:
     dependency: "direct main"
     description:
@@ -269,14 +261,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.2"
-  diff_match_patch:
-    dependency: transitive
-    description:
-      name: diff_match_patch
-      sha256: "2efc9e6e8f449d0abe15be240e2c2a3bcd977c8d126cfd70598aee60af35c0a4"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.4.1"
   dotted_border:
     dependency: transitive
     description:
@@ -285,14 +269,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
-  dropdown_button2:
-    dependency: transitive
-    description:
-      name: dropdown_button2
-      sha256: "50c4d8f73cb58c99a75581974d03457b690af646db19706af4aafd29ec3f6fe8"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.0-beta.21"
   email_validator:
     dependency: transitive
     description:
@@ -333,14 +309,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.1"
-  fleather:
-    dependency: transitive
-    description:
-      name: fleather
-      sha256: "622231d66508fd2f481824134e0e4e539168f20a5ec513c8c6246f5b8c8240da"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.19.0"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -354,11 +322,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
-  flutter_localizations:
-    dependency: transitive
-    description: flutter
-    source: sdk
-    version: "0.0.0"
   flutter_riverpod:
     dependency: "direct main"
     description:
@@ -417,22 +380,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.2.0"
-  html:
-    dependency: transitive
-    description:
-      name: html
-      sha256: "1fc58edeaec4307368c60d59b7e15b9d658b57d7f3125098b6294153c75337ec"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.15.5"
-  html2md:
-    dependency: transitive
-    description:
-      name: html2md
-      sha256: "465cf8ffa1b510fe0e97941579bf5b22e2d575f2cecb500a9c0254efe33a8036"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.3.2"
   http_multi_server:
     dependency: transitive
     description:
@@ -449,14 +396,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.2"
-  intl:
-    dependency: transitive
-    description:
-      name: intl
-      sha256: d6f56758b7d3014a48af9701c085700aac781a92a87a62b1333b46d8879661cf
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.19.0"
   io:
     dependency: transitive
     description:
@@ -585,22 +524,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.1"
-  parchment:
-    dependency: transitive
-    description:
-      name: parchment
-      sha256: a7b4ae5bc7fcfe29909840246d824651315b09cae2176708f86c6ce7f8236019
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.19.0"
-  parchment_delta:
-    dependency: transitive
-    description:
-      name: parchment_delta
-      sha256: "8b360d0138eb591c7fe193670e2d05466e482792af9c5b4d3f568c5c61530f08"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.0"
   path:
     dependency: transitive
     description:
@@ -665,14 +588,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.0"
-  quiver:
-    dependency: transitive
-    description:
-      name: quiver
-      sha256: ea0b925899e64ecdfbf9c7becb60d5b50e706ade44a85b2363be2a22d88117d2
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.2.2"
   riverpod:
     dependency: transitive
     description:
@@ -952,4 +867,4 @@ packages:
     version: "3.1.2"
 sdks:
   dart: ">=3.5.1 <4.0.0"
-  flutter: ">=3.22.0"
+  flutter: ">=3.18.0-18.0.pre.54"
