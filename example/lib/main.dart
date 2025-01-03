@@ -1,12 +1,6 @@
 import 'package:championforms/championforms.dart';
-import 'package:championforms/functions/defaultvalidators/defaultvalidators.dart';
-import 'package:championforms/models/formbuildererrorclass.dart';
-import 'package:championforms/models/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
-import 'package:championforms/models/validatorclass.dart';
-import 'package:championforms/providers/multiselect_provider.dart';
-import 'package:championforms/widgets_external/championform.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -65,27 +59,36 @@ class MyHomePage extends ConsumerStatefulWidget {
 }
 
 class _MyHomePageState extends ConsumerState<MyHomePage> {
-  int _counter = 0;
+  void _executeLogin() {
+    // Because championforms relies on riverpod. Field results
+    // are accessible anywhere in the app as long as the form is still active.
+    // You can simply build the FormResults object at any time to cause the form
+    // to pass results and run validation.
+    final FormResults results =
+        FormResults.getResults(ref: ref, formId: "myForm");
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-
-      final FormResults results =
-          FormResults.getResults(ref: ref, formId: "myForm");
-      final errors = results.errorState;
-      debugPrint("Current Error State is: $errors");
-      if (errors) {
-        debugPrint(results.formErrors.map((error) => error.reason).join(", "));
-      }
+    // Once run the form will tell you if it is in an error state.
+    // If true, then stop processing.
+    final errors = results.errorState;
+    debugPrint("Current Error State is: $errors");
+    if (errors == false) {
+      // No errors, excellent!
+      // Fields can be "grabbed" from the results by their ID.
+      // Then you can format them .asString(), asStringList(), asMultiSelectList()
       debugPrint(results.grab("Text Field").asString());
-      debugPrint(results.grab("Dropdown").asString());
-    });
+      debugPrint(results.grab("DropdownField").asString());
+      debugPrint(results
+          .grab("CheckboxField")
+          .asMultiselectList()
+          .map((field) => field.value)
+          .join(", "));
+    } else {
+      debugPrint("The form had some errors.");
+      debugPrint(results.formErrors
+          .map((error) =>
+              "Field ${error.fieldId} had the error: ${error.reason}")
+          .join(", "));
+    }
   }
 
   @override
@@ -93,12 +96,18 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
     // Time to build a sample form:
     final List<FormFieldDef> fields = [
       ChampionTextField(
-        id: "Email",
-        validateLive: true,
-        maxLines: 1,
-        hintText: "Email",
-        textFieldTitle: "Email",
-        description: "Enter your email Address",
+        id: "Email", // To ID the field, must be unique per form
+        validateLive:
+            true, // This causes the field to validate itself as soon as it loses focus -- defaults to false.
+        maxLines: 1, // Forces field to one line
+        hintText: "Email", // Hint text in the text field
+        textFieldTitle:
+            "Email", // This is the title which displays in the field until you click on it, then moves to the border
+        description:
+            "Enter your email Address", // Description by default displays above the field below the title
+        // Validators are a list of FormBuilderValidator objects which run a bool function on the results to determine if the input is satisfactory.
+        // Default validators are provided in the DefaultValidators() object. The most important one there is the dependency on valid emails.
+        // If a field isn't valid, then the field state is set to error causing the colors to change and the error is displayed (by default) below the field in errorBorder color.
         validators: [
           FormBuilderValidator(
             validator: (results) => DefaultValidators().isEmpty(results),
@@ -109,14 +118,20 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
             reason: "This isn't an email address",
           ),
         ],
+        // Leading icon. Can make clickable with MouseRegion, and GestureDetector
         leading: const Icon(Icons.verified_user),
       ),
       ChampionTextField(
           id: "Text Field 1",
           textFieldTitle: "Password",
           maxLines: 1,
-          password: true,
+          password: true, // Password being true obscures the text in the field
           validateLive: true,
+
+          // The onSubmit will fire when the user presses enter.
+          // If maxLines is null or set to a larger number then onSubmit will fire on enter and
+          // new line will be triggered on shift + enter.
+          // If no onSubmit is present, then enter will add a new line as normal.
           onSubmit: (results) => debugPrint("Login"),
           validators: [
             FormBuilderValidator(
@@ -124,8 +139,40 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
                 reason: "Password is Empty"),
           ],
           leading: const Icon(Icons.password)),
+
+      // Champion option fields utilize a builder to handle the elements in the field.
+      // Currently, this is the base implementation which spits out a Dropdown.
+      // The setup should work for any multi-select object being used.
+      // Custom builders can be inserted via the fieldBuilder property.
+      // See the widgets_external/field_builders/checkboxfield_builder.dart file for details
+      // on constructing your own custom builder.
+      ChampionOptionSelect(
+          id: "DropdownField", // ID can be anything but should be unique
+          title: "Quick Dropdown",
+          // MultiselectOption by default will pass through the label and value when the form is submitted.
+          // However the additionalData property will accept any object? allowing you to pass through any element you desire to the formResults.
+          options: [
+            MultiselectOption(
+              label: "Option 1",
+              value: "Value 1",
+            ),
+            MultiselectOption(
+              label: "Option 2",
+              value: "Value 2",
+            ),
+            MultiselectOption(
+              label: "Option 3",
+              value: "Value 3",
+            ),
+            MultiselectOption(
+              label: "Option 4",
+              value: "Value 4",
+            ),
+          ]),
+      // ChampionCheckboxSelect extends ChampionOptionSelect simply swapping out the fieldBuilder
+      // For one which displays the options as checkboxes.
       ChampionCheckboxSelect(
-        id: "Dropdown",
+        id: "SelectBox",
         requestFocus: true,
         multiselect: true,
         validateLive: true,
@@ -149,12 +196,6 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
       ),
     ];
 
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
         // TRY THIS: Try changing the color here to a specific color (to
@@ -163,45 +204,28 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text("Champion Forms Example"),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            // The ChampionForm widget actually displays a form.
+            // Throw in the fields defined above.
+            // The ID keeps forms seperate when pulling results.
+            // If two forms have the same ID and different fields, then all fields
+            // will appear in the results when the form is evaluated.
             ChampionForm(
               theme: softBlueColorTheme(context),
               id: "myForm",
               spacing: 10,
               fields: fields,
             ),
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
+        onPressed: _executeLogin,
         tooltip: 'Increment',
         child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
