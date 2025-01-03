@@ -17,8 +17,8 @@ dependencies:
   super_clipboard: ^0.8.17
   super_drag_and_drop: ^0.8.16
   dotted_border: ^2.1.0
-  collection:
   textfield_tags: ^3.0.1
+  collection: ^1.19.0
 
 dev_dependencies:
   flutter_test:
