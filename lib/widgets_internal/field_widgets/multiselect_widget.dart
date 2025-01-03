@@ -1,7 +1,6 @@
 import 'package:championforms/providers/field_focus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:collection/collection.dart';
 
 class MultiselectWidget extends ConsumerStatefulWidget {
   const MultiselectWidget({
@@ -20,7 +19,7 @@ class MultiselectWidget extends ConsumerStatefulWidget {
 
 class _MultiselectWidgetState extends ConsumerState<MultiselectWidget> {
   late FocusNode _focusNode;
-  late bool _gotFocus;
+  //late bool _gotFocus;
   late ValueKey<String> _focusKey;
 
   @override
@@ -29,7 +28,7 @@ class _MultiselectWidgetState extends ConsumerState<MultiselectWidget> {
 
     _focusKey = ValueKey("${widget.id}traversalgroup");
 
-    _gotFocus = false;
+    //_gotFocus = false;
 
     _focusNode = FocusNode();
 
@@ -66,21 +65,21 @@ class _MultiselectWidgetState extends ConsumerState<MultiselectWidget> {
     }*/
   }
 
-  BuildContext? _findContextByKey(ValueKey key) {
-    BuildContext? targetContext;
+  // BuildContext? _findContextByKey(ValueKey key) {
+  //   BuildContext? targetContext;
 
-    void visit(Element element) {
-      if (element.widget.key == key) {
-        debugPrint(element.widget.key.toString());
-        targetContext = element;
-      } else {
-        element.visitChildren(visit);
-      }
-    }
+  //   void visit(Element element) {
+  //     if (element.widget.key == key) {
+  //       debugPrint(element.widget.key.toString());
+  //       targetContext = element;
+  //     } else {
+  //       element.visitChildren(visit);
+  //     }
+  //   }
 
-    WidgetsBinding.instance.rootElement?.visitChildren(visit);
-    return targetContext;
-  }
+  //   WidgetsBinding.instance.rootElement?.visitChildren(visit);
+  //   return targetContext;
+  // }
 
   @override
   void dispose() {

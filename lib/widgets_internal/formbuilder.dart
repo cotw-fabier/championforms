@@ -97,10 +97,10 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
         Function(String value)? validate;
         if (field.validateLive) {
           validate = (value) {
-            int validatorPosition = 0;
+            // int validatorPosition = 0;
 
             // Pull results for just this field
-            final fieldResults = FormResults.getResults(
+            FormResults.getResults(
               formId: widget.id,
               fields: [field],
               ref: ref,

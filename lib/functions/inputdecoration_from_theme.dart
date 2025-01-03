@@ -5,22 +5,22 @@ InputDecoration? getInputDecorationFromScheme(FieldColorScheme? scheme) {
   // If null return nothing
   if (scheme == null) return null;
 
-  // Helper function to create a BoxDecoration with gradients or solid colors
-  BoxDecoration? _createGradientDecoration(
-      FieldGradientColors? gradient, Color? color) {
-    if (gradient != null) {
-      return BoxDecoration(
-        gradient: LinearGradient(
-          colors: [gradient.colorOne, gradient.colorTwo],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      );
-    } else if (color != null) {
-      return BoxDecoration(color: color);
-    }
-    return null;
-  }
+  // // Helper function to create a BoxDecoration with gradients or solid colors
+  // BoxDecoration? _createGradientDecoration(
+  //     FieldGradientColors? gradient, Color? color) {
+  //   if (gradient != null) {
+  //     return BoxDecoration(
+  //       gradient: LinearGradient(
+  //         colors: [gradient.colorOne, gradient.colorTwo],
+  //         begin: Alignment.topLeft,
+  //         end: Alignment.bottomRight,
+  //       ),
+  //     );
+  //   } else if (color != null) {
+  //     return BoxDecoration(color: color);
+  //   }
+  //   return null;
+  // }
 
   // Create border decoration with gradients or solid color
   InputBorder _createBorder(

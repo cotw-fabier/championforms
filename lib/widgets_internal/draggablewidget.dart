@@ -89,9 +89,7 @@ class _ConditionalDraggableDropZoneState
                     final value = String.fromCharCodes(fileData);
 
                     // Return plain text to the controller.
-                    if (value != null) {
-                      updateTextField(value.toString());
-                    }
+                    updateTextField(value.toString());
                   });
                 } else {
                   // HTML Content Dragged in
@@ -109,11 +107,8 @@ class _ConditionalDraggableDropZoneState
                     debugPrint("File Dropped: ${file.fileName}");
                     final fileData = await file.readAll();
                     final value = String.fromCharCodes(fileData);
-                    debugPrint("Plain Text: $value");
                     // Return plain text to the controller.
-                    if (value != null) {
-                      updateTextField(value);
-                    }
+                    updateTextField(value);
                   });
                 } else {
                   reader.getValue(Formats.plainText, (value) {

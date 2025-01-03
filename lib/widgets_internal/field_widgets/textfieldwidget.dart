@@ -5,7 +5,6 @@ import 'package:championforms/models/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/providers/field_focus.dart';
 import 'package:championforms/providers/formfield_value_by_id.dart';
-import 'package:championforms/widgets_internal/draggablewidget.dart';
 import 'package:championforms/widgets_internal/fieldwrapperdefault.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -169,14 +168,14 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
 
   // TODO: Handle pasting in content into the field
   // Middleware for dealing with paste events
-  void _handlePaste() async {}
+  // void _handlePaste() async {}
 
   @override
   Widget build(BuildContext context) {
     ref.listen(
         textFormFieldValueByIdProvider(widget.id), _onRiverpodControllerUpdate);
     final ThemeData theme = Theme.of(context);
-    final textValue = ref.watch(textFormFieldValueByIdProvider(widget.id));
+    ref.watch(textFormFieldValueByIdProvider(widget.id));
 
     return widget.fieldBuilder!(
       child: overrideTextField(

@@ -57,7 +57,7 @@ extension InputDecorationMerge on InputDecoration {
       disabledBorder: overrides.disabledBorder ?? disabledBorder,
       enabledBorder: overrides.enabledBorder ?? enabledBorder,
       border: overrides.border ?? border,
-      enabled: overrides.enabled ?? enabled,
+      enabled: overrides.enabled,
       semanticCounterText: overrides.semanticCounterText ?? semanticCounterText,
       alignLabelWithHint: overrides.alignLabelWithHint ?? alignLabelWithHint,
       constraints: overrides.constraints ?? constraints,
