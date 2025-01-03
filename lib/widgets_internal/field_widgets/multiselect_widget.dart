@@ -53,9 +53,9 @@ class _MultiselectWidgetState extends ConsumerState<MultiselectWidget> {
         .read(fieldFocusNotifierProvider(widget.id).notifier)
         .setFocus(_focusNode.hasFocus);
 
-    setState(() {
-      _gotFocus = true;
-    });
+    // setState(() {
+    //   _gotFocus = true;
+    // });
 
     /*if (widget.validate != null && !_focusNode.hasFocus) {
       // if this field ever recieved focus then we can rely on the text controller
