@@ -133,17 +133,19 @@ class FieldResults {
 
   // As MultiSelect
   MultiselectOption? asMultiselectSingle({String? id}) {
-    final item = values.firstWhereOrNull((data) => data.id == id);
+    MultiselectOption? item;
+    if (id != null) {
+      item = values.firstWhereOrNull((data) => data.id == id)?.optionValue;
+    } else {
+      item = values.firstOrNull?.optionValue;
+    }
 
-    return item?.optionValue;
+    return item;
   }
 
   // As MultiSelect List
   List<MultiselectOption> asMultiselectList({String? id}) {
-    final items = values
-        .where((data) => data.id == id)
-        .map((data) => data.optionValue!)
-        .toList();
+    final items = values.map((data) => data.optionValue!).toList();
 
     return items;
   }

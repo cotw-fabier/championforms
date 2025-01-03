@@ -76,10 +76,10 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
       // No errors, excellent!
       // Fields can be "grabbed" from the results by their ID.
       // Then you can format them .asString(), asStringList(), asMultiSelectList()
-      debugPrint(results.grab("Text Field").asString());
+      debugPrint(results.grab("Email").asString());
       debugPrint(results.grab("DropdownField").asString());
       debugPrint(results
-          .grab("CheckboxField")
+          .grab("SelectBox")
           .asMultiselectList()
           .map((field) => field.value)
           .join(", "));
