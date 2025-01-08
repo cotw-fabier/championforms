@@ -5,7 +5,11 @@ export 'package:championforms/widgets_external/championform.dart';
 
 // Export Form Classes
 export 'package:championforms/models/formfieldclass.dart';
+export 'package:championforms/models/formfieldbase.dart';
 export 'package:championforms/models/validatorclass.dart';
+
+// Export form Controller
+export 'package:championforms/controllers/form_controller.dart';
 
 // Export Field Builders for crafting different types of fields.
 
