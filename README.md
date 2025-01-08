@@ -1,39 +1,44 @@
 # ChampionForms
 
-**ChampionForms** is a Flutter plugin that enables you to build robust, declarative, and accessible forms with minimal boilerplate. It leverages [Riverpod](https://riverpod.dev/) for state management and validation, while offering an extensible API for custom field builders, layouts, and theming.
-
-> **Important**: Since **ChampionForms** depends on Riverpod for data flow and state, make sure you wrap your application in a `ProviderScope` from `flutter_riverpod`. ChampionForms also relies on material theme for widgets.
+**ChampionForms** is a Flutter plugin for building robust, declarative, and accessible forms with minimal boilerplate. It is now powered by an internal form controller rather than Riverpod, making it easy to integrate into any Flutter app.
 
 ## Table of Contents
 
-1. [Features](#features)
-2. [Installation](#installation)
-3. [Quick Start](#quick-start)
-4. [Basic Usage](#basic-usage)
+1. [What’s New in 0.0.4](#whats-new-in-004)
+2. [Features](#features)
+3. [Installation](#installation)
+4. [Quick Start Example](#quick-start-example)
+5. [Basic Usage](#basic-usage)
+   - [ChampionFormController](#championformcontroller)
    - [ChampionForm](#championform)
    - [ChampionTextField](#championtextfield)
    - [ChampionOptionSelect & ChampionCheckboxSelect](#championoptionselect--championcheckboxselect)
    - [Retrieving Form Results](#retrieving-form-results)
-5. [Form Validation](#form-validation)
-6. [Customizing Layout & Themes](#customizing-layout--themes)
-7. [Advanced Usage](#advanced-usage)
+6. [Form Validation](#form-validation)
+7. [Customizing Layout & Themes](#customizing-layout--themes)
+8. [Advanced Usage](#advanced-usage)
    - [Custom Field Builders](#custom-field-builders)
-8. [Contributing](#contributing)
-9. [License](#license)
+9. [Contributing](#contributing)
+10. [License](#license)
+
+---
+
+## What’s New in 0.0.4
+
+- **Removed Riverpod Dependency**: You no longer need to wrap your app in a `ProviderScope`.
+- **ChampionFormController**: A new controller-based API to manage the form’s state and retrieval of results.
+- **No More Form ID**: Each form is tied to a `ChampionFormController` instead of a string ID. This simplifies usage and also allows coupling multiple `ChampionForm` widgets to a single controller.
+
+If you used an older version of ChampionForms, you’ll need to update your code to use `ChampionFormController` instead of the old `ref`/`formId` approach. This is quick and simple—follow the [Quick Start Example](#quick-start-example) below.
 
 ---
 
 ## Features
 
 - **Declarative** form definition using Dart classes.
-- **Accessible & Ergonomic**: Uses standard Flutter widgets under the hood with minimal custom painting, ensuring you get accessibility built-in.
-![2025-01-03_14-10-21](https://github.com/user-attachments/assets/2d593a9c-5c15-49a0-a238-5d1921919a76)
-
-- **Live Validation**: Add one or more validators (e.g., “required,” “must be an email,” etc.), and watch fields validate automatically.
-![2025-01-03_14-13-54](https://github.com/user-attachments/assets/66d4d449-83ad-4549-8939-619d301f6681)
-
-- **Extendable**: Create custom field builders, layouts, and even define your own theming.
-- **State Management with Riverpod**: Retrieve your form data from anywhere in your app, as long as your `formId` matches.
+- **Accessible & Ergonomic**: Uses standard Flutter widgets under the hood with minimal custom painting, ensuring built-in accessibility.
+- **Live Validation**: Easily add multiple validators (e.g., required, email, etc.), with automatic field-level error handling.
+- **Extendable**: Create custom field builders, layouts, and theming.
 - **Multiple Field Types**: Text input, drop-downs, checkboxes, multi-select, and more.
 
 ---
@@ -46,9 +51,8 @@
    dependencies:
      flutter:
        sdk: flutter
-     flutter_riverpod: <latest_version>
-     championforms: ^0.0.3
-
+     championforms: ^0.0.4
+   ```
 
 2. Run `flutter pub get` in your project directory.
 
@@ -60,17 +64,18 @@
 
 ---
 
-## Quick Start
+## Quick Start Example
 
-Here’s the minimal setup to get a form on the screen:
+Below is an example of how to use ChampionForms **without** Riverpod. Notice that you initialize a **ChampionFormController**, pass it to your `ChampionForm`, and later use it to retrieve form results.
 
 ```dart
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:championforms/championforms.dart';
+import 'package:championforms/controllers/form_controller.dart';
+import 'package:championforms/models/formresults.dart';
+import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -80,25 +85,62 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'ChampionForms Demo',
       theme: ThemeData(useMaterial3: true),
-      home: const MyHomePage(),
+      home: const MyHomePage(title: 'ChampionForms Quick Start'),
     );
   }
 }
 
-class MyHomePage extends ConsumerWidget {
-  const MyHomePage({super.key});
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key, required this.title});
+  final String title;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // 1. Define your fields
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  // 1. Declare a ChampionFormController to manage your form state
+  late ChampionFormController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = ChampionFormController();
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  void _handleFormSubmission() {
+    // 2. Retrieve results and validate
+    final FormResults results = FormResults.getResults(controller: controller);
+    if (!results.errorState) {
+      // All validations passed
+      final email = results.grab("emailField").asString();
+      final password = results.grab("passwordField").asString();
+      debugPrint("Email: $email, Password: $password");
+    } else {
+      debugPrint("There are form errors:");
+      for (var error in results.formErrors) {
+        debugPrint("Field ${error.fieldId} => ${error.reason}");
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final fields = [
       ChampionTextField(
-        id: "username",
-        textFieldTitle: "Username",
+        id: "emailField",
+        textFieldTitle: "Email",
+        hintText: "Enter your email",
         validateLive: true,
       ),
       ChampionTextField(
-        id: "password",
+        id: "passwordField",
         textFieldTitle: "Password",
         password: true,
         validateLive: true,
@@ -106,28 +148,17 @@ class MyHomePage extends ConsumerWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('ChampionForms Quick Start')),
+      appBar: AppBar(title: Text(widget.title)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        // 2. Place the ChampionForm widget
+        // 3. Use ChampionForm with the same controller
         child: ChampionForm(
-          id: "loginForm",
+          controller: controller,
           fields: fields,
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // 3. Grab Results
-          final results = FormResults.getResults(ref: ref, formId: "loginForm");
-          // 4. Check for errors
-          if (!results.errorState) {
-            final user = results.grab("username").asString();
-            final pass = results.grab("password").asString();
-            debugPrint("Username: $user, Password: $pass");
-          } else {
-            debugPrint("Form has errors!");
-          }
-        },
+        onPressed: _handleFormSubmission,
         child: const Icon(Icons.save),
       ),
     );
@@ -139,31 +170,69 @@ class MyHomePage extends ConsumerWidget {
 
 ## Basic Usage
 
-Below is a breakdown of how to declare and use different field types and retrieve their values.
+Below are more details on using **ChampionForm**, **ChampionFormController**, and different field types.
+
+### ChampionFormController
+
+This class manages the internal state of the form, including:
+
+- Storing each field’s data
+- Keeping track of validation errors
+- Letting you fetch form results at any time
+
+**Example**:
+
+```dart
+late ChampionFormController myFormController;
+
+@override
+void initState() {
+  super.initState();
+  myFormController = ChampionFormController();
+}
+
+@override
+void dispose() {
+  myFormController.dispose();
+  super.dispose();
+}
+```
+
+Then you pass this controller into `ChampionForm(controller: myFormController, ...)`.
+When you want to access the results:
+
+```dart
+final results = FormResults.getResults(controller: myFormController);
+if (!results.errorState) {
+  // No errors
+  // ...
+}
+```
 
 ### ChampionForm
 
-`ChampionForm` is the main widget to which you supply:
+`ChampionForm` is the root widget for your fields. You just supply:
 
-- `id`: A **unique** identifier for the form.
-- `fields`: A **List** of `FormFieldBase` objects.
+- `controller`: The `ChampionFormController` managing this form’s state.
+- `fields`: A List of `FormFieldBase` objects (e.g., `ChampionTextField`, `ChampionOptionSelect`, etc.).
 - `theme` (optional): A custom `FormTheme`.
 - `spacing` (optional): Vertical spacing between fields.
 
 ```dart
 ChampionForm(
-  id: "myForm",
+  controller: myFormController,
   fields: [
-    // ChampionTextField, ChampionOptionSelect, etc.
+    ChampionTextField(id: "username", textFieldTitle: "Username"),
+    ChampionOptionSelect(id: "countrySelect", /* ... */),
   ],
   spacing: 12,
-  theme: softBlueColorTheme(context), // or your custom theme
+  theme: softBlueColorTheme(context), // optional
 ),
 ```
 
 ### ChampionTextField
 
-The text field can be configured to handle single-line or multi-line input, passwords, live validation, etc.
+Defines a text input field with optional password hiding, live validation, and more:
 
 ```dart
 ChampionTextField(
@@ -182,34 +251,31 @@ ChampionTextField(
     ),
   ],
   leading: const Icon(Icons.email),
-),
+)
 ```
 
 ### ChampionOptionSelect & ChampionCheckboxSelect
 
-You can build dropdowns or multi-select checkboxes just by changing the field builder.
-`ChampionOptionSelect` defaults to a **Dropdown** builder, while
-`ChampionCheckboxSelect` defaults to a **Checkbox List** builder.
+Used for **dropdown** or **multi-select checkboxes** by changing the underlying field builder.
 
 ```dart
-// A simple dropdown
+// A simple dropdown (ChampionOptionSelect)
 ChampionOptionSelect(
-  id: "country",
+  id: "countrySelect",
   title: "Select Country",
   options: [
     MultiselectOption(label: "USA", value: "us"),
     MultiselectOption(label: "Canada", value: "ca"),
     MultiselectOption(label: "Mexico", value: "mx"),
   ],
-  // You can allow multiple selection by enabling multiselect
-  multiselect: false,
+  multiselect: false, // single selection by default
 ),
 ```
 
 ```dart
-// A checkbox multi-select
+// A checkbox multi-select (ChampionCheckboxSelect)
 ChampionCheckboxSelect(
-  id: "preferredPlatforms",
+  id: "platformSelect",
   title: "Preferred Gaming Platforms",
   options: [
     MultiselectOption(label: "PC", value: "pc"),
@@ -217,7 +283,7 @@ ChampionCheckboxSelect(
     MultiselectOption(label: "Xbox", value: "xbox"),
     MultiselectOption(label: "Nintendo Switch", value: "switch"),
   ],
-  multiselect: true, // can check multiple boxes
+  multiselect: true,
   validateLive: true,
   validators: [
     FormBuilderValidator(
@@ -230,24 +296,18 @@ ChampionCheckboxSelect(
 
 ### Retrieving Form Results
 
-Use `FormResults.getResults(ref: ref, formId: "myForm")` to obtain a snapshot of all field values in a single object.
+ChampionForms uses the `ChampionFormController` rather than an ID. To get the results:
 
 ```dart
-final results = FormResults.getResults(ref: ref, formId: "myForm");
+final results = FormResults.getResults(controller: myFormController);
 
 // Check if any errors
 if (!results.errorState) {
-  // For a text field:
   String email = results.grab("emailField").asString();
-
-  // For a dropdown field:
-  String country = results.grab("country").asString();
-
-  // For multi-select checkboxes:
+  String country = results.grab("countrySelect").asString();
   List<MultiselectOption> selectedPlatforms =
-      results.grab("preferredPlatforms").asMultiselectList();
+      results.grab("platformSelect").asMultiselectList();
 
-  // Print them
   debugPrint("Email: $email, Country: $country");
   debugPrint("Platforms: ${selectedPlatforms.map((e) => e.value).join(', ')}");
 } else {
@@ -262,7 +322,7 @@ if (!results.errorState) {
 
 ## Form Validation
 
-ChampionForms offers both **live validation** (`validateLive = true`) and on-demand validation when you call `FormResults.getResults()`. You can attach multiple validators per field:
+ChampionForms supports **live validation** (`validateLive = true`) and batch validation when you call `FormResults.getResults()`. You can attach multiple validators per field:
 
 ```dart
 validators: [
@@ -277,17 +337,17 @@ validators: [
 ],
 ```
 
-If any validator fails, the field error state is triggered and displayed, and the `errorState` in `FormResults` is set to `true`.
+If any validator fails, the field enters an error state, displays an error message, and the `FormResults.errorState` will be `true`.
 
 ---
 
 ## Customizing Layout & Themes
 
-- **Layouts**: By default, each field’s title and description appear in a **simple layout**. You can provide a custom layout with the `fieldLayout` parameter on each field.
-- **Background**: The default `fieldSimpleBackground` is a minimal container. You can wrap your fields in a card, or any other widget by providing a custom `fieldBackground`.
-- **Themes**: Extend or tweak the `FormTheme` class or use utility themes (like `softBlueColorTheme(context)`) to quickly style your fields.
+- **Layouts**: Each field’s title, description, and error message is wrapped in a simple layout by default. You can provide a custom layout with the `fieldLayout` parameter on each field.
+- **Field Background**: The default is minimal. You can provide a custom container or your own widget by setting `fieldBackground`.
+- **Theming**: Extend or tweak the `FormTheme` class or use the utility themes (like `softBlueColorTheme(context)`) to quickly style your fields.
 
-Example using a custom layout:
+Example custom layout:
 
 ```dart
 ChampionTextField(
@@ -299,7 +359,7 @@ ChampionTextField(
         Text(fieldDetails.title ?? "", style: TextStyle(color: currentColors.textColor)),
         const SizedBox(height: 4),
         renderedField, // The actual text field
-        // ... maybe show errors differently
+        // Possibly display errors differently here
       ],
     );
   },
@@ -312,26 +372,23 @@ ChampionTextField(
 
 ### Custom Field Builders
 
-If you want a bespoke UI for selecting items, you can create your own builder function. See the included [`checkboxFieldBuilder`](https://github.com/...) and [`dropdownFieldBuilder`](https://github.com/...) for references. A custom builder function receives multiple parameters:
+You can create bespoke UIs for selecting items or controlling how the field is rendered. A custom builder function receives multiple parameters, including the current `FormFieldBase`, a list of options (if applicable), current color scheme, etc. See the included [`checkboxFieldBuilder`](https://github.com/...) or [`dropdownFieldBuilder`](https://github.com/...) for reference.
 
 ```dart
 Widget myCustomSelectBuilder(
   BuildContext context,
-  WidgetRef ref,
-  String formId,
+  ChampionFormController controller,
   List<MultiselectOption> choices,
   ChampionOptionSelect field,
   FieldState currentState,
   FieldColorScheme currentColors,
   List<String>? defaultValue,
-  Function(bool focused) updateFocus,
-  Function(MultiselectOption? selectedOption) updateSelectedOption,
 ) {
   // Return a widget tree that suits your needs
 }
 ```
 
-Then pass it into your field:
+Then assign it to your field:
 
 ```dart
 ChampionOptionSelect(
@@ -345,13 +402,13 @@ ChampionOptionSelect(
 
 ## Contributing
 
-Contributions, issues, and feature requests are welcome! Feel free to open a PR or file an issue to get in touch. Please follow the standard [Flutter code style guidelines](https://dart.dev/guides/language/effective-dart/style) and add tests when possible.
+Contributions, issues, and feature requests are welcome! To get started:
 
-1. Fork the repository
-2. Create a new feature branch (`git checkout -b feature/my-awesome-feature`)
-3. Commit your changes
-4. Push to your branch (`git push origin feature/my-awesome-feature`)
-5. Open a Pull Request
+1. **Fork** the repository.
+2. Create a new feature branch (`git checkout -b feature/my-awesome-feature`).
+3. **Commit** your changes.
+4. **Push** to your branch (`git push origin feature/my-awesome-feature`).
+5. Open a **Pull Request**.
 
 ---
 
@@ -359,8 +416,8 @@ Contributions, issues, and feature requests are welcome! Feel free to open a PR 
 
 [MIT License](LICENSE) © 2025 *Champions of the Web*
 
-ChampionForms is free and open-source. See [LICENSE](LICENSE) for more details.
+ChampionForms is free and open-source. See [LICENSE](LICENSE) for details.
 
 ---
 
-That’s it! With **ChampionForms**, you can declaratively define powerful, validated, and accessible forms in Flutter. If you have any questions or issues, don’t hesitate to open an issue or discussion on the repository. Enjoy building great forms with **ChampionForms**!
+That’s it! In **ChampionForms 0.0.4**, you can now declaratively define robust, validated, and accessible forms in Flutter using a simple controller-based API—no more Riverpod setup required. Enjoy building forms with **ChampionForms**!
