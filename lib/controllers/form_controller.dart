@@ -91,7 +91,7 @@ class ChampionFormController extends ChangeNotifier {
     if (field == null || field is! ChampionOptionSelect) {
       debugPrint("Tried to toggle values on a field that doesn't seem to exist: $fieldId");
       return;
-    };
+    }
 
     final List<MultiselectOption> selectOptions = field.options
         .where((option) => toggleOn.contains(option.value))

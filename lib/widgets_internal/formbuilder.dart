@@ -111,7 +111,7 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
 
         // Start with errors
 
-        final int validatorCount = field.validators?.length ?? 0;
+        //final int validatorCount = field.validators?.length ?? 0;
         List<FormBuilderError> errors = [];
 
         errors = [...errors, ...widget.controller.findErrors(field.id)];
@@ -260,7 +260,7 @@ class FormBuilderValidatorErrors extends StatelessWidget {
     // determine if there is an error for this field.
     // If there is, then we need to return it in order of validator
 
-    final int validatorCount = field.validators?.length ?? 0;
+    //final int validatorCount = field.validators?.length ?? 0;
 
     List<FormBuilderError> errors = [];
 
