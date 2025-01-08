@@ -26,10 +26,9 @@ List<FormBuilderError> getFormBuilderErrors({
 
     // Run the validators in order and add the results to the errors.
     int validatorPosition = 0;
+    // Start by invalidating previous errors.
+    controller.clearErrors(field.id);
     for (final FormBuilderValidator validator in field.validators ?? []) {
-      // Start by invalidating previous errors.
-      controller.clearError(field.id, validatorPosition);
-
       final errorResult = validator.validator(result);
 
       if (!errorResult) {

@@ -155,6 +155,13 @@ class ChampionFormController extends ChangeNotifier {
     return formErrors.where((error) => error.fieldId == fieldId).toList();
   }
 
+  void clearErrors(String fieldId) {
+    formErrors = formErrors.where((error) => error.fieldId != fieldId).toList();
+    notifyListeners();
+
+    return;
+  }
+
   void clearError(String fieldId, int errorPosition) {
     formErrors = formErrors
         .where((error) => error.validatorPosition != errorPosition)
