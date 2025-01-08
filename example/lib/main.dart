@@ -1,4 +1,5 @@
 import 'package:championforms/championforms.dart';
+import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/formfieldbase.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
@@ -60,13 +61,26 @@ class MyHomePage extends ConsumerStatefulWidget {
 }
 
 class _MyHomePageState extends ConsumerState<MyHomePage> {
+  late ChampionFormController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = ChampionFormController();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    controller.dispose();
+  }
+
   void _executeLogin() {
     // Because championforms relies on riverpod. Field results
     // are accessible anywhere in the app as long as the form is still active.
     // You can simply build the FormResults object at any time to cause the form
     // to pass results and run validation.
-    final FormResults results =
-        FormResults.getResults(ref: ref, formId: "myForm");
+    final FormResults results = FormResults.getResults(controller: controller);
 
     // Once run the form will tell you if it is in an error state.
     // If true, then stop processing.
@@ -218,7 +232,7 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
             // will appear in the results when the form is evaluated.
             ChampionForm(
               theme: softBlueColorTheme(context),
-              id: "myForm",
+              controller: controller,
               spacing: 10,
               fields: fields,
             ),

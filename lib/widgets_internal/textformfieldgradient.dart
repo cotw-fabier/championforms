@@ -1,4 +1,3 @@
-import 'package:championforms/providers/formbuilderprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -40,9 +39,8 @@ class GradientTextFormField extends ConsumerWidget {
         ),
       ),
       child: TextFormField(
-        focusNode: focusNode ?? ref.watch(FieldFocusNotifierProvider(id)),
-        controller:
-            controller ?? ref.watch(fieldControllerNotifierProvider(id)),
+        focusNode: focusNode,
+        controller: controller,
         style: theme.textTheme.bodyMedium,
         decoration: InputDecoration(
           prefixIcon: icon,

@@ -1,3 +1,4 @@
+import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
@@ -11,7 +12,6 @@ import 'package:championforms/widgets_external/field_builders/checkboxfield_buil
 import 'package:championforms/widgets_external/field_builders/dropdownfield_builder.dart';
 import 'package:championforms/widgets_external/field_layouts/simple_layout.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum FormFieldType {
   textField,
@@ -138,7 +138,6 @@ class ChampionTextField extends FormFieldDef {
     TextEditingController controller,
     required String formId,
     required String fieldId,
-    required WidgetRef ref,
   })? onDrop;
 
   // Does this field support drag functionality?
@@ -149,7 +148,6 @@ class ChampionTextField extends FormFieldDef {
     TextEditingController controller,
     required String formId,
     required String fieldId,
-    required WidgetRef ref,
   })? onPaste;
 
   ChampionTextField({
@@ -203,8 +201,7 @@ class ChampionOptionSelect extends FormFieldDef {
   // Add a builder for defining the field style
   Widget Function(
     BuildContext context,
-    WidgetRef ref,
-    String formId,
+    ChampionFormController controller,
     List<MultiselectOption> choices,
     ChampionOptionSelect field,
     FieldState currentState,
@@ -241,10 +238,10 @@ class ChampionOptionSelect extends FormFieldDef {
 
 class ChampionCheckboxSelect extends ChampionOptionSelect {
   // Add a builder for defining the field style
+  @override
   Widget Function(
     BuildContext context,
-    WidgetRef ref,
-    String formId,
+    ChampionFormController controller,
     List<MultiselectOption> choices,
     ChampionOptionSelect field,
     FieldState currentState,

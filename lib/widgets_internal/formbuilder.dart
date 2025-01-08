@@ -1,34 +1,28 @@
+import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/models/themes.dart';
-import 'package:championforms/providers/field_focus.dart';
-import 'package:championforms/providers/formfield_value_by_id.dart';
-import 'package:championforms/providers/formfieldsstorage.dart';
-import 'package:championforms/providers/multiselect_provider.dart';
 import 'package:championforms/widgets_internal/field_widgets/textfieldwidget.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formfieldbase.dart';
 import 'package:championforms/models/formfieldclass.dart';
-import 'package:championforms/providers/formerrorprovider.dart';
-import 'package:collection/collection.dart';
 
-class FormBuilderWidget extends ConsumerStatefulWidget {
+class FormBuilderWidget extends StatefulWidget {
   const FormBuilderWidget({
     super.key,
     this.fields = const [],
-    required this.id,
     required this.formWrapper,
     required this.theme,
+    required this.controller,
     this.spacer,
   });
 
   final List<FormFieldBase> fields;
-  final String id;
   final double? spacer;
+  final ChampionFormController controller;
   final Widget Function(
     BuildContext context,
     List<Widget> form,
@@ -36,49 +30,56 @@ class FormBuilderWidget extends ConsumerStatefulWidget {
 
   final FormTheme theme;
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() =>
-      _FormBuilderWidgetState();
+  State<StatefulWidget> createState() => _FormBuilderWidgetState();
 }
 
-class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
+class _FormBuilderWidgetState extends State<FormBuilderWidget> {
   @override
   void initState() {
     super.initState();
+    widget.controller.addListener(_rebuildOnControllerUpdate);
 
     // We're going to loop through the incoming fields and set defaults for chip values
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // At this point we need to make sure all these fields are merged together into one list in case we need to reference it later.
-      ref
-          .read(formFieldsStorageNotifierProvider(widget.id).notifier)
-          .addFields(widget.fields.whereType<FormFieldDef>().toList());
+      _updateDefaults();
+    });
+  }
 
-      // Replace with your default values for chips
+  @override
+  void dispose() {
+    widget.controller.removeListener(_rebuildOnControllerUpdate);
+    super.dispose();
+  }
 
-      for (final field in widget.fields) {
-        if (field is FormFieldDef) {
-          // populate default values for the text fields
-          if (field is ChampionTextField) {
-            ref
-                .read(textFormFieldValueByIdProvider("${widget.id}${field.id}")
-                    .notifier)
-                .updateValue(field.defaultValue ?? "");
-          } else if (field is ChampionOptionSelect) {
-            for (final defaultValue in field.defaultValue) {
-              final defaultOption = field.options
-                  .firstWhereOrNull((option) => option.value == defaultValue);
+  void _rebuildOnControllerUpdate() {
+    setState(() {});
+  }
 
-              if (defaultOption != null) {
-                ref
-                    .read(multiSelectOptionNotifierProvider(
-                            "${widget.id}${field.id}")
-                        .notifier)
-                    .addChoice(defaultOption, field.multiselect);
-              }
-            }
+  void _updateDefaults() {
+    // We're going to add all fields from this widget into our controller
+    widget.controller
+        .addFields(widget.fields.whereType<FormFieldDef>().toList());
+
+    // Replace with your default values for chips
+
+    for (final field in widget.fields) {
+      if (field is FormFieldDef) {
+        // populate default values for the text fields
+        if (field is ChampionTextField) {
+          widget.controller
+              .updateTextFieldValue(field.id, field.defaultValue ?? "");
+        } else if (field is ChampionOptionSelect) {
+          final defaultValues = field.options
+              .where((option) => field.defaultValue.contains(option.value))
+              .toList();
+          if (defaultValues.isNotEmpty) {
+            widget.controller.updateMultiselectValues(field.id, defaultValues,
+                multiselect: field.multiselect);
           }
         }
       }
-    });
+    }
   }
 
   @override
@@ -86,7 +87,6 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
     List<Widget> output = [];
 
     // Listen for the form fields as long as this form is active
-    ref.listen(formFieldsStorageNotifierProvider(widget.id), (prev, next) {});
 
     for (final field in widget.fields) {
       if (field is FormFieldDef) {
@@ -101,9 +101,8 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
 
             // Pull results for just this field
             FormResults.getResults(
-              formId: widget.id,
+              controller: widget.controller,
               fields: [field],
-              ref: ref,
             );
           };
         }
@@ -115,12 +114,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
         final int validatorCount = field.validators?.length ?? 0;
         List<FormBuilderError> errors = [];
 
-        for (int i = 0; i < validatorCount; i++) {
-          final error = ref
-              .watch(formBuilderErrorNotifierProvider(widget.id, field.id, i));
-
-          if (error != null) errors.add(error);
-        }
+        errors = [...errors, ...widget.controller.findErrors(field.id)];
 
         // merge the theme from the field into the form theme.
         final finalTheme = field.theme != null
@@ -128,8 +122,7 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
             : widget.theme;
 
         // Set the state
-        final fieldFocused =
-            ref.watch(fieldFocusNotifierProvider(widget.id + field.id));
+        final fieldFocused = widget.controller.isFieldFocused(field.id);
         FieldState fieldState;
         FieldColorScheme fieldColor;
         if (errors.isNotEmpty) {
@@ -153,12 +146,11 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
         switch (field) {
           case ChampionTextField():
             outputWidget = TextFieldWidget(
-              id: "${widget.id}${field.id}",
+              controller: widget.controller,
               field: field,
               fieldOverride: field.fieldOverride,
               fieldState: fieldState,
               colorScheme: fieldColor,
-              formId: widget.id,
               fieldId: field.id,
               onDrop: field.onDrop,
               onPaste: field.onPaste,
@@ -177,50 +169,34 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
             break;
 
           case ChampionOptionSelect():
-
-            // Because we are using a builder instead of a widget we need to listen to the value provider here
-
-            ref.listen(
-                multiSelectOptionNotifierProvider("${widget.id}${field.id}"),
-                (prev, next) {});
-
             outputWidget = field.fieldBuilder(
               context,
-              ref,
-              widget.id,
+              widget.controller,
               field.options,
               field,
               fieldState,
               fieldColor,
-              ref
-                  .watch(multiSelectOptionNotifierProvider(
-                      "${widget.id}${field.id}"))
-                  .map((option) => option.value)
-                  .toList(),
+              widget.controller
+                      .findMultiselectValue(field.id)
+                      ?.values
+                      .map((option) => option.value)
+                      .toList() ??
+                  [],
               (focus) {
-                ref
-                    .read(fieldFocusNotifierProvider(widget.id + field.id)
-                        .notifier)
-                    .setFocus(focus);
+                widget.controller.setFieldFocus(field.id, focus);
               },
               (MultiselectOption? selectedOption) {
                 if (selectedOption != null) {
-                  ref
-                      .read(multiSelectOptionNotifierProvider(
-                              "${widget.id}${field.id}")
-                          .notifier)
-                      .addChoice(selectedOption, field.multiselect);
+                  widget.controller.updateMultiselectValues(
+                      field.id, [selectedOption],
+                      multiselect: field.multiselect);
                 } else {
-                  ref
-                      .read(multiSelectOptionNotifierProvider(
-                              ("${widget.id}${field.id}"))
-                          .notifier)
-                      .resetChoices();
+                  widget.controller.resetMultiselectChoices(field.id);
                 }
                 if (field.validateLive == true) {
                   // Run validation
                   FormResults.getResults(
-                      ref: ref, formId: widget.id, fields: [field]);
+                      controller: widget.controller, fields: [field]);
                 }
               },
             );
@@ -267,18 +243,20 @@ class _FormBuilderWidgetState extends ConsumerState<FormBuilderWidget> {
   }
 }
 
-class FormBuilderValidatorErrors extends ConsumerWidget {
+class FormBuilderValidatorErrors extends StatelessWidget {
   const FormBuilderValidatorErrors({
     super.key,
-    required this.id,
     required this.field,
+    required this.controller,
   });
 
-  final String id;
+  final ChampionFormController controller;
   final FormFieldDef field;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(
+    BuildContext context,
+  ) {
     // determine if there is an error for this field.
     // If there is, then we need to return it in order of validator
 
@@ -286,12 +264,7 @@ class FormBuilderValidatorErrors extends ConsumerWidget {
 
     List<FormBuilderError> errors = [];
 
-    for (int i = 0; i < validatorCount; i++) {
-      final error =
-          ref.watch(formBuilderErrorNotifierProvider(id, field.id, i));
-
-      if (error != null) errors.add(error);
-    }
+    errors = [...errors, ...controller.findErrors(field.id)];
 
     // We have zero errors, so we can return a blank list.
     if (errors == []) {

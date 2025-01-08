@@ -1,6 +1,6 @@
 name: championforms
 description: "Easy Build Data Input Fields of All Types in Flutter"
-version: 0.0.3
+version: 0.0.4
 homepage: "https://championsoftheweb.com"
 repository: "https://github.com/cotw-fabier/championforms/"
 
@@ -19,6 +19,7 @@ dependencies:
   dotted_border: ^2.1.0
   textfield_tags: ^3.0.1
   collection: ^1.19.0
+  uuid: ^4.5.1
 
 dev_dependencies:
   flutter_test:

@@ -1,11 +1,7 @@
 import 'package:championforms/championforms.dart';
+import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/multiselect_option.dart';
-import 'package:championforms/providers/formfield_value_by_id.dart';
-import 'package:championforms/providers/formfieldsstorage.dart';
-import 'package:championforms/providers/multiselect_provider.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:collection/collection.dart';
 
 class FieldResults {
@@ -174,13 +170,11 @@ class FieldResultData {
 
 // We're going to compress the form's fields into an object we can traverse with some handy helper functions for pulling the results out.
 class FormResults {
-  final String formId;
   final bool errorState;
   final List<FormBuilderError> formErrors;
   final List<FieldResults> results;
   // Because this is just a wrapper around calling Riverpod directly we're going to need access to widgetref
   const FormResults({
-    required this.formId,
     this.errorState = false,
     this.formErrors = const [],
     required this.results,
@@ -188,13 +182,11 @@ class FormResults {
 
   // This factory pulls in all results and also does some handy error checking on the fields. The finished result can be worked with to find detailed information on each field.
   factory FormResults.getResults({
-    required WidgetRef ref,
-    required String formId,
+    required ChampionFormController controller,
     bool checkForErrors = true,
     List<FormFieldDef>? fields,
   }) {
-    List<FormFieldDef> finalFields =
-        fields ?? ref.read(formFieldsStorageNotifierProvider(formId));
+    List<FormFieldDef> finalFields = fields ?? controller.fields;
 
     // Initialize our results list
     List<FieldResults> results = [];
@@ -209,21 +201,17 @@ class FormResults {
       switch (field) {
         case ChampionTextField():
           type = FieldType.string;
-          final value =
-              ref.read(textFormFieldValueByIdProvider(formId + field.id));
+          final value = controller.findTextFieldValue(field.id)?.value ?? "";
 
           results.add(FieldResults(
             id: field.id,
-            values: [
-              FieldResultData(value: value, id: formId + field.id, type: type)
-            ],
+            values: [FieldResultData(value: value, id: field.id, type: type)],
             type: type,
           ));
           break;
         case ChampionOptionSelect():
           type = FieldType.bool;
-          final value =
-              ref.read(multiSelectOptionNotifierProvider(formId + field.id));
+          final value = controller.findMultiselectValue(field.id)?.values ?? [];
 
           results.add(FieldResults(
             id: field.id,
@@ -233,7 +221,7 @@ class FormResults {
                         .toString(), // Merge all the options into a comma seperated list
                     optionValue:
                         val, // This is the actual list of values which we can access in our field results.
-                    id: formId + field.id,
+                    id: field.id,
                     active: true,
                     type: type))
                 .toList(),
@@ -245,85 +233,18 @@ class FormResults {
         default:
           type = FieldType.string;
       }
-
-      // Now that we know what field type we're working with. Grab the data from the field and convert it into a FormFieldData object to be added to the FormField list of results.
-
-      // TODO Reintegrate chips and choice fields
-      /*
-      if (field.type == FormFieldType.chips ||
-          field.type == FormFieldType.dropdown ||
-          field.type == FormFieldType.checkbox) {
-        final choiceChips =
-            ref.read(choiceChipNotifierProvider(formId + field.id));
-        List<FieldResultData> chipResults = [];
-        for (final ChoiceChipValue choiceChip in choiceChips) {
-          final fieldResult = FieldResultData(
-            id: choiceChip.id,
-            active: choiceChip.value,
-            type: type,
-          );
-          chipResults.add(fieldResult);
-        }
-
-        results.add(FieldResults(
-          id: field.id,
-          values: chipResults,
-          type: type,
-        ));
-      } else if (field.type == FormFieldType.tagField) {
-        final stringList =
-            ref.read(formListStringsNotifierProvider(formId + field.id));
-
-        final List<FieldResultData> stringResults = stringList
-            .map((item) => FieldResultData(
-                  id: item,
-                  value: item,
-                  type: type,
-                ))
-            .toList();
-
-        results.add(FieldResults(
-          id: field.id,
-          values: field.multiselect
-              ? stringResults
-              : (stringResults.isNotEmpty ? [stringResults.first] : []),
-          type: type,
-        ));
-      } else if (field.type == FormFieldType.richText) {
-        final controller =
-            ref.read(quillControllerNotifierProvider(formId, field.id));
-
-        final delta = controller.document.toDelta();
-
-        results.add(FieldResults(
-          id: field.id,
-          values: [
-            FieldResultData(
-              type: type,
-              id: field.id,
-              deltaValue: delta,
-            )
-          ],
-          type: type,
-        ));
-      } else {
-      */
-
-      //}
     }
     bool errorState = false;
     List<FormBuilderError> formErrors = [];
     // Check for errors and set the error state
     if (checkForErrors) {
-      debugPrint("Checking for errors");
       formErrors.addAll(
-          getFormBuilderErrors(results: results, formId: formId, ref: ref));
+          getFormBuilderErrors(results: results, controller: controller));
       if (formErrors.isNotEmpty) {
         errorState = true;
       }
     }
     return FormResults(
-      formId: formId,
       formErrors: formErrors,
       errorState: errorState,
       results: results,

@@ -1,3 +1,7 @@
+## 0.0.4
+
+Fixing the readme. It needs a little bit of love to fix a few errors.
+
 ## 0.0.3
 
 Major overhaul of the entire library. Open sourced (yay!).

@@ -1,21 +1,18 @@
+import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/validatorclass.dart';
-import 'package:championforms/providers/formerrorprovider.dart';
-import 'package:championforms/providers/formfieldsstorage.dart';
 import 'package:collection/collection.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-List<FormBuilderError> getFormBuilderErrors(
-    {List<FormFieldDef>? fields,
-    required List<FieldResults> results,
-    required String formId,
-    required WidgetRef ref}) {
+List<FormBuilderError> getFormBuilderErrors({
+  List<FormFieldDef>? fields,
+  required List<FieldResults> results,
+  required ChampionFormController controller,
+}) {
   List<FormBuilderError> errors = [];
 
-  List<FormFieldDef> finalFields =
-      fields ?? ref.read(formFieldsStorageNotifierProvider(formId));
+  List<FormFieldDef> finalFields = fields ?? controller.fields;
 
   for (final field in finalFields) {
     final FieldResults? result =
@@ -31,29 +28,19 @@ List<FormBuilderError> getFormBuilderErrors(
     int validatorPosition = 0;
     for (final FormBuilderValidator validator in field.validators ?? []) {
       // Start by invalidating previous errors.
-      ref
-          .read(formBuilderErrorNotifierProvider(
-                  formId, field.id, validatorPosition)
-              .notifier)
-          .clearError();
+      controller.clearError(field.id, validatorPosition);
 
       final errorResult = validator.validator(result);
 
       if (!errorResult) {
         final errorOutput = FormBuilderError(
           fieldId: field.id,
-          formId: formId,
           reason: validator.reason,
           validatorPosition: validatorPosition,
         );
 
         errors.add(errorOutput);
-
-        ref
-            .read(formBuilderErrorNotifierProvider(
-                    formId, field.id, validatorPosition)
-                .notifier)
-            .setError(errorOutput);
+        controller.addError(errorOutput);
       }
 
       validatorPosition++;

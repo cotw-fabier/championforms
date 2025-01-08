@@ -1,3 +1,4 @@
+import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formfieldclass.dart';
@@ -5,12 +6,10 @@ import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_internal/field_widgets/multiselect_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 Widget checkboxFieldBuilder(
   BuildContext context,
-  WidgetRef ref,
-  String formId,
+  ChampionFormController controller,
   List<MultiselectOption> choices,
   ChampionOptionSelect field,
   FieldState currentState,
@@ -20,7 +19,8 @@ Widget checkboxFieldBuilder(
   Function(MultiselectOption? selectedOption) updateSelectedOption,
 ) {
   return MultiselectWidget(
-    id: formId + field.id,
+    id: field.id,
+    controller: controller,
     requestFocus: field.requestFocus,
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,8 +53,7 @@ Widget checkboxFieldBuilder(
                 // Handle onChanged behavior if provided
                 if (field.onChange != null) {
                   final FormResults results = FormResults.getResults(
-                    ref: ref,
-                    formId: formId,
+                    controller: controller,
                     fields: [field],
                   );
                   field.onChange!(results);
@@ -63,8 +62,7 @@ Widget checkboxFieldBuilder(
                 // If you also want to handle onSubmit when toggling checkboxes
                 if (field.onSubmit != null) {
                   final FormResults results = FormResults.getResults(
-                    ref: ref,
-                    formId: formId,
+                    controller: controller,
                     fields: [field],
                   );
                   field.onSubmit!(results);

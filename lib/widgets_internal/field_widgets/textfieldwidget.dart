@@ -1,24 +1,21 @@
+import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/fieldbuilders/textfieldbuilder.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';
-import 'package:championforms/providers/field_focus.dart';
-import 'package:championforms/providers/formfield_value_by_id.dart';
 import 'package:championforms/widgets_internal/fieldwrapperdefault.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 
-class TextFieldWidget extends ConsumerStatefulWidget {
+class TextFieldWidget extends StatefulWidget {
   const TextFieldWidget({
     super.key,
-    required this.id,
+    required this.controller,
     required this.field,
     this.fieldId = "",
-    this.formId = "",
     this.colorScheme,
     required this.fieldState,
     this.fieldOverride,
@@ -38,13 +35,12 @@ class TextFieldWidget extends ConsumerStatefulWidget {
     this.onPaste,
     Widget Function({required Widget child})? fieldBuilder,
   }) : fieldBuilder = fieldBuilder ?? defaultFieldBuilder;
-  final String id;
+  final ChampionFormController controller;
   final ChampionTextField field;
   final TextField? fieldOverride;
   final FieldState fieldState;
   final FieldColorScheme? colorScheme;
   final String fieldId;
-  final String formId;
   final bool requestFocus;
   final bool password;
   final Function(FormResults results)? onChanged;
@@ -59,7 +55,6 @@ class TextFieldWidget extends ConsumerStatefulWidget {
     TextEditingController controller,
     required String formId,
     required String fieldId,
-    required WidgetRef ref,
   })? onDrop;
   final List<DataFormat<Object>>? formats;
   final bool draggable;
@@ -67,7 +62,6 @@ class TextFieldWidget extends ConsumerStatefulWidget {
     TextEditingController controller,
     required String formId,
     required String fieldId,
-    required WidgetRef ref,
   })? onPaste;
   final Widget Function({required Widget child})? fieldBuilder;
 
@@ -78,11 +72,10 @@ class TextFieldWidget extends ConsumerStatefulWidget {
   }
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() =>
-      _TextFieldWidgetState();
+  State<StatefulWidget> createState() => _TextFieldWidgetState();
 }
 
-class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
+class _TextFieldWidgetState extends State<TextFieldWidget> {
   late TextEditingController _controller;
   late FocusNode _pasteFocusNode;
   late FocusNode _focusNode;
@@ -105,7 +98,7 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
         if (evt is KeyDownEvent) {
           if (widget.onSubmitted == null) return KeyEventResult.ignored;
           final formResults =
-              FormResults.getResults(ref: ref, formId: widget.formId);
+              FormResults.getResults(controller: widget.controller);
           widget.onSubmitted!(formResults);
         }
         return KeyEventResult.handled;
@@ -119,14 +112,14 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
 
     _focusNode.addListener(_onLoseFocus);
 
+    widget.controller.addListener(_onControllerValueUpdated);
+
     if (widget.requestFocus) _focusNode.requestFocus();
   }
 
   void _onLoseFocus() {
-    // transmit focus state to provider
-    ref
-        .read(fieldFocusNotifierProvider(widget.id).notifier)
-        .setFocus(_focusNode.hasFocus);
+    // transmit focus state to controller
+    widget.controller.setFieldFocus(widget.field.id, _focusNode.hasFocus);
 
     setState(() {
       _gotFocus = true;
@@ -140,26 +133,28 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
     }
   }
 
-  void _onRiverpodControllerUpdate(String? previous, String next) {
-    if (next != _controller.text) {
-      _controller.text = next;
+  // Allow us to programatically update this text field through the controller
+  void _onControllerValueUpdated() {
+    if (widget.controller.findTextFieldValue(widget.field.id)?.value !=
+        _controller.text) {
+      _controller.text =
+          widget.controller.findTextFieldValue(widget.field.id)?.value ?? "";
     }
     //debugPrint("Riverpod controller update: $next");
   }
 
   void _onControllerChanged() {
-    ref
-        .read(textFormFieldValueByIdProvider(widget.id).notifier)
-        .updateValue(_controller.text);
+    widget.controller.updateTextFieldValue(widget.field.id, _controller.text);
 
     if (widget.onChanged != null) {
       widget.onChanged!(FormResults.getResults(
-          ref: ref, formId: widget.formId, fields: [widget.field]));
+          controller: widget.controller, fields: [widget.field]));
     }
   }
 
   @override
   void dispose() {
+    widget.controller.removeListener(_onControllerValueUpdated);
     _controller.dispose();
     _pasteFocusNode.dispose();
     _focusNode.dispose();
@@ -172,10 +167,7 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(
-        textFormFieldValueByIdProvider(widget.id), _onRiverpodControllerUpdate);
     final ThemeData theme = Theme.of(context);
-    ref.watch(textFormFieldValueByIdProvider(widget.id));
 
     return widget.fieldBuilder!(
       child: overrideTextField(
@@ -196,7 +188,8 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
                     onSubmitted: (value) {
                       if (widget.onSubmitted == null) return;
                       final formResults = FormResults.getResults(
-                          ref: ref, formId: widget.formId);
+                        controller: widget.controller,
+                      );
                       widget.onSubmitted!(formResults);
                     },
                     baseField: widget.fieldOverride!,
@@ -206,8 +199,9 @@ class _TextFieldWidgetState extends ConsumerState<TextFieldWidget> {
                 maxLines: widget.maxLines,
                 onSubmitted: (value) {
                   if (widget.onSubmitted == null) return;
-                  final formResults =
-                      FormResults.getResults(ref: ref, formId: widget.formId);
+                  final formResults = FormResults.getResults(
+                    controller: widget.controller,
+                  );
                   widget.onSubmitted!(formResults);
                 },
                 style: theme.textTheme.bodyMedium,

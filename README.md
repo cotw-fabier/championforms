@@ -47,12 +47,8 @@
      flutter:
        sdk: flutter
      flutter_riverpod: <latest_version>
-     championforms:
-       git:
-         url: https://github.com/YourUserName/championforms.git
-         # Or specify a tag/branch if needed
-         # ref: main
-   ```
+     championforms: ^0.0.3
+
 
 2. Run `flutter pub get` in your project directory.
 

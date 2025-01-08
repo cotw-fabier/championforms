@@ -1,23 +1,23 @@
-import 'package:championforms/providers/field_focus.dart';
+import 'package:championforms/controllers/form_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class MultiselectWidget extends ConsumerStatefulWidget {
+class MultiselectWidget extends StatefulWidget {
   const MultiselectWidget({
     super.key,
     required this.id,
     required this.child,
+    required this.controller,
     this.requestFocus = false,
   });
   final String id;
   final Widget child;
+  final ChampionFormController controller;
   final bool requestFocus;
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() =>
-      _MultiselectWidgetState();
+  State<StatefulWidget> createState() => _MultiselectWidgetState();
 }
 
-class _MultiselectWidgetState extends ConsumerState<MultiselectWidget> {
+class _MultiselectWidgetState extends State<MultiselectWidget> {
   late FocusNode _focusNode;
   //late bool _gotFocus;
   late ValueKey<String> _focusKey;
@@ -49,37 +49,8 @@ class _MultiselectWidgetState extends ConsumerState<MultiselectWidget> {
 
   void _onLoseFocus() {
     // transmit focus state to provider
-    ref
-        .read(fieldFocusNotifierProvider(widget.id).notifier)
-        .setFocus(_focusNode.hasFocus);
-
-    // setState(() {
-    //   _gotFocus = true;
-    // });
-
-    /*if (widget.validate != null && !_focusNode.hasFocus) {
-      // if this field ever recieved focus then we can rely on the text controller
-      // If not, then we'll run the validator on the initial value supplied
-      widget
-          .validate!(_gotFocus ? _controller.text : widget.initialValue ?? "");
-    }*/
+    widget.controller.setFieldFocus(widget.id, _focusNode.hasFocus);
   }
-
-  // BuildContext? _findContextByKey(ValueKey key) {
-  //   BuildContext? targetContext;
-
-  //   void visit(Element element) {
-  //     if (element.widget.key == key) {
-  //       debugPrint(element.widget.key.toString());
-  //       targetContext = element;
-  //     } else {
-  //       element.visitChildren(visit);
-  //     }
-  //   }
-
-  //   WidgetsBinding.instance.rootElement?.visitChildren(visit);
-  //   return targetContext;
-  // }
 
   @override
   void dispose() {
