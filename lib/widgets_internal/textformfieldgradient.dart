@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class GradientTextFormField extends ConsumerWidget {
+class GradientTextFormField extends StatelessWidget {
   const GradientTextFormField(
       {super.key,
       required this.id,
@@ -18,7 +17,7 @@ class GradientTextFormField extends ConsumerWidget {
   final String? hintText;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     return Container(
       width: 250,

@@ -1,5 +1,12 @@
 ## 0.0.4
 
+Killed Riverpod as a dependency for this library. I love Riverpod, but it wasn't being used correctly here.
+Now the library can function with any (or no) state management using the new ChampionFormController.
+
+Removed formIds since we have a controller serving that purpose.
+
+Most things should continue to operate the same, just no more need for riverpod.
+
 Fixing the readme. It needs a little bit of love to fix a few errors.
 
 ## 0.0.3

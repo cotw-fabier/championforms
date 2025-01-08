@@ -1,10 +1,9 @@
 // This widget allows to dynamically insert drag and drop functionality.
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 
-class ConditionalDraggableDropZone extends ConsumerStatefulWidget {
+class ConditionalDraggableDropZone extends StatefulWidget {
   const ConditionalDraggableDropZone({
     super.key,
     required this.child,
@@ -22,7 +21,6 @@ class ConditionalDraggableDropZone extends ConsumerStatefulWidget {
     TextEditingController controller,
     required String formId,
     required String fieldId,
-    required WidgetRef ref,
   })? onDrop;
   final List<DataFormat<Object>>? formats;
 
@@ -31,12 +29,11 @@ class ConditionalDraggableDropZone extends ConsumerStatefulWidget {
   final String formId;
   final String fieldId;
 
-  ConsumerState<ConsumerStatefulWidget> createState() =>
-      _ConditionalDraggableDropZoneState();
+  State<StatefulWidget> createState() => _ConditionalDraggableDropZoneState();
 }
 
 class _ConditionalDraggableDropZoneState
-    extends ConsumerState<ConditionalDraggableDropZone> {
+    extends State<ConditionalDraggableDropZone> {
   late bool _dropReturn;
 
   @override
@@ -70,7 +67,6 @@ class _ConditionalDraggableDropZoneState
               //fleatherController: widget.fletherController,
               formId: widget.formId,
               fieldId: widget.fieldId,
-              ref: ref,
             );
           } else {
             for (final item in event.session.items) {

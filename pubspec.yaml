@@ -11,8 +11,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_riverpod: ^2.5.1
-  riverpod_annotation: ^2.3.5
   email_validator: ^3.0.0
   super_clipboard: ^0.8.17
   super_drag_and_drop: ^0.8.16
@@ -25,10 +23,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
-  riverpod_generator: ^2.4.0
-  build_runner: ^2.4.8
   custom_lint: ^0.6.8
-  riverpod_lint: ^2.3.10
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
