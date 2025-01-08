@@ -78,6 +78,58 @@ class ChampionFormController extends ChangeNotifier {
     return null;
   }
 
+  // This is a helper function so you can find the field options and then toggle them via a list of string values.
+  void toggleMultiSelectValue(
+    String fieldId, {
+    List<String> toggleOn = const [],
+    List<String> toggleOff = const [],
+  }) {
+    final field =
+        fields.firstWhereOrNull((fieldData) => fieldData.id == fieldId);
+
+
+    if (field == null || field is! ChampionOptionSelect) {
+      debugPrint("Tried to toggle values on a field that doesn't seem to exist: $fieldId");
+      return;
+    };
+
+    final List<MultiselectOption> selectOptions = field.options
+        .where((option) => toggleOn.contains(option.value))
+        .toList();
+
+    final List<MultiselectOption> deSelectOptions = field.options
+        .where((option) => toggleOn.contains(option.value))
+        .toList();
+    // Run the logic to add and remove these values
+    final reference = findMultiselectValueIndex(id);
+
+    if (reference == null) {
+     multiselectValues = [
+       MultiselectFormFieldValueById(
+         id: field.id,
+         values: selectOptions,
+       ),
+       ...multiselectValues,];
+    } else {
+
+    multiselectValues[reference] = MultiselectFormFieldValueById(
+        id: multiselectValues[reference].id,
+        values: [
+          // original values minus the addition and subtracted values
+          // Leave original selections intact
+          ...multiselectValues[reference].values.where((value) =>
+              !selectOptions.any((selected) => selected.value == value.value) &&
+              !deSelectOptions
+                  .any((deSelected) => deSelected.value == value.value)),
+
+          // The new values we're adding in
+          ...selectOptions,
+        ]);
+    }
+
+    notifyListeners();
+  }
+
   // Update Multiselect values
   void updateMultiselectValues(String id, List<MultiselectOption> newValue,
       {bool multiselect = false}) {

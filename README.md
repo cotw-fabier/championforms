@@ -1,6 +1,6 @@
 # ChampionForms
 
-**ChampionForms** is a Flutter plugin for building robust, declarative, and accessible forms with minimal boilerplate. It is now powered by an internal form controller rather than Riverpod, making it easy to integrate into any Flutter app.
+**ChampionForms** is a Flutter plugin for building robust, declarative, and accessible forms with minimal boilerplate. It now uses an internal form controller rather than Riverpod, making it easy to integrate into any Flutter app and providing powerful features like manual field updates.
 
 ## Table of Contents
 
@@ -14,6 +14,7 @@
    - [ChampionTextField](#championtextfield)
    - [ChampionOptionSelect & ChampionCheckboxSelect](#championoptionselect--championcheckboxselect)
    - [Retrieving Form Results](#retrieving-form-results)
+   - [Manually Setting Values](#manually-setting-values)
 6. [Form Validation](#form-validation)
 7. [Customizing Layout & Themes](#customizing-layout--themes)
 8. [Advanced Usage](#advanced-usage)
@@ -28,8 +29,9 @@
 - **Removed Riverpod Dependency**: You no longer need to wrap your app in a `ProviderScope`.
 - **ChampionFormController**: A new controller-based API to manage the form’s state and retrieval of results.
 - **No More Form ID**: Each form is tied to a `ChampionFormController` instead of a string ID. This simplifies usage and also allows coupling multiple `ChampionForm` widgets to a single controller.
+- **Manually Setting Field Values**: You can now programmatically update text fields or toggle on/off multi-select fields using the controller (see [Manually Setting Values](#manually-setting-values)).
 
-If you used an older version of ChampionForms, you’ll need to update your code to use `ChampionFormController` instead of the old `ref`/`formId` approach. This is quick and simple—follow the [Quick Start Example](#quick-start-example) below.
+If you used an older version of ChampionForms, you’ll need to update your code to use `ChampionFormController` instead of the old `ref`/`formId` approach.
 
 ---
 
@@ -40,6 +42,7 @@ If you used an older version of ChampionForms, you’ll need to update your code
 - **Live Validation**: Easily add multiple validators (e.g., required, email, etc.), with automatic field-level error handling.
 - **Extendable**: Create custom field builders, layouts, and theming.
 - **Multiple Field Types**: Text input, drop-downs, checkboxes, multi-select, and more.
+- **Manual Field Updates**: Programmatically set text fields, toggle multi-select options, and more.
 
 ---
 
@@ -66,7 +69,7 @@ If you used an older version of ChampionForms, you’ll need to update your code
 
 ## Quick Start Example
 
-Below is an example of how to use ChampionForms **without** Riverpod. Notice that you initialize a **ChampionFormController**, pass it to your `ChampionForm`, and later use it to retrieve form results.
+Below is an example of how to use ChampionForms **without** Riverpod. Notice that you initialize a **ChampionFormController**, pass it to your `ChampionForm`, and later use it to retrieve form results or even manually set field values.
 
 ```dart
 import 'package:championforms/championforms.dart';
@@ -152,9 +155,23 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         // 3. Use ChampionForm with the same controller
-        child: ChampionForm(
-          controller: controller,
-          fields: fields,
+        child: Column(
+          children: [
+            ChampionForm(
+              controller: controller,
+              fields: fields,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              child: const Text("Set Values"),
+              onPressed: () {
+                // 4. Manually set text fields or toggle multi-select fields
+                controller.updateTextFieldValue("emailField", "hello@world.com");
+                // For multi-select or dropdown fields, you can add or remove items from the selected set:
+                // controller.toggleMultiSelectValue("myMultiSelectField", toggleOn: ["Option1"], toggleOff: ["Option2"]);
+              },
+            ),
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -179,6 +196,7 @@ This class manages the internal state of the form, including:
 - Storing each field’s data
 - Keeping track of validation errors
 - Letting you fetch form results at any time
+- **Manually setting field values** (e.g., toggling multi-select, updating text fields)
 
 **Example**:
 
@@ -199,15 +217,6 @@ void dispose() {
 ```
 
 Then you pass this controller into `ChampionForm(controller: myFormController, ...)`.
-When you want to access the results:
-
-```dart
-final results = FormResults.getResults(controller: myFormController);
-if (!results.errorState) {
-  // No errors
-  // ...
-}
-```
 
 ### ChampionForm
 
@@ -268,7 +277,7 @@ ChampionOptionSelect(
     MultiselectOption(label: "Canada", value: "ca"),
     MultiselectOption(label: "Mexico", value: "mx"),
   ],
-  multiselect: false, // single selection by default
+  multiselect: false, // single selection
 ),
 ```
 
@@ -317,6 +326,44 @@ if (!results.errorState) {
   }
 }
 ```
+
+---
+
+### Manually Setting Values
+
+One of the newest features in **0.0.4** is the ability to **manually update** fields via the controller—handy for resetting forms, pre-filling fields, or conditionally toggling multi-select options.
+
+Use the following methods:
+
+- **`updateTextFieldValue(fieldId, newValue)`**: Updates a text field’s value.
+- **`toggleMultiSelectValue(fieldId, { List<String>? toggleOn, List<String>? toggleOff })`**: Toggles on or off specific choices for a multi-select field.
+
+**Example**:
+
+```dart
+ElevatedButton(
+  child: const Text("Set Values"),
+  onPressed: () {
+    // Set the "Email" text field
+    controller.updateTextFieldValue("Email", "Hello@hello.com");
+
+    // Toggle multi-select values on a dropdown or checkbox field
+    controller.toggleMultiSelectValue(
+      "DropdownField",
+      toggleOn: ["Value 3", "Value 2"],
+    );
+
+    // Toggle on some options and toggle off others
+    controller.toggleMultiSelectValue(
+      "SelectBox",
+      toggleOn: ["Hi", "Yoz"],
+      toggleOff: ["Hiya"],
+    );
+  },
+),
+```
+
+After calling these methods, the UI updates automatically to reflect the new values.
 
 ---
 
@@ -372,7 +419,7 @@ ChampionTextField(
 
 ### Custom Field Builders
 
-You can create bespoke UIs for selecting items or controlling how the field is rendered. A custom builder function receives multiple parameters, including the current `FormFieldBase`, a list of options (if applicable), current color scheme, etc. See the included [`checkboxFieldBuilder`](https://github.com/...) or [`dropdownFieldBuilder`](https://github.com/...) for reference.
+You can create bespoke UIs for selecting items or controlling how the field is rendered. A custom builder function receives multiple parameters, including the current `ChampionFormController`, the list of options (if applicable), current color scheme, etc. See the included [`checkboxFieldBuilder`](https://github.com/...) or [`dropdownFieldBuilder`](https://github.com/...) for reference.
 
 ```dart
 Widget myCustomSelectBuilder(
@@ -404,11 +451,11 @@ ChampionOptionSelect(
 
 Contributions, issues, and feature requests are welcome! To get started:
 
-1. **Fork** the repository.
-2. Create a new feature branch (`git checkout -b feature/my-awesome-feature`).
-3. **Commit** your changes.
-4. **Push** to your branch (`git push origin feature/my-awesome-feature`).
-5. Open a **Pull Request**.
+1. **Fork** the repository
+2. Create a new feature branch (`git checkout -b feature/my-awesome-feature`)
+3. **Commit** your changes
+4. **Push** to your branch (`git push origin feature/my-awesome-feature`)
+5. Open a **Pull Request**
 
 ---
 
@@ -420,4 +467,4 @@ ChampionForms is free and open-source. See [LICENSE](LICENSE) for details.
 
 ---
 
-That’s it! In **ChampionForms 0.0.4**, you can now declaratively define robust, validated, and accessible forms in Flutter using a simple controller-based API—no more Riverpod setup required. Enjoy building forms with **ChampionForms**!
+That’s it! In **ChampionForms 0.0.4**, you can now declaratively define robust, validated, and accessible forms in Flutter using a simple controller-based API—and you can even set or toggle field values on-the-fly. Enjoy building forms with **ChampionForms**!

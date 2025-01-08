@@ -235,6 +235,17 @@ class _MyHomePageState extends State<MyHomePage> {
               spacing: 10,
               fields: fields,
             ),
+            ElevatedButton(
+                child: const Text("Set Values"),
+                onPressed: () {
+                  controller.updateTextFieldValue("Email", "Hello@hello.com");
+                  controller.toggleMultiSelectValue("DropdownField", toggleOn: ["Value 3", "Value 2"]);
+                  controller.toggleMultiSelectValue(
+                    "SelectBox",
+                    toggleOn: ["Hi", "Yoz"],
+                    toggleOff: ["Hiya"],
+                  );
+                }),
           ],
         ),
       ),
