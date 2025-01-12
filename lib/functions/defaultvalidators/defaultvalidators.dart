@@ -29,8 +29,9 @@ class DefaultValidators {
       for (final data in result.values) {
         final String value = data.value?.trim() ?? "";
         final int length = value.length;
-        if ((length < (start ?? 0) || length > (end ?? 0)) == false)
+        if ((length <= (start ?? 0) || length >= (end ?? 0)) == false) {
           return false;
+        }
       }
     }
     return true;
@@ -42,7 +43,7 @@ class DefaultValidators {
         String value = data.value?.trim() ?? "";
 // Use a RegExp to check if the string contains only digits and possibly decimal points
 
-        if ((!RegExp(r'^\d*\.?\d+$').hasMatch(value)) == false) return false;
+        if ((RegExp(r'^\d*\.?\d+$').hasMatch(value)) == false) return false;
       }
     }
     return true;
@@ -55,7 +56,7 @@ class DefaultValidators {
         String value = data.value?.trim() ?? "";
 // Use a RegExp to check if the string contains only digits and possibly decimal points
 
-        if ((!RegExp(r'^\d*\.?\d+$').hasMatch(value)) == false) return false;
+        if ((RegExp(r'^\d*\.?\d+$').hasMatch(value)) == false) return false;
       }
     }
     return true;
@@ -82,7 +83,7 @@ class DefaultValidators {
         String value = data.value?.trim() ?? "";
 // Use a RegExp to check if the string contains only digits
 
-        if ((!RegExp(r'^\d+$').hasMatch(value)) == false) return false;
+        if ((RegExp(r'^\d+$').hasMatch(value)) == false) return false;
       }
     }
     return true;
