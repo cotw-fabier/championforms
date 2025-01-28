@@ -18,6 +18,8 @@ dependencies:
   textfield_tags: ^3.0.1
   collection: ^1.19.0
   uuid: ^4.5.1
+  file_picker: ^8.1.7
+  cross_file: ^0.3.4+2
 
 dev_dependencies:
   flutter_test:

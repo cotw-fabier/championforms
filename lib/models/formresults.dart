@@ -1,11 +1,5 @@
-<?xml version="1.0"?>
-<!--
-<ai_context>
-File: /Users/fabier/Documents/championforms/lib/models/formresults.dart
-</ai_context>
--->
 import 'package:championforms/championforms.dart';
-import 'package:championforms/controllers/form_controller.dart';
+import 'package:championforms/models/championfileupload.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:collection/collection.dart';
@@ -90,9 +84,7 @@ class FieldResults {
         if (item == null) return {};
         return {item.id: item.active};
       } else {
-        return {
-          for (var item in values) item.id: item.active
-        };
+        return {for (var item in values) item.id: item.active};
       }
     } else if (type == FieldType.string) {
       if (id != null) {
@@ -215,9 +207,7 @@ class FormResults {
           final value = controller.findTextFieldValue(field.id)?.value ?? "";
           results.add(FieldResults(
             id: field.id,
-            values: [
-              FieldResultData(value: value, id: field.id, type: type)
-            ],
+            values: [FieldResultData(value: value, id: field.id, type: type)],
             type: type,
           ));
           break;
@@ -228,8 +218,7 @@ class FormResults {
           } else {
             type = FieldType.bool;
           }
-          final value =
-              controller.findMultiselectValue(field.id)?.values ?? [];
+          final value = controller.findMultiselectValue(field.id)?.values ?? [];
 
           results.add(FieldResults(
             id: field.id,

@@ -1,12 +1,6 @@
-<?xml version="1.0"?>
-<!--
-<ai_context>
-File: /Users/fabier/Documents/championforms/lib/functions/defaultvalidators/defaultvalidators.dart
-</ai_context>
--->
 import 'package:championforms/models/formresults.dart';
 import 'package:email_validator/email_validator.dart';
-import 'dart:io' show Platform;
+
 import 'dart:core';
 
 class DefaultValidators {

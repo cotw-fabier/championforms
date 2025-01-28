@@ -1,9 +1,3 @@
-<?xml version="1.0"?>
-<!--
-<ai_context>
-File: /Users/fabier/Documents/championforms/lib/widgets_external/field_builders/fileupload_field_builder.dart
-</ai_context>
--->
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/fieldstate.dart';

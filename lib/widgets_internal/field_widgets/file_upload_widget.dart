@@ -1,17 +1,13 @@
-<?xml version="1.0"?>
-<!--
-<ai_context>
-File: /Users/fabier/Documents/championforms/lib/widgets_internal/field_widgets/file_upload_widget.dart
-</ai_context>
--->
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formfieldclass.dart';
 import 'package:championforms/models/multiselect_option.dart';
-import 'package:championforms/widgets_internal/helper_widgets/fading_opacity.dart';
+import 'package:championforms/widgets_external/helper_widgets/fading_opacity.dart';
+import 'package:cross_file/cross_file.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:file_selector/file_selector.dart';
+import 'package:super_clipboard/super_clipboard.dart';
 import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 import 'dart:typed_data';
 
@@ -97,19 +93,17 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
 
   Future<void> _pickFiles() async {
     // If multiselect is true, allow multiple. Otherwise single
+    FilePickerResult? result;
     if (widget.field.multiselect) {
-      final List<XFile> pickedFiles = await openFiles();
-      if (pickedFiles.isNotEmpty) {
-        for (final xfile in pickedFiles) {
-          await _addFile(xfile);
-        }
-      }
+      result = await FilePicker.platform.pickFiles(allowMultiple: true);
     } else {
-      final XFile? pickedFile = await openFile();
-      if (pickedFile != null) {
-        // if single -> clear first
-        _files.clear();
-        await _addFile(pickedFile);
+      result = await FilePicker.platform.pickFiles();
+    }
+
+    if (result != null) {
+      final List<XFile> pickedFiles = result.xFiles;
+      for (final xfile in pickedFiles) {
+        await _addFile(xfile);
       }
     }
   }
@@ -203,7 +197,7 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
           // We'll handle images or files
           if (reader.canProvide(Formats.png) ||
               reader.canProvide(Formats.jpeg) ||
-              reader.canProvide(Formats.file) ||
+              reader.canProvide(Formats.fileUri) ||
               reader.canProvide(Formats.plainTextFile)) {
             // We'll attempt to get a "file" from the item
             await _handleDroppedFile(reader);
@@ -240,7 +234,8 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
                         const SizedBox(width: 8),
                         Text(
                           "Upload File",
-                          style: TextStyle(color: widget.currentColors.textColor),
+                          style:
+                              TextStyle(color: widget.currentColors.textColor),
                         ),
                       ],
                     ),
@@ -324,9 +319,12 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
     Uint8List? fileBytes;
     String name = "untitled";
 
-    if (reader.canProvide(Formats.file)) {
+    if (reader.canProvide(Formats.fileUri)) {
       // This might be from Desktop or other app
-      final file = await reader.getFile(Formats.file);
+      reader.getFile(null, (file) {
+        final stream = file.getStream();
+      });
+      final file = reader;
       if (file != null) {
         fileBytes = await file.readAll();
         name = file.fileName ?? "untitled";
