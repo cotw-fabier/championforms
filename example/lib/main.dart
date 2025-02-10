@@ -1,5 +1,6 @@
 import 'package:championforms/championforms.dart';
 import 'package:championforms/controllers/form_controller.dart';
+import 'package:championforms/models/championfileupload.dart';
 import 'package:championforms/models/formfieldbase.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
@@ -136,23 +137,24 @@ class _MyHomePageState extends State<MyHomePage> {
         leading: const Icon(Icons.verified_user),
       ),
       ChampionTextField(
-          id: "Text Field 1",
-          textFieldTitle: "Password",
-          maxLines: 1,
-          password: true, // Password being true obscures the text in the field
-          validateLive: true,
+        id: "Text Field 1",
+        textFieldTitle: "Password",
+        maxLines: 1,
+        password: true, // Password being true obscures the text in the field
+        validateLive: true,
 
-          // The onSubmit will fire when the user presses enter.
-          // If maxLines is null or set to a larger number then onSubmit will fire on enter and
-          // new line will be triggered on shift + enter.
-          // If no onSubmit is present, then enter will add a new line as normal.
-          onSubmit: (results) => debugPrint("Login"),
-          validators: [
-            FormBuilderValidator(
-                validator: (results) => DefaultValidators().isEmpty(results),
-                reason: "Password is Empty"),
-          ],
-          leading: const Icon(Icons.password)),
+        // The onSubmit will fire when the user presses enter.
+        // If maxLines is null or set to a larger number then onSubmit will fire on enter and
+        // new line will be triggered on shift + enter.
+        // If no onSubmit is present, then enter will add a new line as normal.
+        onSubmit: (results) => debugPrint("Login"),
+        validators: [
+          FormBuilderValidator(
+              validator: (results) => DefaultValidators().isEmpty(results),
+              reason: "Password is Empty"),
+        ],
+        leading: const Icon(Icons.password),
+      ),
 
       // Champion option fields utilize a builder to handle the elements in the field.
       // Currently, this is the base implementation which spits out a Dropdown.
@@ -208,6 +210,8 @@ class _MyHomePageState extends State<MyHomePage> {
           MultiselectOption(value: "Yoz", label: "Sup"),
         ],
       ),
+
+      ChampionFileUpload(id: "fileUpload"),
     ];
 
     return Scaffold(
@@ -239,7 +243,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: const Text("Set Values"),
                 onPressed: () {
                   controller.updateTextFieldValue("Email", "Hello@hello.com");
-                  controller.toggleMultiSelectValue("DropdownField", toggleOn: ["Value 3", "Value 2"]);
+                  controller.toggleMultiSelectValue("DropdownField",
+                      toggleOn: ["Value 3", "Value 2"]);
                   controller.toggleMultiSelectValue(
                     "SelectBox",
                     toggleOn: ["Hi", "Yoz"],
