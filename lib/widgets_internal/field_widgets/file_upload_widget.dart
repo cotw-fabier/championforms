@@ -1,6 +1,7 @@
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/fieldstate.dart';
+import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/formfieldclass.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_external/helper_widgets/fading_opacity.dart';
@@ -22,7 +23,7 @@ class FileUploadWidget extends StatefulWidget {
   final ValueChanged<MultiselectOption?> onFileOptionChange;
 
   const FileUploadWidget({
-    Key? key,
+    super.key,
     required this.id,
     required this.controller,
     required this.field,
@@ -31,7 +32,7 @@ class FileUploadWidget extends StatefulWidget {
     required this.defaultValue,
     required this.onFocusChange,
     required this.onFileOptionChange,
-  }) : super(key: key);
+  });
 
   @override
   State<FileUploadWidget> createState() => _FileUploadWidgetState();
@@ -192,13 +193,18 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
         });
       },
       onPerformDrop: (event) async {
-        for (final item in event.session.items) {
-          final reader = item.dataReader!;
-          // We'll handle images or files
-          if (reader.canProvide(Formats.png) ||
-              reader.canProvide(Formats.jpeg) ||
-              reader.canProvide(Formats.fileUri) ||
-              reader.canProvide(Formats.plainTextFile)) {
+        if (!widget.field.multiselect) {
+          final reader = event.session.items.first.dataReader;
+          if (reader != null) {
+            await _handleDroppedFile(reader);
+            return;
+          }
+        } else {
+          // If Multiselect is true then lets do all the files
+          for (final item in event.session.items) {
+            final reader = item.dataReader!;
+            // We'll handle images or files
+
             // We'll attempt to get a "file" from the item
             await _handleDroppedFile(reader);
           }
@@ -211,7 +217,7 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
           padding: const EdgeInsets.all(8.0),
           decoration: BoxDecoration(
             color: widget.currentColors.backgroundColor
-                .withOpacity(_hovering ? 0.8 : 1.0),
+                .withValues(alpha: _hovering ? 0.8 : 1.0),
             border: Border.all(
               color: widget.currentColors.borderColor,
               width: widget.currentColors.borderSize.toDouble(),
@@ -315,60 +321,39 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
   }
 
   Future<void> _handleDroppedFile(DataReader reader) async {
-    // We'll pick the first recognized format
-    Uint8List? fileBytes;
+    // Pick a default name. We'll replace this in a moment
     String name = "untitled";
+    Stream<Uint8List>? stream;
+    // This might be from Desktop or other app
+    reader.getFile(null, (file) {
+      stream = file.getStream();
+    });
+    final file = reader;
+    name = await file.getSuggestedName() ?? "untitled";
 
-    if (reader.canProvide(Formats.fileUri)) {
-      // This might be from Desktop or other app
-      reader.getFile(null, (file) {
-        final stream = file.getStream();
-      });
-      final file = reader;
-      if (file != null) {
-        fileBytes = await file.readAll();
-        name = file.fileName ?? "untitled";
-      }
-    } else if (reader.canProvide(Formats.png)) {
-      final file = await reader.getFile(Formats.png);
-      if (file != null) {
-        fileBytes = await file.readAll();
-        name = file.fileName ?? "untitled.png";
-      }
-    } else if (reader.canProvide(Formats.jpeg)) {
-      final file = await reader.getFile(Formats.jpeg);
-      if (file != null) {
-        fileBytes = await file.readAll();
-        name = file.fileName ?? "untitled.jpg";
-      }
-    } else if (reader.canProvide(Formats.plainTextFile)) {
-      final file = await reader.getFile(Formats.plainTextFile);
-      if (file != null) {
-        fileBytes = await file.readAll();
-        name = file.fileName ?? "untitled.txt";
-      }
+    final path = "$name-drag"; // We can store something as path
+    final option = MultiselectOption(
+      label: name,
+      value: path,
+      additionalData: FileModel(
+        fileName: name,
+        fileStream: stream,
+        fileReader: reader,
+      ),
+    );
+
+    // Only the last option is kept if multiselect is turned off.
+    if (!widget.field.multiselect) {
+      _files.clear();
     }
+    _files.add(option);
 
-    if (fileBytes != null) {
-      final path = "$name-drag"; // We can store something as path
-      final option = MultiselectOption(
-        label: name,
-        value: path,
-        additionalData: fileBytes,
-      );
-
-      if (!widget.field.multiselect) {
-        _files.clear();
-      }
-      _files.add(option);
-
-      widget.controller.updateMultiselectValues(
-        widget.field.id,
-        [option],
-        multiselect: widget.field.multiselect,
-      );
-      widget.onFileOptionChange(option);
-      setState(() {});
-    }
+    widget.controller.updateMultiselectValues(
+      widget.field.id,
+      [option],
+      multiselect: widget.field.multiselect,
+    );
+    widget.onFileOptionChange(option);
+    setState(() {});
   }
 }

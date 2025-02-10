@@ -1,9 +1,3 @@
-<?xml version="1.0"?>
-<!--
-<ai_context>
-File: /Users/fabier/Documents/championforms/lib/models/championfileupload.dart
-</ai_context>
--->
 import 'package:championforms/models/formfieldclass.dart';
 import 'package:championforms/widgets_external/field_builders/fileupload_field_builder.dart';
 
