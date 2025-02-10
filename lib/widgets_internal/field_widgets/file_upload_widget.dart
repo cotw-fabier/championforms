@@ -1,8 +1,11 @@
 import 'package:championforms/controllers/form_controller.dart';
+import 'package:championforms/functions/filetype_from_mime.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/formfieldclass.dart';
+import 'package:championforms/models/formresults.dart';
+import 'package:championforms/models/mime_filetypes.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_external/helper_widgets/fading_opacity.dart';
 import 'package:cross_file/cross_file.dart';
@@ -92,6 +95,13 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
     super.dispose();
   }
 
+  void _validateLive() {
+    if (widget.field.validateLive) {
+      FormResults.getResults(
+          controller: widget.controller, fields: [widget.field]);
+    }
+  }
+
   Future<void> _pickFiles() async {
     // If multiselect is true, allow multiple. Otherwise single
     FilePickerResult? result;
@@ -109,12 +119,60 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
     }
   }
 
+  Future<void> _handleDroppedFile(DataReader reader) async {
+    // Pick a default name. We'll replace this in a moment
+    String name = "untitled";
+    Stream<Uint8List>? stream;
+    // This might be from Desktop or other app
+    reader.getFile(null, (file) {
+      stream = file.getStream();
+    });
+    final file = reader;
+    name = await file.getSuggestedName() ?? "untitled";
+
+    final path = "$name-drag"; // We can store something as path
+
+    // Create filemodel for storage
+    FileModel fileData = FileModel(
+      fileName: name,
+      fileStream: stream,
+      fileReader: reader,
+      uploadExtension: name.split('.').lastOrNull ?? '',
+    );
+
+    fileData = fileData.copyWith(mimeData: await fileData.readMimeData());
+
+    final option = MultiselectOption(
+      label: name,
+      value: path,
+      additionalData: fileData,
+    );
+
+    setState(() {
+      // Only the last option is kept if multiselect is turned off.
+      if (!widget.field.multiselect) {
+        _files.clear();
+      }
+      _files.add(option);
+
+      widget.controller.updateMultiselectValues(
+        widget.field.id,
+        _files,
+        multiselect: widget.field.multiselect,
+        overwrite: true,
+      );
+      // Report back that a file has been uploaded
+      widget.onFileOptionChange(option);
+
+      // if validate live then run validation
+      _validateLive();
+    });
+  }
+
   Future<void> _addFile(XFile xfile) async {
     final name = xfile.name;
     final path = xfile.path;
     final bytes = await xfile.readAsBytes();
-
-    debugPrint("Added file: $name");
 
     // Create filemodel for storage
     FileModel fileData = FileModel(
@@ -125,8 +183,6 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
 
     fileData = fileData.copyWith(mimeData: await fileData.readMimeData());
 
-    debugPrint(
-        "The file $name is of type ${fileData.mimeData?.mime} with a suggested extension of ${fileData.mimeData?.extension}");
     final option = MultiselectOption(
       label: name,
       value: path,
@@ -147,29 +203,35 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
       );
       // Let the builder know
       widget.onFileOptionChange(option);
+
+      // if validate live then run validation
+      _validateLive();
     });
   }
 
-  String _getFileIcon(MultiselectOption opt) {
-    // Attempt to parse extension to choose an icon
-    final label = opt.label.toLowerCase();
-    if (label.endsWith(".png") ||
-        label.endsWith(".jpg") ||
-        label.endsWith(".jpeg") ||
-        label.endsWith(".gif")) {
-      return "assets/image.png";
-    } else if (label.endsWith(".pdf")) {
-      return "assets/pdf.png";
-    } else if (label.endsWith(".doc") || label.endsWith(".docx")) {
-      return "assets/document.png";
-    } else if (label.endsWith(".xls") || label.endsWith(".xlsx")) {
-      return "assets/excel.png";
-    } else if (label.endsWith(".csv")) {
-      return "assets/csv.png";
-    } else if (label.endsWith(".txt")) {
-      return "assets/document.png";
+  IconData _getFileIcon(MultiselectOption opt) {
+    final mimeType =
+        getFileType((opt.additionalData as FileModel).mimeData?.mime ?? "");
+    switch (mimeType) {
+      case MimeFileType.htmlOrCode:
+        return Icons.code;
+      case MimeFileType.plainText:
+        return Icons.text_snippet;
+      case MimeFileType.document:
+        return Icons.description;
+      case MimeFileType.image:
+        return Icons.image;
+      case MimeFileType.video:
+        return Icons.videocam;
+      case MimeFileType.audio:
+        return Icons.audiotrack;
+      case MimeFileType.executable:
+        return Icons.build;
+      case MimeFileType.archive:
+        return Icons.archive;
+      case MimeFileType.other:
+        return Icons.insert_drive_file;
     }
-    return "assets/file.png";
   }
 
   void _removeFile(MultiselectOption opt) {
@@ -183,13 +245,15 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
       overwrite: true,
     );
     widget.onFileOptionChange(null);
+
+    // if validate live then run validation
+    _validateLive();
   }
 
   @override
   Widget build(BuildContext context) {
     // We'll show a container with drag-n-drop overlay, plus
     // a button to pick files. Then the list of files displayed as icons.
-    final theme = Theme.of(context);
 
     return DropRegion(
       formats: Formats.standardFormats,
@@ -231,7 +295,8 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
           width: double.infinity,
           padding: const EdgeInsets.all(8.0),
           decoration: BoxDecoration(
-            color: widget.currentColors.backgroundColor
+            color: (widget.currentColors.textBackgroundColor ??
+                    widget.currentColors.backgroundColor)
                 .withValues(alpha: _hovering ? 0.8 : 1.0),
             border: Border.all(
               color: widget.currentColors.borderColor,
@@ -243,25 +308,9 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Title row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  InkWell(
-                    onTap: _pickFiles,
-                    child: Row(
-                      children: [
-                        Icon(Icons.upload_file,
-                            color: widget.currentColors.iconColor),
-                        const SizedBox(width: 8),
-                        Text(
-                          "Upload File",
-                          style:
-                              TextStyle(color: widget.currentColors.textColor),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              InkWell(
+                onTap: _pickFiles,
+                child: DropZoneWidget(widget: widget),
               ),
               const SizedBox(height: 8),
               // Show file previews
@@ -276,17 +325,8 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
                       Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Image.asset(
-                            iconAsset,
-                            width: 64,
-                            height: 64,
-                            errorBuilder: (ctx, err, stack) {
-                              // fallback icon
-                              return Icon(Icons.insert_drive_file,
-                                  size: 48,
-                                  color: widget.currentColors.iconColor);
-                            },
-                          ),
+                          Icon(iconAsset,
+                              size: 48, color: widget.currentColors.iconColor),
                           const SizedBox(height: 4),
                           SizedBox(
                             width: 80,
@@ -312,12 +352,12 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
                             child: Container(
                               padding: const EdgeInsets.all(2.0),
                               decoration: BoxDecoration(
-                                color: theme.colorScheme.error,
+                                color: widget.currentColors.textBackgroundColor,
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 Icons.close,
-                                color: theme.colorScheme.onError,
+                                color: widget.currentColors.iconColor,
                                 size: 16,
                               ),
                             ),
@@ -334,52 +374,53 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
       ),
     );
   }
+}
 
-  Future<void> _handleDroppedFile(DataReader reader) async {
-    // Pick a default name. We'll replace this in a moment
-    String name = "untitled";
-    Stream<Uint8List>? stream;
-    // This might be from Desktop or other app
-    reader.getFile(null, (file) {
-      stream = file.getStream();
-    });
-    final file = reader;
-    name = await file.getSuggestedName() ?? "untitled";
+class DropZoneWidget extends StatelessWidget {
+  const DropZoneWidget({
+    super.key,
+    required this.widget,
+  });
 
-    final path = "$name-drag"; // We can store something as path
+  final FileUploadWidget widget;
 
-    // Create filemodel for storage
-    FileModel fileData = FileModel(
-      fileName: name,
-      fileStream: stream,
-      fileReader: reader,
-      uploadExtension: name.split('.').lastOrNull ?? '',
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: widget.currentColors.borderColor,
+            width: widget.currentColors.borderSize.toDouble(),
+            style: BorderStyle.solid,
+          ),
+          borderRadius: widget.currentColors.borderRadius,
+        ),
+        foregroundDecoration: BoxDecoration(
+          border: Border.all(
+            color: widget.currentColors.borderColor,
+            width: widget.currentColors.borderSize.toDouble(),
+            style: BorderStyle.solid,
+          ),
+          borderRadius: widget.currentColors.borderRadius,
+        ),
+        padding: EdgeInsets.all(20),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.upload_file,
+              color: widget.currentColors.iconColor,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              "Upload File",
+              style: TextStyle(color: widget.currentColors.textColor),
+            ),
+          ],
+        ),
+      ),
     );
-
-    fileData = fileData.copyWith(mimeData: await fileData.readMimeData());
-
-    final option = MultiselectOption(
-      label: name,
-      value: path,
-      additionalData: fileData,
-    );
-
-    setState(() {
-      // Only the last option is kept if multiselect is turned off.
-      if (!widget.field.multiselect) {
-        _files.clear();
-      }
-      _files.add(option);
-      debugPrint("Updating fileupload");
-
-      widget.controller.updateMultiselectValues(
-        widget.field.id,
-        _files,
-        multiselect: widget.field.multiselect,
-        overwrite: true,
-      );
-      // Report back that a file has been uploaded
-      widget.onFileOptionChange(option);
-    });
   }
 }
