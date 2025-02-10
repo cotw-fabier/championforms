@@ -1,6 +1,6 @@
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
-import 'package:championforms/models/formfieldclass.dart';
+import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/validatorclass.dart';
 import 'package:collection/collection.dart';

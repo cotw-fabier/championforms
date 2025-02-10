@@ -1,7 +1,5 @@
 import 'package:championforms/championforms.dart';
-import 'package:championforms/controllers/form_controller.dart';
-import 'package:championforms/models/championfileupload.dart';
-import 'package:championforms/models/formfieldbase.dart';
+import 'package:championforms/models/field_types/championfileupload.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:flutter/material.dart';
@@ -217,6 +215,9 @@ class _MyHomePageState extends State<MyHomePage> {
         title: "Upload some files",
         description: "Drag and drop or click and use the file picker.",
         validateLive: true,
+        // dropDisplayWidget: (colors, field) =>
+        //     Center(child: Text(field.title ?? "")),
+        displayUploadedFiles: true,
         validators: [
           FormBuilderValidator(
               validator: (results) => DefaultValidators().isEmpty(results),

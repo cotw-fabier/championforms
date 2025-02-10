@@ -2,7 +2,7 @@
 
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formcontroller/field_focus.dart';
-import 'package:championforms/models/formfieldclass.dart';
+import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/formvalues/multiselect_form_field_value_by_id.dart';
 import 'package:championforms/models/formvalues/text_form_field_value_by_id.dart';
 import 'package:championforms/models/multiselect_option.dart';

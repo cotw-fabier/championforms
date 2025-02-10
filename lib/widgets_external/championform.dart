@@ -1,5 +1,5 @@
 import 'package:championforms/controllers/form_controller.dart';
-import 'package:championforms/models/formfieldbase.dart';
+import 'package:championforms/models/field_types/formfieldbase.dart';
 import 'package:championforms/models/themes.dart';
 import 'package:championforms/widgets_external/form_wrappers/simple_wrapper.dart';
 import 'package:championforms/widgets_internal/formbuilder.dart';

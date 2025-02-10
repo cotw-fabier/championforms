@@ -1,9 +1,10 @@
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/functions/filetype_from_mime.dart';
+import 'package:championforms/models/field_types/championfileupload.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/file_model.dart';
-import 'package:championforms/models/formfieldclass.dart';
+import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/mime_filetypes.dart';
 import 'package:championforms/models/multiselect_option.dart';
@@ -310,64 +311,75 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
               // Title row
               InkWell(
                 onTap: _pickFiles,
-                child: DropZoneWidget(widget: widget),
+                child: (widget.field as ChampionFileUpload).dropDisplayWidget !=
+                        null
+                    ? (widget.field as ChampionFileUpload).dropDisplayWidget!(
+                        widget.currentColors,
+                        widget.field as ChampionFileUpload)
+                    : DropZoneWidget(
+                        field: widget.field as ChampionFileUpload,
+                        currentColors: widget.currentColors),
               ),
-              const SizedBox(height: 8),
+              if ((widget.field as ChampionFileUpload).displayUploadedFiles)
+                const SizedBox(height: 8),
               // Show file previews
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _files.map((opt) {
-                  final iconAsset = _getFileIcon(opt);
-                  return Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(iconAsset,
-                              size: 48, color: widget.currentColors.iconColor),
-                          const SizedBox(height: 4),
-                          SizedBox(
-                            width: 80,
-                            child: Text(
-                              opt.label,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: widget.currentColors.textColor,
-                                fontSize: 12,
+              if ((widget.field as ChampionFileUpload).displayUploadedFiles)
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _files.map((opt) {
+                    final iconAsset = _getFileIcon(opt);
+                    return Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(iconAsset,
+                                size: 48,
+                                color: widget.currentColors.iconColor),
+                            const SizedBox(height: 4),
+                            SizedBox(
+                              width: 80,
+                              child: Text(
+                                opt.label,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: widget.currentColors.textColor,
+                                  fontSize: 12,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 2,
                               ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 2,
                             ),
-                          ),
-                        ],
-                      ),
-                      Positioned(
-                        right: -4,
-                        top: -4,
-                        child: InkWell(
-                          onTap: () => _removeFile(opt),
-                          child: FadingWidget(
-                            child: Container(
-                              padding: const EdgeInsets.all(2.0),
-                              decoration: BoxDecoration(
-                                color: widget.currentColors.textBackgroundColor,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.close,
-                                color: widget.currentColors.iconColor,
-                                size: 16,
+                          ],
+                        ),
+                        Positioned(
+                          right: -4,
+                          top: -4,
+                          child: InkWell(
+                            onTap: () => _removeFile(opt),
+                            child: FadingWidget(
+                              child: Container(
+                                padding: const EdgeInsets.all(2.0),
+                                decoration: BoxDecoration(
+                                  color:
+                                      widget.currentColors.textBackgroundColor,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.close,
+                                  color: widget.currentColors.iconColor,
+                                  size: 16,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  );
-                }).toList(),
-              ),
+                      ],
+                    );
+                  }).toList(),
+                ),
             ],
           ),
         ),
@@ -379,10 +391,15 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
 class DropZoneWidget extends StatelessWidget {
   const DropZoneWidget({
     super.key,
-    required this.widget,
+    required this.currentColors,
+    required this.field,
   });
 
-  final FileUploadWidget widget;
+  /// Current Field Colors (changes as field state changes)
+  final FieldColorScheme currentColors;
+
+  /// Field settings
+  final ChampionFileUpload field;
 
   @override
   Widget build(BuildContext context) {
@@ -391,19 +408,19 @@ class DropZoneWidget extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           border: Border.all(
-            color: widget.currentColors.borderColor,
-            width: widget.currentColors.borderSize.toDouble(),
+            color: currentColors.borderColor,
+            width: currentColors.borderSize.toDouble(),
             style: BorderStyle.solid,
           ),
-          borderRadius: widget.currentColors.borderRadius,
+          borderRadius: currentColors.borderRadius,
         ),
         foregroundDecoration: BoxDecoration(
           border: Border.all(
-            color: widget.currentColors.borderColor,
-            width: widget.currentColors.borderSize.toDouble(),
+            color: currentColors.borderColor,
+            width: currentColors.borderSize.toDouble(),
             style: BorderStyle.solid,
           ),
-          borderRadius: widget.currentColors.borderRadius,
+          borderRadius: currentColors.borderRadius,
         ),
         padding: EdgeInsets.all(20),
         child: Row(
@@ -411,12 +428,12 @@ class DropZoneWidget extends StatelessWidget {
           children: [
             Icon(
               Icons.upload_file,
-              color: widget.currentColors.iconColor,
+              color: currentColors.iconColor,
             ),
             const SizedBox(width: 8),
             Text(
               "Upload File",
-              style: TextStyle(color: widget.currentColors.textColor),
+              style: TextStyle(color: currentColors.textColor),
             ),
           ],
         ),
