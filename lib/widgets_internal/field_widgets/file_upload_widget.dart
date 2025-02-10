@@ -117,7 +117,10 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
     final option = MultiselectOption(
       label: name,
       value: path,
-      additionalData: bytes,
+      additionalData: FileModel(
+        fileName: name,
+        fileBytes: bytes,
+      ),
     );
 
     if (!widget.field.multiselect) {

@@ -22,4 +22,32 @@ class FileModel {
     this.fileStream,
     this.fileBytes,
   });
+
+  FileModel copyWith({
+    String? fileName,
+    DataReader? fileReader,
+    Stream<Uint8List>? fileStream,
+    Uint8List? fileBytes,
+  }) {
+    return FileModel(
+      fileName: fileName ?? this.fileName,
+      fileReader: fileReader ?? this.fileReader,
+      fileStream: fileStream ?? this.fileStream,
+      fileBytes: fileBytes ?? this.fileBytes,
+    );
+  }
+
+  Future<Uint8List?> getFileBytes() async {
+    if (fileBytes != null) {
+      return fileBytes;
+    } else if (fileStream != null) {
+      final List<int> bytesBuffer = [];
+      await for (final chunk in fileStream!) {
+        bytesBuffer.addAll(chunk);
+      }
+      final Uint8List completeBytes = Uint8List.fromList(bytesBuffer);
+      return completeBytes;
+    }
+    return null;
+  }
 }
