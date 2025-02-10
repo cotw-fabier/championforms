@@ -20,7 +20,7 @@ class FileUploadWidget extends StatefulWidget {
   final FieldColorScheme currentColors;
   final List<String> defaultValue;
   final ValueChanged<bool> onFocusChange;
-  final ValueChanged<MultiselectOption?> onFileOptionChange;
+  final Function(MultiselectOption? file) onFileOptionChange;
 
   const FileUploadWidget({
     super.key,
@@ -114,29 +114,40 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
     final path = xfile.path;
     final bytes = await xfile.readAsBytes();
 
+    debugPrint("Added file: $name");
+
+    // Create filemodel for storage
+    FileModel fileData = FileModel(
+      fileName: name,
+      uploadExtension: name.split('.').lastOrNull ?? '',
+      fileBytes: bytes,
+    );
+
+    fileData = fileData.copyWith(mimeData: await fileData.readMimeData());
+
+    debugPrint(
+        "The file $name is of type ${fileData.mimeData?.mime} with a suggested extension of ${fileData.mimeData?.extension}");
     final option = MultiselectOption(
       label: name,
       value: path,
-      additionalData: FileModel(
-        fileName: name,
-        fileBytes: bytes,
-      ),
+      additionalData: fileData,
     );
 
-    if (!widget.field.multiselect) {
-      // clear existing
-      _files.clear();
-    }
-    _files.add(option);
-
-    widget.controller.updateMultiselectValues(
-      widget.field.id,
-      [option],
-      multiselect: widget.field.multiselect,
-    );
-    // Let the builder know
-    widget.onFileOptionChange(option);
-    setState(() {});
+    setState(() {
+      if (!widget.field.multiselect) {
+        // clear existing
+        _files.clear();
+      }
+      _files.add(option);
+      widget.controller.updateMultiselectValues(
+        widget.field.id,
+        _files,
+        multiselect: widget.field.multiselect,
+        overwrite: true,
+      );
+      // Let the builder know
+      widget.onFileOptionChange(option);
+    });
   }
 
   String _getFileIcon(MultiselectOption opt) {
@@ -169,6 +180,7 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
       widget.field.id,
       _files,
       multiselect: widget.field.multiselect,
+      overwrite: true,
     );
     widget.onFileOptionChange(null);
   }
@@ -197,7 +209,7 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
       },
       onPerformDrop: (event) async {
         if (!widget.field.multiselect) {
-          final reader = event.session.items.first.dataReader;
+          final reader = event.session.items.firstOrNull?.dataReader;
           if (reader != null) {
             await _handleDroppedFile(reader);
             return;
@@ -335,28 +347,39 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
     name = await file.getSuggestedName() ?? "untitled";
 
     final path = "$name-drag"; // We can store something as path
+
+    // Create filemodel for storage
+    FileModel fileData = FileModel(
+      fileName: name,
+      fileStream: stream,
+      fileReader: reader,
+      uploadExtension: name.split('.').lastOrNull ?? '',
+    );
+
+    fileData = fileData.copyWith(mimeData: await fileData.readMimeData());
+
     final option = MultiselectOption(
       label: name,
       value: path,
-      additionalData: FileModel(
-        fileName: name,
-        fileStream: stream,
-        fileReader: reader,
-      ),
+      additionalData: fileData,
     );
 
-    // Only the last option is kept if multiselect is turned off.
-    if (!widget.field.multiselect) {
-      _files.clear();
-    }
-    _files.add(option);
+    setState(() {
+      // Only the last option is kept if multiselect is turned off.
+      if (!widget.field.multiselect) {
+        _files.clear();
+      }
+      _files.add(option);
+      debugPrint("Updating fileupload");
 
-    widget.controller.updateMultiselectValues(
-      widget.field.id,
-      [option],
-      multiselect: widget.field.multiselect,
-    );
-    widget.onFileOptionChange(option);
-    setState(() {});
+      widget.controller.updateMultiselectValues(
+        widget.field.id,
+        _files,
+        multiselect: widget.field.multiselect,
+        overwrite: true,
+      );
+      // Report back that a file has been uploaded
+      widget.onFileOptionChange(option);
+    });
   }
 }

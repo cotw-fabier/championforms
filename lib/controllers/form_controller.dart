@@ -87,9 +87,9 @@ class ChampionFormController extends ChangeNotifier {
     final field =
         fields.firstWhereOrNull((fieldData) => fieldData.id == fieldId);
 
-
     if (field == null || field is! ChampionOptionSelect) {
-      debugPrint("Tried to toggle values on a field that doesn't seem to exist: $fieldId");
+      debugPrint(
+          "Tried to toggle values on a field that doesn't seem to exist: $fieldId");
       return;
     }
 
@@ -104,27 +104,28 @@ class ChampionFormController extends ChangeNotifier {
     final reference = findMultiselectValueIndex(id);
 
     if (reference == null) {
-     multiselectValues = [
-       MultiselectFormFieldValueById(
-         id: field.id,
-         values: selectOptions,
-       ),
-       ...multiselectValues,];
+      multiselectValues = [
+        MultiselectFormFieldValueById(
+          id: field.id,
+          values: selectOptions,
+        ),
+        ...multiselectValues,
+      ];
     } else {
+      multiselectValues[reference] = MultiselectFormFieldValueById(
+          id: multiselectValues[reference].id,
+          values: [
+            // original values minus the addition and subtracted values
+            // Leave original selections intact
+            ...multiselectValues[reference].values.where((value) =>
+                !selectOptions
+                    .any((selected) => selected.value == value.value) &&
+                !deSelectOptions
+                    .any((deSelected) => deSelected.value == value.value)),
 
-    multiselectValues[reference] = MultiselectFormFieldValueById(
-        id: multiselectValues[reference].id,
-        values: [
-          // original values minus the addition and subtracted values
-          // Leave original selections intact
-          ...multiselectValues[reference].values.where((value) =>
-              !selectOptions.any((selected) => selected.value == value.value) &&
-              !deSelectOptions
-                  .any((deSelected) => deSelected.value == value.value)),
-
-          // The new values we're adding in
-          ...selectOptions,
-        ]);
+            // The new values we're adding in
+            ...selectOptions,
+          ]);
     }
 
     notifyListeners();
@@ -132,8 +133,34 @@ class ChampionFormController extends ChangeNotifier {
 
   // Update Multiselect values
   void updateMultiselectValues(String id, List<MultiselectOption> newValue,
-      {bool multiselect = false}) {
+      {bool multiselect = false, bool overwrite = false}) {
     final reference = findMultiselectValueIndex(id);
+
+    // if overwrite is true then we don't need to merge, just replace the current list
+    // This is used for file uploads
+    if (overwrite) {
+      if (reference != null) {
+        multiselectValues[reference] = MultiselectFormFieldValueById(
+            id: id,
+            values: multiselect
+                ? newValue
+                : newValue.isNotEmpty
+                    ? [newValue.first]
+                    : []);
+      } else {
+        multiselectValues = [
+          ...multiselectValues,
+          MultiselectFormFieldValueById(
+              id: id,
+              values: multiselect
+                  ? newValue
+                  : newValue.isNotEmpty
+                      ? [newValue.first]
+                      : [])
+        ];
+      }
+      return;
+    }
 
     if (reference != null) {
       // Lets do some massaging to the values to see if we need to remove some items based on this list.
@@ -163,6 +190,7 @@ class ChampionFormController extends ChangeNotifier {
                   : []);
     } else {
       multiselectValues = [
+        ...multiselectValues,
         MultiselectFormFieldValueById(
             id: id,
             values: multiselect

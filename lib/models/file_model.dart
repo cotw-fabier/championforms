@@ -1,5 +1,8 @@
 import 'dart:typed_data';
 
+import 'package:championforms/models/mime_data.dart';
+import 'package:flutter/widgets.dart';
+import 'package:mime/mime.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 
 /// Stores file data which we can pass through
@@ -16,11 +19,19 @@ class FileModel {
   /// Stores the bytes of the file if we got the whole file to pass through
   final Uint8List? fileBytes;
 
+  /// Store the file MimeType. This can't be set until the file has been read
+  final MimeData? mimeData;
+
+  /// Stores the file extension from when it was uploaded
+  final String? uploadExtension;
+
   const FileModel({
     required this.fileName,
     this.fileReader,
     this.fileStream,
     this.fileBytes,
+    this.mimeData,
+    this.uploadExtension,
   });
 
   FileModel copyWith({
@@ -28,12 +39,16 @@ class FileModel {
     DataReader? fileReader,
     Stream<Uint8List>? fileStream,
     Uint8List? fileBytes,
+    MimeData? mimeData,
+    String? uploadExtension,
   }) {
     return FileModel(
       fileName: fileName ?? this.fileName,
       fileReader: fileReader ?? this.fileReader,
       fileStream: fileStream ?? this.fileStream,
       fileBytes: fileBytes ?? this.fileBytes,
+      mimeData: mimeData ?? this.mimeData,
+      uploadExtension: uploadExtension ?? this.uploadExtension,
     );
   }
 
@@ -49,5 +64,14 @@ class FileModel {
       return completeBytes;
     }
     return null;
+  }
+
+  Future<MimeData> readMimeData() async {
+    final mimeType =
+        lookupMimeType(fileName, headerBytes: await getFileBytes());
+    debugPrint("Looking up mime type: $mimeType");
+    return MimeData(
+        extension: extensionFromMime(mimeType ?? "") ?? "",
+        mime: mimeType ?? "application/octet-stream");
   }
 }

@@ -1,8 +1,6 @@
 import 'package:championforms/models/formresults.dart';
 import 'package:email_validator/email_validator.dart';
 
-import 'dart:core';
-
 class DefaultValidators {
   final int? start;
   final int? end;
@@ -94,88 +92,44 @@ class DefaultValidators {
   // NEW FILE VALIDATORS
   // ----------------------------
 
-  // 1. File is present (not empty)
-  bool isFileNotEmpty(FieldResults result) {
-    if (result.type == FieldType.file) {
-      // check if we have any file
-      if (result.values.isEmpty) return false;
-    }
-    return true;
+  /// Checks if all files in [result] have a mime type that starts with at least
+  /// one of the strings in [matchStrings].
+  bool isMimeType(FieldResults result, List<String> matchStrings) {
+    return result.asFile().every((file) {
+      final mime = file.fileDetails?.mimeData?.mime;
+
+      if (mime == null) return false;
+      // Return false if mime is null, otherwise check if it starts with any pattern.
+      return mime != null &&
+          matchStrings.any((pattern) => mime.startsWith(pattern));
+    });
   }
 
-  // 2. Check if all files are images (png/jpg/jpeg/gif)
-  bool isImageFile(FieldResults result) {
-    if (result.type != FieldType.file) return true;
-    final files = result.asFile();
-    for (final file in files) {
-      final extension = _getExtension(file.name);
-      if (!_imageExtensions.contains(extension.toLowerCase())) {
-        return false;
-      }
-    }
-    return true;
+  /// Matches all images of mime type "image/*"
+  bool fileIsImage(FieldResults result) {
+    return isMimeType(result, ["image"]);
   }
 
-  // 3. Check if all files are documents (doc, docx, txt)
-  bool isDocumentFile(FieldResults result) {
-    if (result.type != FieldType.file) return true;
-    final files = result.asFile();
-    for (final file in files) {
-      final extension = _getExtension(file.name);
-      if (!_documentExtensions.contains(extension.toLowerCase())) {
-        return false;
-      }
-    }
-    return true;
+  /// Matches jpg, png, svg, gif, and webp formats
+  bool fileIsCommonImage(FieldResults result) {
+    return isMimeType(result, [
+      "image/jpeg", // .jpg
+      "image/png", // .png
+      "image/svg+xml", // .svg
+      "image/gif", // .gif
+      "image/webp", // .webp
+    ]);
   }
 
-  // 4. CSV
-  bool isCsvFile(FieldResults result) {
-    if (result.type != FieldType.file) return true;
-    final files = result.asFile();
-    for (final file in files) {
-      final extension = _getExtension(file.name);
-      if (extension.toLowerCase() != ".csv") {
-        return false;
-      }
-    }
-    return true;
+  /// Matches doc/docx/pdf/txt/rtf/odt file formats.
+  bool fileIsDocument(FieldResults result) {
+    return isMimeType(result, [
+      "application/msword", // .doc
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+      "application/pdf", // .pdf
+      "text/plain", // .txt
+      "application/rtf", // .rtf
+      "application/vnd.oasis.opendocument.text" // .odt
+    ]);
   }
-
-  // 5. Excel (xls, xlsx)
-  bool isExcelFile(FieldResults result) {
-    if (result.type != FieldType.file) return true;
-    final files = result.asFile();
-    for (final file in files) {
-      final extension = _getExtension(file.name);
-      if (!(extension.toLowerCase() == ".xls" ||
-          extension.toLowerCase() == ".xlsx")) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  // 6. PDF
-  bool isPdfFile(FieldResults result) {
-    if (result.type != FieldType.file) return true;
-    final files = result.asFile();
-    for (final file in files) {
-      final extension = _getExtension(file.name);
-      if (extension.toLowerCase() != ".pdf") {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  // Helper
-  String _getExtension(String name) {
-    final dotIndex = name.lastIndexOf('.');
-    if (dotIndex == -1) return "";
-    return name.substring(dotIndex).toLowerCase();
-  }
-
-  static final _imageExtensions = [".png", ".jpg", ".jpeg", ".gif"];
-  static final _documentExtensions = [".doc", ".docx", ".txt"];
 }

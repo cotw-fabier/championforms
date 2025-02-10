@@ -27,7 +27,9 @@ Widget fileUploadFieldBuilder(
     defaultValue: defaultValue ?? [],
     onFocusChange: (bool focus) => updateFocus(focus),
     onFileOptionChange: (MultiselectOption? option) {
-      updateSelectedOption(option);
+      // Commented out because we don't know what file options we have previously to uploading files.
+      // So this has to be handled down at the widget level.
+      // updateSelectedOption(option);
 
       if (field.onChange != null) {
         final FormResults results = FormResults.getResults(

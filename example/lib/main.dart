@@ -211,7 +211,24 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
 
-      ChampionFileUpload(id: "fileUpload"),
+      ChampionFileUpload(
+        id: "fileUpload",
+        multiselect: true,
+        title: "Upload some files",
+        description: "Drag and drop or click and use the file picker.",
+        validateLive: true,
+        validators: [
+          FormBuilderValidator(
+              validator: (results) => DefaultValidators().isEmpty(results),
+              reason: "No Files Uploaded"),
+          FormBuilderValidator(
+            reason: "Only images allowed",
+            validator: (results) => DefaultValidators().fileIsImage(
+              results,
+            ),
+          ),
+        ],
+      ),
     ];
 
     return Scaffold(
