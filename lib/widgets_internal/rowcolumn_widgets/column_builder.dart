@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 /// errors at the bottom.
 Widget buildChampionColumn(
   ChampionColumn columnField,
-  List<Widget> childFieldWidgets,
   List<FormBuilderError> errors,
   FieldColorScheme colorScheme,
 ) {
