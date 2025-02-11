@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:championforms/models/field_types/championcolumn.dart';
 import 'package:championforms/models/field_types/formfieldbase.dart';
 
@@ -21,12 +23,19 @@ class ChampionRow extends FormFieldBase {
   final bool hideField;
 
   ChampionRow({
-    required super.id,
+    String? id, // Make id optional
     super.title,
     super.description,
     required this.columns,
     this.collapse = false,
     this.rollUpErrors = false,
     this.hideField = false,
-  });
+  }) : super(id: id ?? _generateRandomId());
+
+  // Helper function to generate a random ID
+  static String _generateRandomId() {
+    final random = Random();
+    // For example, create a simple random id string.
+    return 'championRow_${random.nextInt(10000)}';
+  }
 }

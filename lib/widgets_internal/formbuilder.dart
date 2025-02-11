@@ -1,4 +1,5 @@
 import 'package:championforms/controllers/form_controller.dart';
+import 'package:championforms/functions/gather_child_errors.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/field_types/championcolumn.dart';
 import 'package:championforms/models/field_types/championrow.dart';
@@ -7,7 +8,6 @@ import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/models/themes.dart';
 import 'package:championforms/widgets_internal/field_widgets/textfieldwidget.dart';
-import 'package:championforms/widgets_internal/rowcolumn_widgets/column_builder.dart';
 import 'package:championforms/widgets_internal/rowcolumn_widgets/row_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
@@ -18,14 +18,16 @@ class FormBuilderWidget extends StatefulWidget {
   const FormBuilderWidget({
     super.key,
     this.fields = const [],
-    required this.formWrapper,
+    this.formWrapper,
     required this.theme,
     required this.controller,
     this.spacer,
     this.parentErrors,
+    this.fieldPadding,
   });
 
   final List<FormBuilderError>? parentErrors;
+  final EdgeInsets? fieldPadding;
 
   final List<FormFieldBase> fields;
   final double? spacer;
@@ -33,7 +35,7 @@ class FormBuilderWidget extends StatefulWidget {
   final Widget Function(
     BuildContext context,
     List<Widget> form,
-  ) formWrapper;
+  )? formWrapper;
 
   final FormTheme theme;
   @override
@@ -89,34 +91,6 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
     }
   }
 
-  /// Recursively gather *all* errors for a list of fields.
-  /// This is used so a parent row/column can "roll up" child errors
-  /// and display them in one place.
-  List<FormBuilderError> _gatherAllChildErrors(
-    List<FormFieldBase> fields,
-    ChampionFormController controller,
-  ) {
-    final allErrors = <FormBuilderError>[];
-
-    for (final f in fields) {
-      // Direct errors for this field
-      allErrors.addAll(controller.findErrors(f.id));
-
-      // If it's a row, gather errors from each column inside
-      if (f is ChampionRow) {
-        for (final col in f.columns) {
-          allErrors.addAll(_gatherAllChildErrors(col.fields, controller));
-        }
-      }
-      // If it's a column, gather from the fields inside
-      else if (f is ChampionColumn) {
-        allErrors.addAll(_gatherAllChildErrors(f.fields, controller));
-      }
-    }
-
-    return allErrors;
-  }
-
   @override
   Widget build(BuildContext context) {
     List<Widget> output = [];
@@ -147,9 +121,8 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
       // If we have a parent rolling up errors,
       // we skip direct display of errors in the child
       // but we still need the child to highlight in red, etc.
-      List<FormBuilderError> errorsForThisField = widget.parentErrors != null
-          ? widget.parentErrors!
-          : widget.controller.findErrors(field.id);
+      List<FormBuilderError> errorsForThisField =
+          widget.controller.findErrors(field.id);
 
       // If the field is hidden, skip:
       if ((field as dynamic).hideField) {
@@ -197,7 +170,7 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
 
             if (rowField.rollUpErrors) {
               // Gather child errors from all columns inside the row
-              childErrors = _gatherAllChildErrors(
+              childErrors = gatherAllChildErrors(
                 rowField.columns.expand((c) => c.fields).toList(),
                 widget.controller,
               );
@@ -215,57 +188,15 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
             final rowColor =
                 rowHasErrors ? mergedTheme.errorColorScheme! : fieldColors;
 
-            // Build each column as a sub-widget
-            final columnWidgets = <Widget>[];
-            for (final col in rowField.columns) {
-              // Gather errors from the column's fields
-              List<FormBuilderError> colChildErrors = [];
-              if (col.rollUpErrors) {
-                final colChildErrors =
-                    _gatherAllChildErrors(col.fields, widget.controller);
-              }
-              // If rollUpErrors is true for the column,
-              // the column will display them.
-              // Otherwise each field in that column displays its own.
-              final colErrorsToUse = col.rollUpErrors
-                  ? colChildErrors
-                  : widget.controller.findErrors(col.id);
-              final colHasErrors = colErrorsToUse.isNotEmpty;
-              final colColorScheme = colHasErrors
-                  ? mergedTheme.errorColorScheme!
-                  : rowColor; // you could do rowColor or fieldColors
-
-              // We create a sub FormBuilder for the column fields
-              // so that the column can manage them or pass down errors.
-              final columnSubForm = FormBuilderWidget(
-                key: ValueKey(col.id),
-                fields: col.fields,
-                theme: mergedTheme,
-                controller: widget.controller,
-                // If the column has rollUpErrors,
-                // then pass its child errors as parentErrors so children
-                // won't directly display them
-                parentErrors: col.rollUpErrors ? colChildErrors : null,
-                spacer: widget.spacer,
-                formWrapper: (ctx, children) {
-                  // Build champion column
-                  return buildChampionColumn(
-                    col,
-                    children,
-                    colErrorsToUse, // The errors we want to display
-                    colColorScheme,
-                  );
-                },
-              );
-              columnWidgets.add(columnSubForm);
-            }
-
             // Finally build the row
-            outputWidget = buildChampionRow(
-              rowField,
-              columnWidgets,
-              rowErrors,
-              rowColor,
+            outputWidget = ChampionRowWidget(
+              rowField: rowField,
+              columns: rowField.columns,
+              errors: rowErrors.isEmpty ? null : rowErrors,
+              colorScheme: rowColor,
+              controller: widget.controller,
+              theme: mergedTheme,
+              fieldPadding: widget.fieldPadding,
             );
 
             break;
@@ -335,6 +266,14 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
           break;
       }
 
+      // Add padding to the form field if it was defined.
+      if (widget.fieldPadding != null &&
+          widget.fieldPadding != EdgeInsets.all(0) &&
+          field is FormFieldDef) {
+        outputWidget =
+            Padding(padding: widget.fieldPadding!, child: outputWidget);
+      }
+
       // Lets add the new form field with our layout
       if (field is FormFieldDef) {
         output.add(
@@ -365,10 +304,15 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
 
     return FocusTraversalGroup(
       policy: OrderedTraversalPolicy(),
-      child: widget.formWrapper(
-        context,
-        output,
-      ),
+      child: widget.formWrapper != null
+          ? widget.formWrapper!(
+              context,
+              output,
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: output,
+            ),
     );
   }
 }
