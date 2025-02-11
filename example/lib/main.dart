@@ -112,10 +112,10 @@ class _MyHomePageState extends State<MyHomePage> {
     final List<FormFieldBase> fields = [
       ChampionRow(
         collapse: false,
+        rollUpErrors: true,
         columns: [
           ChampionColumn(
             columnFlex: 3,
-            rollUpErrors: false,
             fields: [
               ChampionTextField(
                 id: "Email", // To ID the field, must be unique per form

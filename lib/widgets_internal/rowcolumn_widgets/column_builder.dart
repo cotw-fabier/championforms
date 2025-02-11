@@ -72,7 +72,7 @@ class ChampionColumnWidget extends StatelessWidget {
               controller: controller,
               fields: columnField.fields,
               theme: theme,
-              parentErrors: colChildErrors.isNotEmpty ? colChildErrors : null,
+              parentErrors: colChildErrors.isNotEmpty ? colChildErrors : errors,
               fieldPadding: fieldPadding,
             ),
             // If we're rolling up errors, display them here
