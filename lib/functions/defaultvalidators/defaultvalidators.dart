@@ -12,19 +12,18 @@ class DefaultValidators {
   bool isEmpty(FieldResults result) {
     if (result.type == FieldType.string) {
       for (final FieldResultData data in result.values) {
-        if (data.value?.trim() == "") return false;
+        if ((data.value ?? "").trim().isEmpty) return false;
       }
     } else if (result.type == FieldType.bool) {
       if (result.values.isEmpty) return false;
+    } else if (result.type == FieldType.file) {
+      // File is considered empty if no items
+      if (result.values.isEmpty) return false;
     }
-
     return true;
   }
 
-  // Validator to check if the text length is not between min and max length
-  bool isLengthNotInRange(
-    FieldResults result,
-  ) {
+  bool isLengthNotInRange(FieldResults result) {
     if (result.type == FieldType.string) {
       for (final data in result.values) {
         final String value = data.value?.trim() ?? "";
@@ -41,8 +40,6 @@ class DefaultValidators {
     if (result.type == FieldType.string) {
       for (final data in result.values) {
         String value = data.value?.trim() ?? "";
-// Use a RegExp to check if the string contains only digits and possibly decimal points
-
         if ((RegExp(r'^\d*\.?\d+$').hasMatch(value)) == false) return false;
       }
     }
@@ -54,35 +51,27 @@ class DefaultValidators {
     if (result.type == FieldType.string) {
       for (final data in result.values) {
         String value = data.value?.trim() ?? "";
-// Use a RegExp to check if the string contains only digits and possibly decimal points
-
         if ((RegExp(r'^\d*\.?\d+$').hasMatch(value)) == false) return false;
       }
     }
     return true;
   }
 
-  // Validator to check if the input is not an integer
   bool isInteger(FieldResults result) {
     if (result.type == FieldType.string) {
       for (final data in result.values) {
         String value = data.value?.trim() ?? "";
-// Use a RegExp to check if the string contains only digits
-
         if ((RegExp(r'^\d+$').hasMatch(value)) == false) return false;
       }
     }
     return true;
   }
 
-  // Validator to check if the input is not an integer
   bool isIntegerOrNull(FieldResults result) {
     if (result.asString() == "") return true;
     if (result.type == FieldType.string) {
       for (final data in result.values) {
         String value = data.value?.trim() ?? "";
-// Use a RegExp to check if the string contains only digits
-
         if ((RegExp(r'^\d+$').hasMatch(value)) == false) return false;
       }
     }
@@ -93,13 +82,54 @@ class DefaultValidators {
     if (result.type == FieldType.string) {
       for (final data in result.values) {
         String value = data.value?.trim() ?? "";
-// Use a RegExp to check if the string contains only digits
-
         if ((EmailValidator.validate(value)) == false) return false;
       }
     }
     return true;
   }
-}
 
-//DefaultValidators defaultValidators = DefaultValidators();
+  // ----------------------------
+  // NEW FILE VALIDATORS
+  // ----------------------------
+
+  /// Checks if all files in [result] have a mime type that starts with at least
+  /// one of the strings in [matchStrings].
+  bool isMimeType(FieldResults result, List<String> matchStrings) {
+    return result.asFile().every((file) {
+      final mime = file.fileDetails?.mimeData?.mime;
+
+      if (mime == null) return false;
+      // Return false if mime is null, otherwise check if it starts with any pattern.
+      return mime != null &&
+          matchStrings.any((pattern) => mime.startsWith(pattern));
+    });
+  }
+
+  /// Matches all images of mime type "image/*"
+  bool fileIsImage(FieldResults result) {
+    return isMimeType(result, ["image"]);
+  }
+
+  /// Matches jpg, png, svg, gif, and webp formats
+  bool fileIsCommonImage(FieldResults result) {
+    return isMimeType(result, [
+      "image/jpeg", // .jpg
+      "image/png", // .png
+      "image/svg+xml", // .svg
+      "image/gif", // .gif
+      "image/webp", // .webp
+    ]);
+  }
+
+  /// Matches doc/docx/pdf/txt/rtf/odt file formats.
+  bool fileIsDocument(FieldResults result) {
+    return isMimeType(result, [
+      "application/msword", // .doc
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+      "application/pdf", // .pdf
+      "text/plain", // .txt
+      "application/rtf", // .rtf
+      "application/vnd.oasis.opendocument.text" // .odt
+    ]);
+  }
+}

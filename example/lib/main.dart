@@ -1,6 +1,7 @@
 import 'package:championforms/championforms.dart';
-import 'package:championforms/controllers/form_controller.dart';
-import 'package:championforms/models/formfieldbase.dart';
+import 'package:championforms/models/field_types/championcolumn.dart';
+import 'package:championforms/models/field_types/championfileupload.dart';
+import 'package:championforms/models/field_types/championrow.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:flutter/material.dart';
@@ -109,50 +110,71 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     // Time to build a sample form:
     final List<FormFieldBase> fields = [
-      ChampionTextField(
-        id: "Email", // To ID the field, must be unique per form
-        validateLive:
-            true, // This causes the field to validate itself as soon as it loses focus -- defaults to false.
-        maxLines: 1, // Forces field to one line
-        hintText: "Email", // Hint text in the text field
-        textFieldTitle:
-            "Email", // This is the title which displays in the field until you click on it, then moves to the border
-        description:
-            "Enter your email Address", // Description by default displays above the field below the title
-        // Validators are a list of FormBuilderValidator objects which run a bool function on the results to determine if the input is satisfactory.
-        // Default validators are provided in the DefaultValidators() object. The most important one there is the dependency on valid emails.
-        // If a field isn't valid, then the field state is set to error causing the colors to change and the error is displayed (by default) below the field in errorBorder color.
-        validators: [
-          FormBuilderValidator(
-            validator: (results) => DefaultValidators().isEmpty(results),
-            reason: "Field is empty",
+      ChampionRow(
+        collapse: false,
+        columns: [
+          ChampionColumn(
+            columnFlex: 3,
+            rollUpErrors: false,
+            fields: [
+              ChampionTextField(
+                id: "Email", // To ID the field, must be unique per form
+                validateLive:
+                    true, // This causes the field to validate itself as soon as it loses focus -- defaults to false.
+                maxLines: 1, // Forces field to one line
+                hintText: "Email", // Hint text in the text field
+                textFieldTitle:
+                    "Email", // This is the title which displays in the field until you click on it, then moves to the border
+                description:
+                    "Enter your email Address", // Description by default displays above the field below the title
+                // Validators are a list of FormBuilderValidator objects which run a bool function on the results to determine if the input is satisfactory.
+                // Default validators are provided in the DefaultValidators() object. The most important one there is the dependency on valid emails.
+                // If a field isn't valid, then the field state is set to error causing the colors to change and the error is displayed (by default) below the field in errorBorder color.
+                validators: [
+                  FormBuilderValidator(
+                    validator: (results) =>
+                        DefaultValidators().isEmpty(results),
+                    reason: "Field is empty",
+                  ),
+                  FormBuilderValidator(
+                    validator: (results) =>
+                        DefaultValidators().isEmail(results),
+                    reason: "This isn't an email address",
+                  ),
+                ],
+                // Leading icon. Can make clickable with MouseRegion, and GestureDetector
+                leading: const Icon(Icons.verified_user),
+              ),
+            ],
           ),
-          FormBuilderValidator(
-            validator: (results) => DefaultValidators().isEmail(results),
-            reason: "This isn't an email address",
-          ),
-        ],
-        // Leading icon. Can make clickable with MouseRegion, and GestureDetector
-        leading: const Icon(Icons.verified_user),
-      ),
-      ChampionTextField(
-          id: "Text Field 1",
-          textFieldTitle: "Password",
-          maxLines: 1,
-          password: true, // Password being true obscures the text in the field
-          validateLive: true,
+          ChampionColumn(
+            fields: [
+              ChampionTextField(
+                id: "Text Field 1",
+                textFieldTitle: "Password",
+                description: "Enter your password",
+                maxLines: 1,
+                password:
+                    true, // Password being true obscures the text in the field
+                validateLive: true,
 
-          // The onSubmit will fire when the user presses enter.
-          // If maxLines is null or set to a larger number then onSubmit will fire on enter and
-          // new line will be triggered on shift + enter.
-          // If no onSubmit is present, then enter will add a new line as normal.
-          onSubmit: (results) => debugPrint("Login"),
-          validators: [
-            FormBuilderValidator(
-                validator: (results) => DefaultValidators().isEmpty(results),
-                reason: "Password is Empty"),
-          ],
-          leading: const Icon(Icons.password)),
+                // The onSubmit will fire when the user presses enter.
+                // If maxLines is null or set to a larger number then onSubmit will fire on enter and
+                // new line will be triggered on shift + enter.
+                // If no onSubmit is present, then enter will add a new line as normal.
+                onSubmit: (results) => debugPrint("Login"),
+                validators: [
+                  FormBuilderValidator(
+                      validator: (results) =>
+                          DefaultValidators().isEmpty(results),
+                      reason: "Password is Empty"),
+                ],
+                leading: const Icon(Icons.password),
+              ),
+            ],
+          )
+        ],
+      ),
 
       // Champion option fields utilize a builder to handle the elements in the field.
       // Currently, this is the base implementation which spits out a Dropdown.
@@ -208,6 +230,28 @@ class _MyHomePageState extends State<MyHomePage> {
           MultiselectOption(value: "Yoz", label: "Sup"),
         ],
       ),
+
+      ChampionFileUpload(
+        id: "fileUpload",
+        multiselect: true,
+        title: "Upload some files",
+        description: "Drag and drop or click and use the file picker.",
+        validateLive: true,
+        // dropDisplayWidget: (colors, field) =>
+        //     Center(child: Text(field.title ?? "")),
+        displayUploadedFiles: true,
+        validators: [
+          FormBuilderValidator(
+              validator: (results) => DefaultValidators().isEmpty(results),
+              reason: "No Files Uploaded"),
+          FormBuilderValidator(
+            reason: "Only images allowed",
+            validator: (results) => DefaultValidators().fileIsImage(
+              results,
+            ),
+          ),
+        ],
+      ),
     ];
 
     return Scaffold(
@@ -239,7 +283,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: const Text("Set Values"),
                 onPressed: () {
                   controller.updateTextFieldValue("Email", "Hello@hello.com");
-                  controller.toggleMultiSelectValue("DropdownField", toggleOn: ["Value 3", "Value 2"]);
+                  controller.toggleMultiSelectValue("DropdownField",
+                      toggleOn: ["Value 3", "Value 2"]);
                   controller.toggleMultiSelectValue(
                     "SelectBox",
                     toggleOn: ["Hi", "Yoz"],

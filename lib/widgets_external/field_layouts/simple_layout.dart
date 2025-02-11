@@ -1,6 +1,6 @@
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
-import 'package:championforms/models/formfieldclass.dart';
+import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/widgets_external/helper_widgets/fading_opacity.dart';
 import 'package:flutter/material.dart';
 

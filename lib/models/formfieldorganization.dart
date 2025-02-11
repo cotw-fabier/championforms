@@ -1,4 +1,4 @@
-import 'package:championforms/models/formfieldbase.dart';
+import 'package:championforms/models/field_types/formfieldbase.dart';
 
 class FormFieldRow implements FormFieldBase {
   @override

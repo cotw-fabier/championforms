@@ -2,7 +2,7 @@ import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/fieldbuilders/textfieldbuilder.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/fieldstate.dart';
-import 'package:championforms/models/formfieldclass.dart';
+import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/widgets_internal/fieldwrapperdefault.dart';
 import 'package:flutter/material.dart';

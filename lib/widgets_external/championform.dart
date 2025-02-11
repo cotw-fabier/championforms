@@ -1,5 +1,5 @@
 import 'package:championforms/controllers/form_controller.dart';
-import 'package:championforms/models/formfieldbase.dart';
+import 'package:championforms/models/field_types/formfieldbase.dart';
 import 'package:championforms/models/themes.dart';
 import 'package:championforms/widgets_external/form_wrappers/simple_wrapper.dart';
 import 'package:championforms/widgets_internal/formbuilder.dart';
@@ -15,17 +15,49 @@ class ChampionForm extends StatefulWidget {
     this.formHeight,
     this.theme,
     this.formWrapper = simpleWrapper,
+    this.fieldPadding = const EdgeInsets.all(8),
   });
+
+  /// Takes in a ChampionFormController() instance. Stores all fields and associated data in the controller.
+  /// You can reuse the same controller for multiple ChampionForm() instances as long as all fields have unique IDs.
+  /// This is encouraged behavior for building dynamic form layouts.
   final ChampionFormController controller;
+
+  /// Form Fields. Takes in all the various types of form Fields.
+  /// Base class is FormFieldBase, then various fields are built on top of that:
+  /// ChampionRow(),
+  /// ChampionColumn(),
+  /// ChampionTextField(),
+  /// ChampionDropDown(),
+  /// ChampionOptionSelect(),
+  /// ChampionCheckboxSelect(),
+  /// etc
   final List<FormFieldBase> fields;
+
+  /// Adds a little spacing between fields.
+  /// Leave Blank to rely on other field layouts
   final double? spacing;
+
+  /// Width of the Form
   final double? formWidth;
+
+  /// Max height of the form. Will scroll if reach the edge of the height.
   final double? formHeight;
 
+  /// Field Padding. Gives a default padding to all fields.
+  /// Convienence feature to give all fields some simple padding.
+  /// Defaults to EdgeInsets.all(8.0) for a nice clean look.
+  final EdgeInsets fieldPadding;
+
+  /// This is the form wrapper building. Will wrap the entire output of the form.
+  /// Create any builder you like or leave it default.
   final Widget Function(
     BuildContext context,
     List<Widget> form,
   ) formWrapper;
+
+  /// This is the form Theme. Takes a FormTheme object which defines fonts and colors for the form.
+  /// Will try to default to material widget colors if no theme is given.
   final FormTheme? theme;
 
   @override
@@ -50,6 +82,7 @@ class _ChampionFormWidgetState extends State<ChampionForm> {
       fields: widget.fields,
       theme: formTheme,
       formWrapper: widget.formWrapper,
+      fieldPadding: widget.fieldPadding,
     );
   }
 }
