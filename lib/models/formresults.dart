@@ -310,7 +310,9 @@ class FormResults {
                       value: val.value.toString(),
                       optionValue: val,
                       id: field.id,
-                      mimeType: (val.additionalData as FileModel).mimeData,
+                      mimeType: type == FieldType.file
+                          ? (val.additionalData as FileModel).mimeData
+                          : null,
                       active: true,
                       type: type,
                     ))

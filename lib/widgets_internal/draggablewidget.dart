@@ -148,7 +148,7 @@ class _ConditionalDraggableDropZoneState
                       color: Theme.of(context)
                           .colorScheme
                           .secondaryContainer
-                          .withOpacity(0.5),
+                          .withValues(alpha: 0.5),
                     ),
                     child: Center(
                       child: Text("Drop",
