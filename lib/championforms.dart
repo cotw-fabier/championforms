@@ -3,10 +3,22 @@
 export 'package:championforms/widgets_external/championform.dart';
 // TODO: Create provider container widget for projects which don't implement riverpod but want to use this project
 
-// Export Form Classes
-export 'package:championforms/models/field_types/formfieldclass.dart';
+// Export Form Field Base Classes
 export 'package:championforms/models/field_types/formfieldbase.dart';
+export 'package:championforms/models/field_types/formfieldclass.dart';
+
+export 'package:championforms/models/field_types/championtextfield.dart';
+export 'package:championforms/models/field_types/championoptionselect.dart';
 export 'package:championforms/models/field_types/championfileupload.dart';
+
+// Export rows and columns
+export 'package:championforms/models/field_types/championrow.dart';
+export 'package:championforms/models/field_types/championcolumn.dart';
+
+// Export additional field convenience classes
+export 'package:championforms/models/field_types/convienence_classes/championcheckboxselect.dart';
+
+// Export default validators
 export 'package:championforms/models/validatorclass.dart';
 
 // Export form Controller

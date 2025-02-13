@@ -1,5 +1,6 @@
 // We are going to build one giant controller to handle all aspects of our form.
 
+import 'package:championforms/models/field_types/championoptionselect.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formcontroller/field_focus.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
