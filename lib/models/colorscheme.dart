@@ -13,10 +13,18 @@ class FieldGradientColors {
 // This color scheme can be added to any field to be used for defining the field colors. Otherwise we will use a default version of this which is defined using MediaQuery.of(context).colorScheme when the ChampionForm widget is initalized.
 
 // The order of application is: default theme colors -> form widget colors -> field colors. They will override going from general to specific.
-
+/// A field color Scheme contains all the colors that the form will use.
+/// The colors can be swapped out as the field changes state. Common states are
+/// normal and error.
 class FieldColorScheme {
   final Color backgroundColor;
   final FieldGradientColors? backgroundGradient;
+
+  /// Colors for popover events such as autocomplete dropdown
+  final Color surfaceBackground;
+
+  /// text color for popover events such as autocomplete dropdown
+  final Color surfaceText;
 
   final Color borderColor;
   final FieldGradientColors? borderGradient;
@@ -37,6 +45,8 @@ class FieldColorScheme {
   const FieldColorScheme({
     this.backgroundColor = Colors.white,
     this.backgroundGradient,
+    this.surfaceBackground = Colors.white,
+    this.surfaceText = Colors.black,
     this.borderColor = Colors.grey,
     this.borderGradient,
     this.borderSize = 1,

@@ -84,7 +84,12 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
   late TextEditingController _controller;
   late FocusNode _pasteFocusNode;
   late FocusNode _focusNode;
+  // Removed _autoCompleteFocusNode in favor of per-item focus nodes.
   late bool _gotFocus;
+
+  // track the previous field value so we don't send meaningless field updates
+  // to the champion controller
+  String _lastTextValue = "";
 
   // Autocomplete options are tracked here.
   late List<AutoCompleteOption> _autoCompleteOptions;
@@ -92,106 +97,133 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
   // Debounce timer for autocomplete
   Timer? _debounceTimer;
 
-  //Other AutoComplete Dropdown variables to track
+  // Overlay layer link.
   final LayerLink _layerLink = LayerLink();
-  late bool _autoCompleteAvailable; // Tracks if we can perform autocomplete
+  late bool _autoCompleteAvailable; // Tracks if autocomplete is available
 
   OverlayEntry? _overlayEntry;
 
   bool _updatedFromAutoComplete = false;
   AutoCompleteOption? _lastPickedOption;
 
+  // Scroll controller for the autocomplete list.
+  final ScrollController _scrollController = ScrollController();
+
+  // List of focus nodes for each autocomplete list item.
+  List<FocusNode> _autoCompleteItemFocusNodes = [];
+
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialValue);
+    // set the last value to the default field value
+    _lastTextValue = widget.initialValue ?? "";
 
     _gotFocus = false;
-
-    // Add autocomplete options from the incoming field
     _autoCompleteOptions = [];
     _autoCompleteAvailable = false;
 
     _focusNode = FocusNode(
-        // This code attaches shift  enter functionality for
-        // new lines if there is an onsubmitted function
-        // present in the form field
-        onKeyEvent: (FocusNode node, KeyEvent evt) {
-      if (!HardwareKeyboard.instance.isShiftPressed &&
-          evt.logicalKey.keyLabel == 'Enter') {
-        if (evt is KeyDownEvent) {
-          if (widget.onSubmitted == null) return KeyEventResult.ignored;
-          final formResults =
-              FormResults.getResults(controller: widget.controller);
-          widget.onSubmitted!(formResults);
+      onKeyEvent: (FocusNode node, KeyEvent evt) {
+        // When the overlay is visible, intercept arrow keys to move focus.
+        if (_overlayEntry != null && _autoCompleteOptions.isNotEmpty) {
+          if (evt is KeyDownEvent) {
+            if (evt.logicalKey == LogicalKeyboardKey.tab) {
+              return _handleKeyboardFocusAutocompleteDropdown();
+            } else if (evt.logicalKey == LogicalKeyboardKey.escape) {
+              // Dismiss the autocomplete overlay.
+              _removeOverlay();
+              return KeyEventResult.handled;
+            }
+          }
         }
-        return KeyEventResult.handled;
-      } else if (evt.logicalKey.keyLabel == 'Tab' && _autoCompleteAvailable) {
-        // Insert logic here for handling inserting autocomplete data.
-        // TODO: fix this to insert the active autocomplete
-        _controller.text = "";
-        return KeyEventResult.handled;
-      } else {
+        // Handle Enter key submission if no autocomplete navigation is in play.
+        if (!HardwareKeyboard.instance.isShiftPressed &&
+            evt.logicalKey == LogicalKeyboardKey.enter) {
+          if (evt is KeyDownEvent) {
+            if (widget.onSubmitted != null) {
+              final formResults =
+                  FormResults.getResults(controller: widget.controller);
+              widget.onSubmitted!(formResults);
+              return KeyEventResult.handled;
+            }
+          }
+        }
         return KeyEventResult.ignored;
-      }
-    });
+      },
+    );
+
     _pasteFocusNode = FocusNode();
 
     _controller.addListener(_onControllerChanged);
-
     _focusNode.addListener(_onLoseFocus);
-
     widget.controller.addListener(_onControllerValueUpdated);
 
     if (widget.requestFocus) _focusNode.requestFocus();
   }
 
+  KeyEventResult _handleKeyboardFocusAutocompleteDropdown() {
+    // Move focus to the first autocomplete item.
+    if (_autoCompleteItemFocusNodes.isNotEmpty) {
+      debugPrint("Trying to focus the autocomplete menu");
+      try {
+        selectTopAutoCompleteOption();
+      } catch (e) {
+        // Couldn't request focus for some reason, so pass through the key
+        return KeyEventResult.ignored;
+      }
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   Future<void> _onLoseFocus() async {
-    // transmit focus state to controller
+    // Transmit focus state to the controller.
     widget.controller
-        .setFieldFocus(widget.field.id, _focusNode.hasFocus, widget.field);
+        .setFieldFocus(widget.field.id, _anyFocusActive, widget.field);
 
     setState(() {
       _gotFocus = true;
     });
 
-    if (widget.validate != null && !_focusNode.hasFocus) {
-      // if this field ever recieved focus then we can rely on the text controller
-      // If not, then we'll run the validator on the initial value supplied
-      widget
-          .validate!(_gotFocus ? _controller.text : widget.initialValue ?? "");
+    if (widget.validate != null && !_anyFocusActive) {
+      await Future.delayed(const Duration(milliseconds: 200), () {
+        if (!_anyFocusActive) {
+          widget.validate!(
+              _gotFocus ? _controller.text : widget.initialValue ?? "");
+        }
+      });
     }
 
-    // When the controller's active field updates
-    // check if the field has focus and if the field is registered as active
-    if (!_focusNode.hasFocus) {
-      // We wait to see if this is just a momentary loss of focus as it should snap
-      // from the suggested autosuggestion back to the field if we're inserting content
-      // If we did actually lose focus then remove it after waiting a hot second
+    if (!_anyFocusActive) {
       await Future.delayed(const Duration(milliseconds: 200), () {
-        if (!_focusNode.hasFocus) {
+        if (!_anyFocusActive) {
           _removeOverlay(requestFocus: false);
         }
       });
     }
   }
 
-  // Allow us to programatically update this text field through the controller
-  void _onControllerValueUpdated() {
-    if (widget.controller.findTextFieldValue(widget.field.id)?.value !=
-        _controller.text) {
-      _controller.text =
-          widget.controller.findTextFieldValue(widget.field.id)?.value ?? "";
-    }
+  bool get _anyFocusActive =>
+      _focusNode.hasFocus ||
+      _autoCompleteItemFocusNodes.any((node) => node.hasFocus);
 
-    //debugPrint("Riverpod controller update: $next");
+  void _onControllerValueUpdated() {
+    final newValue =
+        widget.controller.findTextFieldValue(widget.field.id)?.value ?? "";
+    if (newValue != _controller.text) {
+      final currentValue = _controller.value;
+      _controller.value = currentValue.copyWith(
+        text: newValue,
+        // Preserve the current selection if it’s still valid; otherwise, collapse at the end.
+        selection: currentValue.selection.isValid
+            ? currentValue.selection
+            : TextSelection.collapsed(offset: newValue.length),
+      );
+    }
   }
 
-  // Quick helper to handle the min. typical pattern
-  // updates autocomplete options using the callback function
-  // provided in field.autoComplete.updateOptions();
   void _scheduleUpdateOptions(String currentText) {
-    // Cancel previous timer if still active
     _debounceTimer?.cancel();
     _debounceTimer = Timer(
         widget.field.autoComplete?.debounceWait ??
@@ -201,66 +233,62 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
 
   Future<void> _doUpdateOptions(String val) async {
     if (widget.field.autoComplete?.updateOptions != null) {
-      // We may want to keep a separate Timer so we can also use autoComplete.debounceDuration.
-      // For simplicity, let's do a single short wait above. You can expand as needed.
       final updated = await widget.field.autoComplete!.updateOptions!(val);
       setState(() {
         _autoCompleteOptions = updated;
       });
       _showOrRemoveOverlay();
     } else {
-      debugPrint("Filtering options with ${_autoCompleteOptions.length}");
-      // If no callback, filter initial options.
       setState(() => _autoCompleteOptions = _defaultAutoCompleteFilter(val));
       _showOrRemoveOverlay();
     }
   }
 
   void _onControllerChanged() {
-    final textVal = _controller.text;
-
-    widget.controller.updateTextFieldValue(widget.field.id, _controller.text);
-
-    if (widget.onChanged != null) {
-      widget.onChanged!(FormResults.getResults(
-          controller: widget.controller, fields: [widget.field]));
-    }
-
-    // If we have autocomplete turned on and user typed something,
-    // let's do an update.
-    if (widget.field.autoComplete != null &&
-        widget.field.autoComplete!.type != AutoCompleteType.none &&
-        textVal != "" &&
-        _lastPickedOption?.value != textVal) {
-      _scheduleUpdateOptions(textVal);
-    } else {
-      // Just remove overlay if any
-      //_removeOverlay();
-      //_showOrRemoveOverlay();
-
-      // Do we need to reset to the default options?
-    }
-    if (_lastPickedOption != null &&
-        _lastPickedOption?.value != _controller.text) {
+    final newText = _controller.text;
+    // Only update if the actual text (not just selection) has changed.
+    if (newText != _lastTextValue) {
+      // Re-enable showing the autocomplete dropdown
+      // set to false to stop it blocking from recreating the overlay.
       _updatedFromAutoComplete = false;
+
+      // Store the last value so we can see if the controller meaningfully changed
+      _lastTextValue = newText;
+      widget.controller.updateTextFieldValue(widget.field.id, newText);
+
+      if (widget.onChanged != null) {
+        widget.onChanged!(FormResults.getResults(
+            controller: widget.controller, fields: [widget.field]));
+      }
+
+      if (widget.field.autoComplete != null &&
+          widget.field.autoComplete!.type != AutoCompleteType.none &&
+          newText.isNotEmpty &&
+          _lastPickedOption?.value != newText) {
+        _scheduleUpdateOptions(newText);
+      }
     }
   }
 
-  // Decide whether to show or remove the autocomplete overlay
+  // Select the top autocomplete option and update the field.
+  void selectTopAutoCompleteOption() {
+    if (_autoCompleteOptions.isNotEmpty) {
+      championCallback(_autoCompleteOptions.first);
+    }
+  }
+
   void _showOrRemoveOverlay() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_focusNode.hasFocus &&
+      if (_anyFocusActive &&
           widget.field.autoComplete != null &&
           widget.field.autoComplete!.type == AutoCompleteType.dropdown &&
           _controller.text.isNotEmpty &&
           _autoCompleteOptions.isNotEmpty &&
           !_updatedFromAutoComplete) {
-        _removeOverlay(); // remove any existing overlay
+        _removeOverlay(); // Remove any existing overlay.
         _overlayEntry = _createOverlayEntry();
         Overlay.of(context).insert(_overlayEntry!);
       } else {
-        // Reset available options
-
         if (_updatedFromAutoComplete) _removeOverlay(requestFocus: false);
         _autoCompleteOptions = [];
       }
@@ -268,39 +296,41 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
   }
 
   void _removeOverlay({bool keepAway = false, bool requestFocus = true}) {
-    // Request focus back to the field after clicking an option in the overlay.
     if (requestFocus) {
       _focusNode.requestFocus();
       _controller.selection = TextSelection.fromPosition(
           TextPosition(offset: _controller.text.length));
     }
-
     _overlayEntry?.remove();
     _overlayEntry = null;
-    _updatedFromAutoComplete = keepAway;
+    _autoCompleteAvailable = false;
+    if (keepAway) _updatedFromAutoComplete = keepAway;
+    _disposeAutoCompleteItemFocusNodes();
   }
 
-  // The championCallback function used to set the text and close
-  // in an AutoComplete dropdown
+  // Dispose all autocomplete item focus nodes.
+  void _disposeAutoCompleteItemFocusNodes() {
+    for (final node in _autoCompleteItemFocusNodes) {
+      node.dispose();
+    }
+    _autoCompleteItemFocusNodes.clear();
+  }
+
+  // The championCallback function used for autocomplete selection.
   String championCallback(AutoCompleteOption picked) {
     setState(() {
-      // Update the controller
       _controller.text = picked.value;
-      // Save the last picked option for comparison later.
       _lastPickedOption = picked;
       widget.controller.updateTextFieldValue(widget.field.id, picked.value);
-      // If they gave a callback in the option, run it
       if (picked.callback != null) {
         picked.callback!(picked);
       }
-
       _removeOverlay(keepAway: true);
     });
-
     return picked.value;
   }
 
-  // Default filter of autocomplete options, does simple string "startsWith()"
+  // Default filter for autocomplete options using simple string "startsWith".
   List<AutoCompleteOption> _defaultAutoCompleteFilter(String value) {
     return widget.field.autoComplete?.initialOptions
             .where((option) => option.value.startsWith(value))
@@ -309,79 +339,83 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
   }
 
   OverlayEntry _createOverlayEntry() {
-    // First, figure out the position of the text field in global coordinates
+    // Mark autocomplete as available.
+    _autoCompleteAvailable = true;
+
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) {
-      // fallback
       return OverlayEntry(builder: (_) => const SizedBox());
     }
 
     final size = renderBox.size;
-    debugPrint("Renderbox Size is ${renderBox.size.height}");
     final offset = renderBox.localToGlobal(Offset.zero);
 
-    // Figure out how much space is below vs above
-    final screenSize = MediaQuery.sizeOf(context);
-    final spaceBelow = screenSize.height - (offset.dy + size.height);
-    // We'll use a minHeight from the builder or default to 100
+    final mediaQuery = MediaQuery.of(context);
+    final screenSize = mediaQuery.size.height -
+        mediaQuery.padding.top -
+        mediaQuery.padding.bottom;
+    final spaceBelow = screenSize -
+        (offset.dy +
+            size.height +
+            (widget.field.autoComplete?.dropdownBoxMargin ?? 8));
     final minHeight = widget.field.autoComplete?.minHeight ?? 100;
-    // Use maxHeight from the builder or some default
     final maxHeight = widget.field.autoComplete?.maxHeight ?? 300;
-    // Optional: if percentageHeight is set, you can interpret it here
-    // e.g. final pHeight = widget.field.autoComplete?.percentageHeight;
 
-    // Decide whether to put the dropdown below or above
     bool goUp = spaceBelow < minHeight;
+    final height = goUp
+        ? (offset.dy < maxHeight ? offset.dy : maxHeight).toDouble()
+        : (spaceBelow < maxHeight ? spaceBelow : maxHeight).toDouble();
 
-    // If going up, optionally reverse the list
-    final actualOptions =
-        goUp ? _autoCompleteOptions.reversed.toList() : _autoCompleteOptions;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollController.jumpTo(0);
+    });
 
     return OverlayEntry(
       builder: (context) {
-        // The container for the dropdown
+        // Recreate autocomplete item focus nodes.
+        _disposeAutoCompleteItemFocusNodes();
+        _autoCompleteItemFocusNodes =
+            List.generate(_autoCompleteOptions.length, (index) => FocusNode());
+
         return Positioned(
-          // if going up, align bottom with the textfield's top
-          top: goUp ? (offset.dy - minHeight) : (offset.dy + size.height),
-          left: offset.dx,
           width: size.width,
-          // We'll pick whichever is smaller: spaceBelow or maxHeight,
-          // but also ensure at least minHeight if we can
-          height: goUp
-              ? (offset.dy < maxHeight ? offset.dy : maxHeight).toDouble()
-              : (spaceBelow < maxHeight ? spaceBelow : maxHeight).toDouble(),
+          height: height,
           child: CompositedTransformFollower(
             link: _layerLink,
             showWhenUnlinked: false,
-            offset: goUp
-                ? Offset(0, -size.height)
-                : Offset(0, 0), // or no offset; you'll adjust if needed
+            offset: Offset(
+                0,
+                goUp
+                    ? (-height -
+                        (widget.field.autoComplete?.dropdownBoxMargin ?? 8))
+                    : size.height +
+                        (widget.field.autoComplete?.dropdownBoxMargin ?? 8)),
             child: Material(
+              color: widget.colorScheme?.surfaceBackground,
+              textStyle: TextStyle(color: widget.colorScheme?.surfaceText),
               elevation: 4.0,
-              child: ListView.builder(
-                shrinkWrap: true,
-                padding: EdgeInsets.zero,
-                itemCount: actualOptions.length,
-                itemBuilder: (context, index) {
-                  final option = actualOptions[index];
-
-                  // If there's a custom builder at the Option level, use it
-                  final overrideBuilder = option.optionBuilder;
-                  // Or if there's a custom builder in the autoComplete object, use that
-                  final fieldBuilder = widget.field.autoComplete?.optionBuilder;
-
-                  if (overrideBuilder != null) {
-                    return overrideBuilder(option, championCallback);
-                  } else if (fieldBuilder != null) {
-                    return fieldBuilder(option, championCallback);
-                  } else {
-                    // default
-                    return ListTile(
-                      title: Text(option.title),
-                      onTap: () => championCallback(option),
+              child: FocusTraversalGroup(
+                policy: ReadingOrderTraversalPolicy(),
+                child: ListView.builder(
+                  controller: _scrollController,
+                  reverse: goUp,
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  itemCount: _autoCompleteOptions.length,
+                  itemBuilder: (context, index) {
+                    final option = _autoCompleteOptions[index];
+                    return Focus(
+                      focusNode: _autoCompleteItemFocusNodes[index],
+                      child: ListTile(
+                        title: Text(option.title),
+                        tileColor: _autoCompleteItemFocusNodes[index].hasFocus
+                            ? Colors.grey[300]
+                            : null,
+                        onTap: () => championCallback(option),
+                      ),
                     );
-                  }
-                },
+                  },
+                ),
               ),
             ),
           ),
@@ -393,7 +427,6 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
   @override
   void didUpdateWidget(covariant TextFieldWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // If anything changes that might require redrawing the overlay:
     _showOrRemoveOverlay();
   }
 
@@ -404,12 +437,9 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
     _pasteFocusNode.dispose();
     _focusNode.dispose();
     _removeOverlay();
+    _scrollController.dispose();
     super.dispose();
   }
-
-  // TODO: Handle pasting in content into the field
-  // Middleware for dealing with paste events
-  // void _handlePaste() async {}
 
   @override
   Widget build(BuildContext context) {

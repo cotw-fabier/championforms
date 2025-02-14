@@ -64,6 +64,11 @@ class AutoCompleteBuilder {
           String Function(AutoCompleteOption option) championCallback)?
       optionBuilder;
 
+  /// Autocomplete Dropdown Box Margin. Spacing from the field of the
+  /// autocomplete dropdown box (if set to AutoCompleteType.dropdown)
+  /// defaults to 8 for some natural spacing.
+  final int dropdownBoxMargin;
+
   AutoCompleteBuilder({
     this.type = AutoCompleteType.dropdown,
     this.initialOptions = const [],
@@ -71,6 +76,7 @@ class AutoCompleteBuilder {
     this.debounceDuration = const Duration(seconds: 1),
     this.debounceWait = const Duration(milliseconds: 100),
     this.optionBuilder,
+    this.dropdownBoxMargin = 8,
 
     // Height inputs for dropdown view
     this.maxHeight,

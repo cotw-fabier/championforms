@@ -65,6 +65,8 @@ class FormTheme {
           descriptionColor: colorInfo.primary,
           textBackgroundColor: colorInfo.secondaryContainer,
           iconColor: colorInfo.tertiary,
+          surfaceBackground: colorInfo.primaryContainer,
+          surfaceText: colorInfo.onPrimary,
         );
     // This is the error color state.
     final passErrorColorScheme = errorColorScheme ??
@@ -79,6 +81,8 @@ class FormTheme {
           descriptionColor: colorInfo.primary,
           textBackgroundColor: colorInfo.secondaryContainer,
           iconColor: colorInfo.error,
+          surfaceBackground: colorInfo.primaryContainer,
+          surfaceText: colorInfo.onPrimary,
         );
     // This is the color scheme for disabled fields.
     final passDisabledColorScheme = errorColorScheme ??
@@ -93,6 +97,8 @@ class FormTheme {
           descriptionColor: colorInfo.primary,
           textBackgroundColor: colorInfo.secondaryContainer,
           iconColor: colorInfo.primary,
+          surfaceBackground: colorInfo.primaryContainer,
+          surfaceText: colorInfo.onPrimary,
         );
 
     // This is the color scheme for selected elements.
@@ -108,6 +114,8 @@ class FormTheme {
           descriptionColor: colorInfo.primary,
           textBackgroundColor: colorInfo.secondaryContainer,
           iconColor: colorInfo.tertiary,
+          surfaceBackground: colorInfo.primaryContainer,
+          surfaceText: colorInfo.onPrimary,
         );
 
     // This is the color scheme for fields which are currently active.
@@ -123,6 +131,8 @@ class FormTheme {
           descriptionColor: colorInfo.primary,
           textBackgroundColor: colorInfo.secondaryContainer,
           iconColor: colorInfo.tertiary,
+          surfaceBackground: colorInfo.primaryContainer,
+          surfaceText: colorInfo.onPrimary,
         );
 
     // Create some default text Styles in case we didn't define anything
