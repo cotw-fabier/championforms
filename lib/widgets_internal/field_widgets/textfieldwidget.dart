@@ -115,7 +115,20 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.initialValue);
+
+    // Track if we're making a new controller or not
+    final textEditingControllerExists =
+        widget.controller.textEditingControllerExists(widget.field.id);
+
+    // 1. Get or create the appropriate TextEditingController from ChampionFormController:
+    _controller = widget.controller.getTextEditingController(widget.field.id);
+
+    // If you have a default initialValue you want to set right away:
+    if ((widget.initialValue ?? "").isNotEmpty &&
+        !textEditingControllerExists) {
+      _controller.text = widget.initialValue!;
+    }
+
     // set the last value to the default field value
     _lastTextValue = widget.initialValue ?? "";
 
@@ -433,7 +446,6 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
   @override
   void dispose() {
     widget.controller.removeListener(_onControllerValueUpdated);
-    _controller.dispose();
     _pasteFocusNode.dispose();
     _focusNode.dispose();
     _removeOverlay();

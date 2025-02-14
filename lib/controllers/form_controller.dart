@@ -2,6 +2,7 @@
 
 import 'package:championforms/models/field_types/championoptionselect.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
+import 'package:championforms/models/formcontroller/field_controller.dart';
 import 'package:championforms/models/formcontroller/field_focus.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/formvalues/multiselect_form_field_value_by_id.dart';
@@ -33,6 +34,9 @@ class ChampionFormController extends ChangeNotifier {
   /// Currently active field. This follows field focus
   FormFieldDef? activeField;
 
+  /// List of texteditingcontrollers for direct access to text fields
+  final List<FieldController> _textControllers = [];
+
   ChampionFormController({
     String? id,
     this.fields = const [],
@@ -48,6 +52,45 @@ class ChampionFormController extends ChangeNotifier {
   void addFields(List<FormFieldDef> newFields) {
     fields = [...fields, ...newFields];
     notifyListeners();
+  }
+
+  /// Query if a text editing controller exists for a field
+  bool textEditingControllerExists(String fieldId) {
+    return _textControllers.firstWhereOrNull((fc) => fc.fieldId == fieldId) !=
+        null;
+  }
+
+  /// Get Text Field Controller
+  TextEditingController getTextEditingController(String fieldId) {
+    // Check if we already have a FieldController for this field:
+    final existing =
+        _textControllers.firstWhereOrNull((fc) => fc.fieldId == fieldId);
+    if (existing != null) {
+      return existing.controller;
+    }
+
+    // Otherwise, create a new TextEditingController:
+    final newController = TextEditingController();
+    _textControllers.add(
+      FieldController(fieldId: fieldId, controller: newController),
+    );
+
+    return newController;
+  }
+
+  // ---------------------------------------------------------------------------
+  // When you no longer need the ChampionFormController, you must call dispose()
+  // to properly dispose of all stored TextEditingControllers.
+  // ---------------------------------------------------------------------------
+  @override
+  void dispose() {
+    // Dispose text controllers:
+    for (final fc in _textControllers) {
+      fc.controller.dispose();
+    }
+    _textControllers.clear();
+
+    super.dispose();
   }
 
   // Update text field values
