@@ -187,12 +187,12 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
     });
 
     if (widget.validate != null && !_anyFocusActive) {
-      await Future.delayed(const Duration(milliseconds: 200), () {
-        if (!_anyFocusActive) {
-          widget.validate!(
-              _gotFocus ? _controller.text : widget.initialValue ?? "");
-        }
-      });
+      //await Future.delayed(const Duration(milliseconds: 200), () {
+      if (!_anyFocusActive) {
+        widget.validate!(
+            _gotFocus ? _controller.text : widget.initialValue ?? "");
+      }
+      //});
     }
 
     if (!_anyFocusActive) {
