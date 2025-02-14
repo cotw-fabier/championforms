@@ -1,4 +1,6 @@
 import 'package:championforms/championforms.dart';
+import 'package:championforms/models/autocomplete/autocomplete_class.dart';
+import 'package:championforms/models/autocomplete/autocomplete_option_class.dart';
 import 'package:championforms/models/field_types/championcolumn.dart';
 import 'package:championforms/models/field_types/championfileupload.dart';
 import 'package:championforms/models/field_types/championrow.dart';
@@ -119,6 +121,9 @@ class _MyHomePageState extends State<MyHomePage> {
             fields: [
               ChampionTextField(
                 id: "Email", // To ID the field, must be unique per form
+                autoComplete: AutoCompleteBuilder(initialOptions: [
+                  AutoCompleteOption(value: "fabier@rogueskies.net"),
+                ]),
                 validateLive:
                     true, // This causes the field to validate itself as soon as it loses focus -- defaults to false.
                 maxLines: 1, // Forces field to one line

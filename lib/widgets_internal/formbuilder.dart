@@ -243,7 +243,7 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
                     .toList() ??
                 [],
             (focus) {
-              widget.controller.setFieldFocus(field.id, focus);
+              widget.controller.setFieldFocus(field.id, focus, field);
             },
             (MultiselectOption? selectedOption) {
               if (selectedOption != null) {

@@ -23,6 +23,7 @@ Widget checkboxFieldBuilder(
     id: field.id,
     controller: controller,
     requestFocus: field.requestFocus,
+    field: field,
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

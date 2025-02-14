@@ -23,6 +23,7 @@ Widget dropdownFieldBuilder(
   return MultiselectWidget(
     id: field.id,
     controller: controller,
+    field: field,
     requestFocus: field.requestFocus,
     child: DropdownButtonFormField<String>(
       value: defaultValue != null && defaultValue.isNotEmpty

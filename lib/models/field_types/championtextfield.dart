@@ -1,3 +1,4 @@
+import 'package:championforms/models/autocomplete/autocomplete_class.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:flutter/material.dart';
 
@@ -8,6 +9,12 @@ class ChampionTextField extends FormFieldDef {
   final TextField? fieldOverride;
 
   final int? maxLines;
+
+  /// Give this text field an autocomplete functionality.
+  /// Use the AutoCompleteBuilder class to define the behavior of autocomplete
+  /// functionality of this field. Fetch from remote sources or give it a predefined
+  /// selection of options.
+  final AutoCompleteBuilder? autoComplete;
 
   // Add a title to the text field itself if desired
   final String? textFieldTitle;
@@ -50,6 +57,7 @@ class ChampionTextField extends FormFieldDef {
     required super.id,
     this.fieldOverride,
     this.maxLines,
+    this.autoComplete,
     this.textFieldTitle,
     this.hintText = "",
     super.icon,
