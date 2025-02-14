@@ -1,5 +1,4 @@
 // This widget allows to dynamically insert drag and drop functionality.
-import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 
@@ -149,16 +148,11 @@ class _ConditionalDraggableDropZoneState
                       color: Theme.of(context)
                           .colorScheme
                           .secondaryContainer
-                          .withOpacity(0.5),
+                          .withValues(alpha: 0.5),
                     ),
-                    child: DottedBorder(
-                      strokeWidth: 5,
-                      dashPattern: const [10, 10],
-                      color: Theme.of(context).colorScheme.secondary,
-                      child: Center(
-                        child: Text("Drop",
-                            style: Theme.of(context).textTheme.headlineMedium),
-                      ),
+                    child: Center(
+                      child: Text("Drop",
+                          style: Theme.of(context).textTheme.headlineMedium),
                     ),
                   ),
                 ),

@@ -1,6 +1,7 @@
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/functions/inputdecoration_from_theme.dart';
 import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/models/field_types/championoptionselect.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';
@@ -22,6 +23,7 @@ Widget dropdownFieldBuilder(
   return MultiselectWidget(
     id: field.id,
     controller: controller,
+    field: field,
     requestFocus: field.requestFocus,
     child: DropdownButtonFormField<String>(
       value: defaultValue != null && defaultValue.isNotEmpty

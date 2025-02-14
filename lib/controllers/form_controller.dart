@@ -1,5 +1,6 @@
 // We are going to build one giant controller to handle all aspects of our form.
 
+import 'package:championforms/models/field_types/championoptionselect.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formcontroller/field_focus.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
@@ -11,23 +12,26 @@ import 'package:flutter/widgets.dart';
 import 'package:uuid/uuid.dart';
 
 class ChampionFormController extends ChangeNotifier {
-  // field ID. This differentiates this field from other fields.
+  /// field ID. This differentiates this field from other fields.
   final String id;
 
-  // Link Fields to this controller
+  /// Link Fields to this controller
   List<FormFieldDef> fields;
 
-  // Handle text field default values
+  /// Handle text field default values
   List<TextFormFieldValueById> textFieldValues;
 
-  // Handle multiselect field default values
+  /// Handle multiselect field default values
   List<MultiselectFormFieldValueById> multiselectValues;
 
-  // Handle form focus controllers
+  /// Handle form focus controllers
   List<FieldFocus> fieldFocus;
 
-  // Form Error Data
+  /// Form Error Data
   List<FormBuilderError> formErrors;
+
+  /// Currently active field. This follows field focus
+  FormFieldDef? activeField;
 
   ChampionFormController({
     String? id,
@@ -36,6 +40,7 @@ class ChampionFormController extends ChangeNotifier {
     this.multiselectValues = const [],
     this.fieldFocus = const [],
     this.formErrors = const [],
+    this.activeField,
   }) : id = id ?? Uuid().v4();
 
   // Lets start by managing all the fields this controller is responsible for.
@@ -263,8 +268,17 @@ class ChampionFormController extends ChangeNotifier {
         false;
   }
 
+  /// This updates the focused field in the controller.
+  /// Use this so the controller can track which field has focus
+  void updateFocusedField(FormFieldDef newField) {
+    activeField = newField;
+  }
+
   // Set field focus
-  void setFieldFocus(String fieldId, bool focused) {
+  void setFieldFocus(String fieldId, bool focused, FormFieldDef activeField) {
+    // Update the active field
+    updateFocusedField(activeField);
+
     final reference = findFieldFocusIndex(fieldId);
     if (reference != null) {
       fieldFocus[reference] = FieldFocus(

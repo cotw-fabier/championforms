@@ -1,5 +1,5 @@
 import 'package:championforms/models/colorscheme.dart';
-import 'package:championforms/models/field_types/formfieldclass.dart';
+import 'package:championforms/models/field_types/championoptionselect.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_external/field_builders/fileupload_field_builder.dart';
 import 'package:flutter/material.dart';

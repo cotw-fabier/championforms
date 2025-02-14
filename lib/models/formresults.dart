@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:championforms/championforms.dart';
 import 'package:championforms/models/field_types/championfileupload.dart';
+import 'package:championforms/models/field_types/championoptionselect.dart';
+import 'package:championforms/models/field_types/championtextfield.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/mime_data.dart';
@@ -308,7 +310,9 @@ class FormResults {
                       value: val.value.toString(),
                       optionValue: val,
                       id: field.id,
-                      mimeType: (val.additionalData as FileModel).mimeData,
+                      mimeType: type == FieldType.file
+                          ? (val.additionalData as FileModel).mimeData
+                          : null,
                       active: true,
                       type: type,
                     ))

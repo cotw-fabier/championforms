@@ -1,6 +1,7 @@
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/field_types/championfileupload.dart';
 import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/models/field_types/championoptionselect.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';

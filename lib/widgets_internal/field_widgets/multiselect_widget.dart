@@ -1,4 +1,5 @@
 import 'package:championforms/controllers/form_controller.dart';
+import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:flutter/material.dart';
 
 class MultiselectWidget extends StatefulWidget {
@@ -6,11 +7,13 @@ class MultiselectWidget extends StatefulWidget {
     super.key,
     required this.id,
     required this.child,
+    required this.field,
     required this.controller,
     this.requestFocus = false,
   });
   final String id;
   final Widget child;
+  final FormFieldDef field;
   final ChampionFormController controller;
   final bool requestFocus;
   @override
@@ -49,7 +52,8 @@ class _MultiselectWidgetState extends State<MultiselectWidget> {
 
   void _onLoseFocus() {
     // transmit focus state to provider
-    widget.controller.setFieldFocus(widget.id, _focusNode.hasFocus);
+    widget.controller
+        .setFieldFocus(widget.id, _focusNode.hasFocus, widget.field);
   }
 
   @override
@@ -66,6 +70,7 @@ class _MultiselectWidgetState extends State<MultiselectWidget> {
       descendantsAreFocusable: true,
       skipTraversal: true,
       focusNode: _focusNode,
+      //onFocusChange: (hasFocus) => _onLoseFocus(),
       child: widget.child,
     );
   }
