@@ -123,50 +123,66 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
   Future<void> _handleDroppedFile(DataReader reader) async {
     // Pick a default name. We'll replace this in a moment
     String name = "untitled";
-    Stream<Uint8List>? stream;
-    // This might be from Desktop or other app
-    reader.getFile(null, (file) {
-      stream = file.getStream();
-    });
-    final file = reader;
-    name = await file.getSuggestedName() ?? "untitled";
 
-    final path = "$name-drag"; // We can store something as path
+    // We are going to skip streams for now
+    // This seems like a good idea for speed and reliability
+    // but for the time being we will only load the entire file into memory.
+    // This might cause lag, so we should try to get a stream working in the future.
+    // Stream<Uint8List>? stream;
+    // // This might be from Desktop or other app
+    // reader.getFile(null, (file) {
+    //   stream = file.getStream();
+    // });
+    final fileReader = reader;
 
-    // Create filemodel for storage
-    FileModel fileData = FileModel(
-      fileName: name,
-      fileStream: stream,
-      fileReader: reader,
-      uploadExtension: name.split('.').lastOrNull ?? '',
-    );
+    fileReader.getFile(null, (file) async {
+      try {
+        final Uint8List fileBytes = await file.readAll();
 
-    fileData = fileData.copyWith(mimeData: await fileData.readMimeData());
+        name = await fileReader.getSuggestedName() ?? "untitled";
 
-    final option = MultiselectOption(
-      label: name,
-      value: path,
-      additionalData: fileData,
-    );
+        final path = "$name-drag"; // We can store something as path
 
-    setState(() {
-      // Only the last option is kept if multiselect is turned off.
-      if (!widget.field.multiselect) {
-        _files.clear();
+        // Create filemodel for storage
+        FileModel fileData = FileModel(
+          fileName: name,
+          //fileStream: stream,
+          fileBytes: fileBytes,
+          fileReader: reader,
+          uploadExtension: name.split('.').lastOrNull ?? '',
+        );
+
+        fileData = fileData.copyWith(mimeData: await fileData.readMimeData());
+
+        final option = MultiselectOption(
+          label: name,
+          value: path,
+          additionalData: fileData,
+        );
+
+        setState(() {
+          // Only the last option is kept if multiselect is turned off.
+          if (!widget.field.multiselect) {
+            _files.clear();
+          }
+          _files.add(option);
+
+          widget.controller.updateMultiselectValues(
+            widget.field.id,
+            _files,
+            multiselect: widget.field.multiselect,
+            overwrite: true,
+          );
+          // Report back that a file has been uploaded
+          widget.onFileOptionChange(option);
+
+          // if validate live then run validation
+          _validateLive();
+        });
+      } catch (e) {
+        // Couldn't read the file for some reason
+        debugPrint("Error Reading File Data: $e");
       }
-      _files.add(option);
-
-      widget.controller.updateMultiselectValues(
-        widget.field.id,
-        _files,
-        multiselect: widget.field.multiselect,
-        overwrite: true,
-      );
-      // Report back that a file has been uploaded
-      widget.onFileOptionChange(option);
-
-      // if validate live then run validation
-      _validateLive();
     });
   }
 
