@@ -12,6 +12,12 @@ class ChampionFileUpload extends ChampionOptionSelect {
   /// Build the list of files
   final Widget Function(List<MultiselectOption>)? fileUploadBuilder;
 
+  /// Allowed Extensions
+  /// Add a list of allowed extensions to upload. This will limit visible choices when using the file picker
+  /// And it will cause drag and drop to reject options which are not compatible.
+  /// If set to null then all files are allowed
+  final List<String>? allowedExtensions;
+
   /// Change the display of the drag and drop zone for file uploads.
   /// Takes parameters of the current color scheme and the
   /// field details so they're available for building your custom implementation.
@@ -38,6 +44,7 @@ class ChampionFileUpload extends ChampionOptionSelect {
     super.onChange,
     super.fieldLayout,
     super.fieldBackground,
+    this.allowedExtensions,
     this.displayUploadedFiles = true,
     this.fileUploadBuilder,
     this.dropDisplayWidget,

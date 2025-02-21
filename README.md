@@ -468,3 +468,6 @@ ChampionForms is free and open-source. See [LICENSE](LICENSE) for details.
 ---
 
 That’s it! In **ChampionForms 0.0.4**, you can now declaratively define robust, validated, and accessible forms in Flutter using a simple controller-based API—and you can even set or toggle field values on-the-fly. Enjoy building forms with **ChampionForms**!
+
+## TODO: Write documentation for file reading functionality. Note that file_picker required <key>com.apple.security.files.user-selected.read-only</key>
+    <true/> in runner entitlements on macOS.

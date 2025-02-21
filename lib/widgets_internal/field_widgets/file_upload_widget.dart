@@ -106,10 +106,29 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
   Future<void> _pickFiles() async {
     // If multiselect is true, allow multiple. Otherwise single
     FilePickerResult? result;
-    if (widget.field.multiselect) {
-      result = await FilePicker.platform.pickFiles(allowMultiple: true);
+
+    final fileType;
+    final allowedExtensions;
+
+    if ((widget.field as ChampionFileUpload).allowedExtensions != null) {
+      fileType = FileType.custom;
+      allowedExtensions =
+          (widget.field as ChampionFileUpload).allowedExtensions;
     } else {
-      result = await FilePicker.platform.pickFiles();
+      fileType = FileType.any;
+      allowedExtensions = null;
+    }
+
+    if (widget.field.multiselect) {
+      result = await FilePicker.platform.pickFiles(
+          type: fileType,
+          allowedExtensions: allowedExtensions,
+          allowMultiple: true);
+    } else {
+      result = await FilePicker.platform.pickFiles(
+        type: fileType,
+        allowedExtensions: allowedExtensions,
+      );
     }
 
     if (result != null) {
@@ -135,11 +154,25 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
     // });
     final fileReader = reader;
 
+    name = await fileReader.getSuggestedName() ?? "untitled";
+
+    if ((widget.field as ChampionFileUpload).allowedExtensions != null) {
+      bool foundExtension = false;
+      for (final ext
+          in (widget.field as ChampionFileUpload).allowedExtensions!) {
+        if (name.toLowerCase().endsWith('.' + ext.toLowerCase())) {
+          foundExtension = true;
+          break;
+        }
+      }
+      if (!foundExtension) {
+        return;
+      }
+    }
+
     fileReader.getFile(null, (file) async {
       try {
         final Uint8List fileBytes = await file.readAll();
-
-        name = await fileReader.getSuggestedName() ?? "untitled";
 
         final path = "$name-drag"; // We can store something as path
 
