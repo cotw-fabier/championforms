@@ -311,8 +311,12 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
   void _removeOverlay({bool keepAway = false, bool requestFocus = true}) {
     if (requestFocus) {
       _focusNode.requestFocus();
-      _controller.selection = TextSelection.fromPosition(
-          TextPosition(offset: _controller.text.length));
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _controller.selection = TextSelection.fromPosition(
+              TextPosition(offset: _controller.text.length));
+        }
+      });
     }
     _overlayEntry?.remove();
     _overlayEntry = null;
