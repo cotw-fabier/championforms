@@ -86,7 +86,7 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
               .toList();
           if (defaultValues.isNotEmpty) {
             widget.controller.updateMultiselectValues(field.id, defaultValues,
-                multiselect: field.multiselect);
+                multiselect: field.multiselect, overwrite: true);
           }
         }
       }
