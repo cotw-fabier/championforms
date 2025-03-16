@@ -47,12 +47,48 @@ class ChampionFormController extends ChangeNotifier {
     this.activeField,
   }) : id = id ?? Uuid().v4();
 
-  // Lets start by managing all the fields this controller is responsible for.
-  // This function allows us to connect disparate championform instances together into one controller
+  // ---------------------------------------------------------------------------
+  // Controller lifecycle functions
+  // These functions manage the lifecycle of the ChampionFormController.
+  // Creation, adding fields, and then disposing of the controller
+  // ---------------------------------------------------------------------------
+
+  /// When you no longer need the ChampionFormController, you must call dispose()
+  /// to properly dispose of all stored values, internal controllers, and more
+  /// this is a sizable controller which manages the state of many other fields
+  /// so calling this is very important when you are done using the controller.
+  ///
+  /// Keep the controller alive as long as you are interacting with any fields
+  /// this controller manages, or the fields will break.
+  @override
+  void dispose() {
+    // Dispose text controllers:
+    for (final fc in _textControllers) {
+      fc.controller.dispose();
+    }
+    _textControllers.clear();
+
+    super.dispose();
+  }
+
+  /// Lets start by managing all the fields this controller is responsible for.
+  /// This function allows us to connect disparate championform instances together into one controller.
+  ///
+  /// This function populates the controller with new fields. You can call this as often
+  /// as you want. This is automatically called when adding new fields to the
+  /// ChampionForm() widget. You may wish to manually call it if you want to prepopulate
+  /// the controller before an associated ChampionForm() widget is called.
+  ///
+  /// For example: a multi-page form handling more than one group of fields.
   void addFields(List<FormFieldDef> newFields) {
     fields = [...fields, ...newFields];
     notifyListeners();
   }
+
+  // ---------------------------------------------------------------------------
+  // Text Field public Functions.
+  // These functions manage text fields.
+  // ---------------------------------------------------------------------------
 
   /// Query if a text editing controller exists for a field
   bool textEditingControllerExists(String fieldId) {
@@ -61,6 +97,13 @@ class ChampionFormController extends ChangeNotifier {
   }
 
   /// Get Text Field Controller
+  /// This gives you direct access to the TextFieldController for a
+  /// given field ID. This can be useful if you want to manipulate any functions
+  /// associated with that controller. For example, moving the cursor position or highlighting text.
+  ///
+  /// Generally, it may be better to modify the field value using updateTextFieldValue().
+  /// It is possible that by calling this directly you may unsync the values in ChampionFormController
+  /// and the TextFieldController.
   TextEditingController getTextEditingController(String fieldId) {
     // Check if we already have a FieldController for this field:
     final existing =
@@ -78,22 +121,10 @@ class ChampionFormController extends ChangeNotifier {
     return newController;
   }
 
-  // ---------------------------------------------------------------------------
-  // When you no longer need the ChampionFormController, you must call dispose()
-  // to properly dispose of all stored TextEditingControllers.
-  // ---------------------------------------------------------------------------
-  @override
-  void dispose() {
-    // Dispose text controllers:
-    for (final fc in _textControllers) {
-      fc.controller.dispose();
-    }
-    _textControllers.clear();
-
-    super.dispose();
-  }
-
-  // Update text field values
+  /// Update text field values
+  /// Call this to force a field update to a text field. This will
+  /// update the text field value and also update anything listening
+  /// to the controller.
   void updateTextFieldValue(String id, String newValue) {
     final reference = findTextFieldValueIndex(id);
     if (reference != null) {
@@ -109,6 +140,10 @@ class ChampionFormController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Use this function to find the value of a text field.
+  /// Returned value is a TextFormFieldValueById which
+  /// has the properties of id and value. Simple class
+  /// so you can track which value is associated with which field.
   TextFormFieldValueById? findTextFieldValue(String id) {
     final reference = findTextFieldValueIndex(id);
     if (reference != null) {
@@ -126,7 +161,16 @@ class ChampionFormController extends ChangeNotifier {
     return null;
   }
 
-  // This is a helper function so you can find the field options and then toggle them via a list of string values.
+  // ---------------------------------------------------------------------------
+  // Multiselect public Functions. Checkboxes, Dropdowns, File Uploads, and more.
+  // These functions manage text fields.
+  // ---------------------------------------------------------------------------
+
+  /// This is a helper function so you can find the field options and then toggle them via a list of string values.
+  /// toggleOn to enable the values and toggleOff to disable the values.
+  /// This is different than updateMultiSelectValues() because this assumes the values have already been established
+  /// in the controller via the "options:" parameter when creating
+  /// a multiselect field. This simply enables or disables the values that are already in the controller.
   void toggleMultiSelectValue(
     String fieldId, {
     List<String> toggleOn = const [],
@@ -179,7 +223,13 @@ class ChampionFormController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Update Multiselect values
+  /// This takes in a list of MultiselectOptions and will toggle those values on and off.
+  /// If the values are not in the controller as options then it will add them.
+  /// If the values are already present then they will be updated to the reverse toggle
+  /// as they were before running this function (true -> false and vice versa).
+  ///
+  /// If you want to force their setting on and off, then set the bool overwrite to
+  /// ensure they are set with the value being on when being added.
   void updateMultiselectValues(String id, List<MultiselectOption> newValue,
       {bool multiselect = false, bool overwrite = false}) {
     final reference = findMultiselectValueIndex(id);
@@ -252,6 +302,7 @@ class ChampionFormController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Resets all choices on any multiselect field to zero. Useful for resetting a field.
   void resetMultiselectChoices(String fieldId) {
     final reference = findMultiselectValueIndex(id);
     if (reference != null) {
