@@ -302,7 +302,16 @@ class ChampionFormController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Resets all choices on any multiselect field to zero. Useful for resetting a field.
+  /// Reset a multi-select field to zero options. Useful for removing choices from a MultiSelect field.
+  /// or resetting a field to zero files.
+  void removeMultiSelectOptions(String fieldId) {
+    updateMultiselectValues(
+      fieldId,
+      [],
+    );
+  }
+
+  /// Resets all choices on any multiselect field to false.
   void resetMultiselectChoices(String fieldId) {
     final reference = findMultiselectValueIndex(id);
     if (reference != null) {
