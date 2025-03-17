@@ -308,12 +308,13 @@ class ChampionFormController extends ChangeNotifier {
     updateMultiselectValues(
       fieldId,
       [],
+      overwrite: true,
     );
   }
 
   /// Resets all choices on any multiselect field to false.
   void resetMultiselectChoices(String fieldId) {
-    final reference = findMultiselectValueIndex(id);
+    final reference = findMultiselectValueIndex(fieldId);
     if (reference != null) {
       multiselectValues.removeAt(reference);
       notifyListeners();
