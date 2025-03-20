@@ -20,6 +20,7 @@ class FormBuilderWidget extends StatefulWidget {
   const FormBuilderWidget({
     super.key,
     this.fields = const [],
+    this.pageName = "default",
     this.formWrapper,
     required this.theme,
     required this.controller,
@@ -32,6 +33,7 @@ class FormBuilderWidget extends StatefulWidget {
   final EdgeInsets? fieldPadding;
 
   final List<FormFieldBase> fields;
+  final String? pageName;
   final double? spacer;
   final ChampionFormController controller;
   final Widget Function(
@@ -54,11 +56,28 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // At this point we need to make sure all these fields are merged together into one list in case we need to reference it later.
       _updateDefaults();
+
+      // Create a running list of visible fields for more refined error checking on
+      // multipage forms which may not display all fields at once.
+
+      widget.controller
+          .updateActiveFields(widget.fields.whereType<FormFieldDef>().toList());
+
+      // Update the pageFields
+      // only run this if the page isn't set to "default"
+      if (widget.pageName != null) {
+        widget.controller.updatePageFields(
+            widget.pageName!, widget.fields.whereType<FormFieldDef>().toList());
+      }
     });
   }
 
   @override
   void dispose() {
+    // Clean up active fields.
+    widget.controller
+        .removeActiveFields(widget.fields.whereType<FormFieldDef>().toList());
+
     widget.controller.removeListener(_rebuildOnControllerUpdate);
     super.dispose();
   }

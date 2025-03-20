@@ -10,6 +10,7 @@ class ChampionForm extends StatefulWidget {
     super.key,
     required this.controller,
     required this.fields,
+    this.pageName,
     this.spacing,
     this.formWidth,
     this.formHeight,
@@ -33,6 +34,19 @@ class ChampionForm extends StatefulWidget {
   /// ChampionCheckboxSelect(),
   /// etc
   final List<FormFieldBase> fields;
+
+  /// pageName is a unique name for a page of fields.
+  /// You can use the same name across widgets
+  /// allows you to build a unique subset of fields
+  /// for pulling results "by page" instead
+  /// of grabbing all the results for the form at once
+  /// this is useful if you have a multi-page form
+  /// and only want to grab results for a specific "page"
+  /// of your form.
+  ///
+  /// This is not required. Otherwise give a simple string
+  /// ID to this "page".
+  final String? pageName;
 
   /// Adds a little spacing between fields.
   /// Leave Blank to rely on other field layouts
@@ -80,6 +94,7 @@ class _ChampionFormWidgetState extends State<ChampionForm> {
       controller: widget.controller,
       spacer: widget.spacing,
       fields: widget.fields,
+      pageName: widget.pageName,
       theme: formTheme,
       formWrapper: widget.formWrapper,
       fieldPadding: widget.fieldPadding,

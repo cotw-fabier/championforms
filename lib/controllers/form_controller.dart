@@ -1,6 +1,7 @@
 // We are going to build one giant controller to handle all aspects of our form.
 
 import 'package:championforms/models/field_types/championoptionselect.dart';
+import 'package:championforms/models/field_types/formfieldbase.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formcontroller/field_controller.dart';
 import 'package:championforms/models/formcontroller/field_focus.dart';
@@ -37,6 +38,19 @@ class ChampionFormController extends ChangeNotifier {
   /// List of texteditingcontrollers for direct access to text fields
   final List<FieldController> _textControllers = [];
 
+  /// Active Fields
+  /// This contains an updated list of fields currently
+  /// rendered in a championform widget.
+  List<FormFieldDef> activeFields;
+
+  /// Page Fields
+  /// Subsets of fields added as pages are identified.
+  /// use pageName param on ChampionForm to add fields
+  /// to a page. Then you can return
+  /// a list of pages as needed by calling
+  /// controller.getPageFields("pageID");
+  Map<String, List<FormFieldDef>> pageFields;
+
   ChampionFormController({
     String? id,
     this.fields = const [],
@@ -45,7 +59,10 @@ class ChampionFormController extends ChangeNotifier {
     this.fieldFocus = const [],
     this.formErrors = const [],
     this.activeField,
-  }) : id = id ?? Uuid().v4();
+    this.activeFields = const [],
+    Map<String, List<FormFieldDef>>? pageFields,
+  })  : id = id ?? Uuid().v4(),
+        pageFields = pageFields ?? {};
 
   // ---------------------------------------------------------------------------
   // Controller lifecycle functions
@@ -69,6 +86,63 @@ class ChampionFormController extends ChangeNotifier {
     _textControllers.clear();
 
     super.dispose();
+  }
+
+  /// Update Active Fields
+  /// Merges in a list of fields being actively displayed
+  /// This is called by formbuilder on widget build
+  /// to create a running list of active fields.
+  void updateActiveFields(List<FormFieldDef> fields) {
+    // start by cleaning any fields with the same IDs
+    removeActiveFields(fields, notify: false);
+
+    activeFields = [...activeFields, ...fields];
+
+    notifyListeners();
+  }
+
+  /// Remove active fields.
+  /// Removes a list of fields from active fields
+  /// this is called in FormBuilder when it is being
+  /// torn down.
+  void removeActiveFields(List<FormFieldDef> fields, {bool notify = true}) {
+    activeFields = activeFields
+        .where((field) => !fields.any((f) => f.id == field.id))
+        .toList();
+
+    if (notify) {
+      notifyListeners();
+    }
+  }
+
+  /// Add fields to a specific "page"
+  /// This allows you to build form groups by page
+  /// using one controller.
+  /// This is useful for pulling subsets of results
+  /// from your forms.
+  ///
+  /// Doesn't notify listeners since it should happen silently
+  /// as the controller is updated.'
+
+  void updatePageFields(
+    String pageName,
+    List<FormFieldDef> fields,
+  ) {
+    if (pageFields.containsKey(pageName)) {
+      pageFields[pageName] = [...pageFields[pageName]!, ...fields];
+    } else {
+      pageFields[pageName] = fields;
+    }
+  }
+
+  /// Grab page fields
+  /// as a subset List<FormFieldDef>
+  List<FormFieldDef> getPageFields(String pageName) {
+    if (pageFields.containsKey(pageName)) {
+      return pageFields[pageName] ?? [];
+    } else {
+      return [];
+    }
   }
 
   /// Lets start by managing all the fields this controller is responsible for.
