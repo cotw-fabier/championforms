@@ -75,7 +75,8 @@ class FieldResults {
         final item = values.firstWhereOrNull((data) => data.id == id);
         output.add(item?.active ?? false ? item?.id ?? "" : "");
       } else {
-        output.addAll(values.map((item) => item.id).toList());
+        output.addAll(values.map((item) => item.value ?? "").toList());
+        //debugPrint(values.join(", "));
       }
     } else if (type == FieldType.string) {
       if (id != null) {
