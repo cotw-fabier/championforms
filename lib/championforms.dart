@@ -34,3 +34,6 @@ export 'package:championforms/functions/geterrors.dart';
 
 // This is the list of default validators you can use for field validation
 export 'package:championforms/functions/defaultvalidators/defaultvalidators.dart';
+
+// Export the global theme singleton
+export 'package:championforms/models/theme_singleton.dart';

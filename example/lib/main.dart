@@ -19,6 +19,9 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    final globalTheme =
+        softBlueColorTheme(context); // Assuming context is available or adapt
+    ChampionFormTheme.instance.setTheme(globalTheme);
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(

@@ -1,4 +1,5 @@
 import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/models/theme_singleton.dart';
 import 'package:flutter/material.dart';
 
 class FormTheme {
@@ -155,7 +156,7 @@ class FormTheme {
           fontSize: 12,
         );
 
-    FormTheme outputTheme = FormTheme(
+    FormTheme baseTheme = FormTheme(
       colorScheme: passColorScheme,
       errorColorScheme: passErrorColorScheme,
       disabledColorScheme: passDisabledColorScheme,
@@ -167,11 +168,16 @@ class FormTheme {
       chipTextStyle: passChipTextStyle,
     );
 
-    if (inputTheme != null) {
-      return outputTheme.copyWith(theme: inputTheme);
-    }
+    // --- Step 2: Apply Global Singleton Overrides ---
+    // Get the singleton's current theme state
+    final singletonThemeOverrides = ChampionFormTheme.instance.asFormTheme;
+    FormTheme themeAfterSingleton =
+        baseTheme.copyWith(theme: singletonThemeOverrides);
 
-    return outputTheme;
+    // --- Step 3: Apply Widget-Specific Overrides ---
+    FormTheme finalTheme = themeAfterSingleton.copyWith(theme: inputTheme);
+
+    return finalTheme;
   }
 
   // This is a special copywith which allows us to enter an entire theme as a possible override. It will add all properties from that theme or use defaults set here. You can also override both by naming properties specifically.
