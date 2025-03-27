@@ -1,64 +1,48 @@
+// /Users/fabier/Documents/championforms/example/lib/main.dart
+
 import 'package:championforms/championforms.dart';
 import 'package:championforms/models/autocomplete/autocomplete_class.dart';
 import 'package:championforms/models/autocomplete/autocomplete_option_class.dart';
-import 'package:championforms/models/autocomplete/autocomplete_type.dart';
-import 'package:championforms/models/field_types/championcolumn.dart';
-import 'package:championforms/models/field_types/championfileupload.dart';
-import 'package:championforms/models/field_types/championrow.dart';
-import 'package:championforms/models/formresults.dart';
+// AutoCompleteType is implicitly imported via autocomplete_class.dart
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:flutter/material.dart';
 
 void main() {
+  // --- Global Theme Setup ---
+  // You can set a global theme for all ChampionForm instances.
+  // This theme will be used unless overridden by a theme passed directly
+  // to the ChampionForm widget or an individual field.
+  // We need a BuildContext to create the theme, so we do it inside a
+  // Builder or similar widget that provides context *before* MaterialApp.
+  // For simplicity in this example, we'll set it inside the MyApp build method,
+  // but ideally, do it *outside* MaterialApp if possible using a root Builder.
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    final globalTheme =
-        softBlueColorTheme(context); // Assuming context is available or adapt
+    // --- Setting Global Theme (Example Placement) ---
+    // Retrieve a pre-defined theme (or create your own FormTheme object)
+    final globalTheme = softBlueColorTheme(context);
+    // Set it using the singleton instance
     ChampionFormTheme.instance.setTheme(globalTheme);
+
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'ChampionForms Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'ChampionForms v0.0.5 Demo'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
 
   final String title;
 
@@ -67,261 +51,326 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  // --- Form Controller ---
+  // The controller manages the state of the form fields.
   late ChampionFormController controller;
 
   @override
   void initState() {
     super.initState();
-    controller = ChampionFormController();
+    // Initialize the controller
+    controller = ChampionFormController(
+        // Optionally give the controller an ID, useful if managing
+        // multiple distinct logical forms that might share field IDs.
+        // id: "myFormId"
+        );
   }
 
   @override
   void dispose() {
-    super.dispose();
+    // --- IMPORTANT: Dispose the controller ---
+    // This cleans up internal resources like TextEditingControllers.
     controller.dispose();
+    super.dispose();
   }
 
+  // --- Handling Form Submission ---
   void _executeLogin() {
-    // Because championforms relies on riverpod. Field results
-    // are accessible anywhere in the app as long as the form is still active.
-    // You can simply build the FormResults object at any time to cause the form
-    // to pass results and run validation.
+    // Get results and trigger validation by creating FormResults instance.
     final FormResults results = FormResults.getResults(controller: controller);
 
-    // Once run the form will tell you if it is in an error state.
-    // If true, then stop processing.
+    // Check the error state.
     final errors = results.errorState;
     debugPrint("Current Error State is: $errors");
-    if (errors == false) {
-      // No errors, excellent!
-      // Fields can be "grabbed" from the results by their ID.
-      // Then you can format them .asString(), asStringList(), asMultiSelectList()
-      debugPrint(results.grab("Email").asString());
-      debugPrint(results.grab("DropdownField").asString());
-      debugPrint(results
-          .grab("SelectBox")
-          .asMultiselectList()
-          .map((field) => field.value)
-          .join(", "));
+
+    if (!errors) {
+      // --- Accessing Results ---
+      // Grab results by field ID and format them as needed.
+      debugPrint("Email: ${results.grab("Email").asString()}");
+      debugPrint(
+          "Password Set: ${results.grab("Password").asString().isNotEmpty}"); // Example for password
+      debugPrint("Dropdown: ${results.grab("DropdownField").asString()}");
+      debugPrint(
+          "Checkboxes: ${results.grab("SelectBox").asMultiselectList().map((field) => field.value).join(", ")}");
+      debugPrint(
+          "Autocomplete Field: ${results.grab("BottomText").asString()}");
+
+      // --- Accessing File Upload Results ---
+      final fileResults = results.grab("fileUpload").asFile(); // Use asFile()
+      if (fileResults.isNotEmpty) {
+        debugPrint("Uploaded Files (${fileResults.length}):");
+        for (final fileData in fileResults) {
+          debugPrint(
+              "  - Name: ${fileData.name}, Path: ${fileData.path}, Mime: ${fileData.fileDetails?.mimeData?.mime ?? 'N/A'}");
+          // You can access file bytes (if fully read) or stream via fileData.fileDetails
+          // Example: Accessing bytes (might be null if not read)
+          // Uint8List? bytes = await fileData.fileDetails?.getFileBytes();
+          // debugPrint("    Bytes length: ${bytes?.length ?? 'Not loaded'}");
+        }
+      } else {
+        debugPrint("No files uploaded.");
+      }
     } else {
-      debugPrint("The form had some errors.");
+      // --- Handling Errors ---
+      debugPrint("The form had errors:");
       debugPrint(results.formErrors
-          .map((error) =>
-              "Field ${error.fieldId} had the error: ${error.reason}")
-          .join(", "));
+          .map((error) => "Field '${error.fieldId}' Error: ${error.reason}")
+          .join("\n"));
     }
+  }
+
+  // --- Interacting with Controller ---
+  void _setValuesProgrammatically() {
+    // Update text fields
+    controller.updateTextFieldValue("Email", "programmatic@example.com");
+    controller.updateTextFieldValue("Password", "newPassword123");
+
+    // Toggle options in multiselect fields (like dropdowns, checkboxes)
+    // Uses the 'value' property of the MultiselectOption
+    controller.toggleMultiSelectValue("DropdownField", toggleOn: [
+      "Value 3",
+      "Value 2"
+    ]); // Selects Value 3, ensures Value 2 is selected
+
+    controller.toggleMultiSelectValue(
+      "SelectBox",
+      toggleOn: ["Hi", "Yoz"], // Checks "Hello" and "Sup"
+      toggleOff: ["Hiya"], // Unchecks "Wat"
+    );
+
+    // Note: Programmatically adding files to ChampionFileUpload is complex
+    // and usually handled via user interaction (picker/drag-drop).
+    // You *can* clear files using:
+    // controller.removeMultiSelectOptions("fileUpload");
+    debugPrint("Values set programmatically.");
   }
 
   @override
   Widget build(BuildContext context) {
-    // Time to build a sample form:
+    // --- Defining Form Fields ---
+    // Uses new features: ChampionRow, ChampionColumn, ChampionFileUpload, AutoCompleteBuilder
     final List<FormFieldBase> fields = [
+      // --- Row & Column Layout ---
       ChampionRow(
-        collapse: false,
-        rollUpErrors: true,
+        // collapse: true, // Set true to stack columns vertically (e.g., for mobile)
+        rollUpErrors: false, // Set true to show all child errors under the row
         columns: [
+          // --- Column 1 (Email) ---
           ChampionColumn(
-            columnFlex: 3,
+            columnFlex: 2, // Takes 2/3 of the available width
             fields: [
               ChampionTextField(
-                id: "Email", // To ID the field, must be unique per form
-                autoComplete: AutoCompleteBuilder(initialOptions: [
-                  AutoCompleteOption(value: "fabier@rogueskies.net"),
-                ]),
-                validateLive:
-                    true, // This causes the field to validate itself as soon as it loses focus -- defaults to false.
-                maxLines: 1, // Forces field to one line
-                hintText: "Email", // Hint text in the text field
-                textFieldTitle:
-                    "Email", // This is the title which displays in the field until you click on it, then moves to the border
-                description:
-                    "Enter your email Address", // Description by default displays above the field below the title
-                // Validators are a list of FormBuilderValidator objects which run a bool function on the results to determine if the input is satisfactory.
-                // Default validators are provided in the DefaultValidators() object. The most important one there is the dependency on valid emails.
-                // If a field isn't valid, then the field state is set to error causing the colors to change and the error is displayed (by default) below the field in errorBorder color.
+                id: "Email",
+                textFieldTitle: "Email Address",
+                hintText: "Enter your email",
+                description: "Your login email.",
+                maxLines: 1,
+                validateLive: true, // Validate on losing focus
+                // --- Autocomplete Example ---
+                autoComplete: AutoCompleteBuilder(
+                  // type: AutoCompleteType.dropdown, // Default
+                  initialOptions: [
+                    AutoCompleteOption(value: "test1@example.com"),
+                    AutoCompleteOption(value: "test2@example.com"),
+                    AutoCompleteOption(value: "another@domain.net"),
+                    AutoCompleteOption(value: "fabier@rogueskies.net"),
+                  ],
+                  // Example async update (can fetch from API)
+                  updateOptions: (searchValue) async {
+                    // Simulate network delay
+                    await Future.delayed(const Duration(milliseconds: 300));
+                    // Filter initial options (replace with actual API call)
+                    return [
+                      AutoCompleteOption(
+                          value: "search-$searchValue@example.com"),
+                      AutoCompleteOption(value: "$searchValue@rogueskies.net"),
+                    ].where((opt) => opt.value.contains(searchValue)).toList();
+                  },
+                  debounceWait: const Duration(
+                      milliseconds: 250), // Wait before calling updateOptions
+                ),
                 validators: [
                   FormBuilderValidator(
                     validator: (results) =>
                         DefaultValidators().isEmpty(results),
-                    reason: "Field is empty",
+                    reason: "Email cannot be empty.",
                   ),
                   FormBuilderValidator(
                     validator: (results) =>
                         DefaultValidators().isEmail(results),
-                    reason: "This isn't an email address",
+                    reason: "Please enter a valid email address.",
                   ),
                 ],
-                // Leading icon. Can make clickable with MouseRegion, and GestureDetector
-                leading: const Icon(Icons.verified_user),
+                leading: const Icon(Icons.email),
               ),
             ],
           ),
+          // --- Column 2 (Password) ---
           ChampionColumn(
+            columnFlex: 1, // Takes 1/3 of the available width
             fields: [
               ChampionTextField(
-                id: "Text Field 1",
+                id: "Password", // Changed ID
                 textFieldTitle: "Password",
                 description: "Enter your password",
                 maxLines: 1,
-                password:
-                    true, // Password being true obscures the text in the field
+                password: true, // Obscures text
                 validateLive: true,
-
-                // The onSubmit will fire when the user presses enter.
-                // If maxLines is null or set to a larger number then onSubmit will fire on enter and
-                // new line will be triggered on shift + enter.
-                // If no onSubmit is present, then enter will add a new line as normal.
-                onSubmit: (results) => debugPrint("Login"),
+                onSubmit: (results) => _executeLogin(), // Submit on Enter
                 validators: [
                   FormBuilderValidator(
                       validator: (results) =>
                           DefaultValidators().isEmpty(results),
-                      reason: "Password is Empty"),
+                      reason: "Password cannot be empty."),
+                  // Add more password validators if needed (e.g., length)
                 ],
-                leading: const Icon(Icons.password),
+                leading: const Icon(Icons.lock),
               ),
             ],
           )
         ],
       ),
 
-      // Champion option fields utilize a builder to handle the elements in the field.
-      // Currently, this is the base implementation which spits out a Dropdown.
-      // The setup should work for any multi-select object being used.
-      // Custom builders can be inserted via the fieldBuilder property.
-      // See the widgets_external/field_builders/checkboxfield_builder.dart file for details
-      // on constructing your own custom builder.
+      // --- Dropdown ---
       ChampionOptionSelect(
-          id: "DropdownField", // ID can be anything but should be unique
-          title: "Quick Dropdown",
-          // MultiselectOption by default will pass through the label and value when the form is submitted.
-          // However the additionalData property will accept any object? allowing you to pass through any element you desire to the formResults.
-          options: [
-            MultiselectOption(
-              label: "Option 1",
-              value: "Value 1",
-            ),
-            MultiselectOption(
-              label: "Option 2",
-              value: "Value 2",
-            ),
-            MultiselectOption(
-              label: "Option 3",
-              value: "Value 3",
-            ),
-            MultiselectOption(
-              label: "Option 4",
-              value: "Value 4",
-            ),
-          ]),
-      // ChampionCheckboxSelect extends ChampionOptionSelect simply swapping out the fieldBuilder
-      // For one which displays the options as checkboxes.
+        id: "DropdownField",
+        title: "Select an Option",
+        description: "Choose one from the list.",
+        options: [
+          MultiselectOption(label: "Option 1", value: "Value 1"),
+          MultiselectOption(label: "Option 2", value: "Value 2"),
+          MultiselectOption(label: "Option 3", value: "Value 3"),
+          MultiselectOption(label: "Option 4", value: "Value 4"),
+        ],
+        // defaultValue: ["Value 2"], // Set a default selection
+      ),
+
+      // --- Checkboxes ---
       ChampionCheckboxSelect(
         id: "SelectBox",
-        requestFocus: true,
-        multiselect: true,
+        title: "Choose Multiple",
+        description: "Select all that apply.",
+        multiselect: true, // Allow multiple selections
         validateLive: true,
         validators: [
+          // Example: require at least one selection
           FormBuilderValidator(
               validator: (results) => DefaultValidators().isEmpty(results),
-              reason: "Nothing is checked"),
+              reason: "Please select at least one option."),
         ],
-
-        title: "Choose your weapon",
-        //defaultValue: ["Hiya"],icon: const Icon(Icons.title),
-        leading: const MouseRegion(
-            cursor: SystemMouseCursors.click, child: Icon(Icons.mic)),
-        trailing: const Icon(Icons.search),
-
         options: [
           MultiselectOption(value: "Hi", label: "Hello"),
           MultiselectOption(value: "Hiya", label: "Wat"),
           MultiselectOption(value: "Yoz", label: "Sup"),
         ],
+        // defaultValue: ["Hiya", "Yoz"], // Set default checked items
       ),
 
+      // --- File Upload ---
       ChampionFileUpload(
         id: "fileUpload",
-        multiselect: true,
-        title: "Upload some files",
-        description: "Drag and drop or click and use the file picker.",
+        title: "Upload Images",
+        description: "Drag & drop or click to upload (JPG, PNG only).",
+        multiselect: true, // Allow multiple files
         validateLive: true,
-        // dropDisplayWidget: (colors, field) =>
-        //     Center(child: Text(field.title ?? "")),
-        displayUploadedFiles: true,
+        allowedExtensions: ['jpg', 'jpeg', 'png'], // Restrict file types
+        // displayUploadedFiles: true, // Default is true
+        // Custom display for the drop zone (optional)
+        // dropDisplayWidget: (colors, field) => Container(
+        //   padding: EdgeInsets.all(20),
+        //   decoration: BoxDecoration(border: Border.all(color: colors.borderColor)),
+        //   child: Center(child: Text("Custom Drop Zone Text", style: TextStyle(color: colors.textColor))),
+        // ),
         validators: [
+          // Example: Ensure at least one file is uploaded
+          // FormBuilderValidator(
+          //     validator: (results) => DefaultValidators().isEmpty(results),
+          //     reason: "Please upload at least one image."),
+          // Example: Validate that uploaded files are indeed images
           FormBuilderValidator(
-              validator: (results) => DefaultValidators().isEmpty(results),
-              reason: "No Files Uploaded"),
-          FormBuilderValidator(
-            reason: "Only images allowed",
-            validator: (results) => DefaultValidators().fileIsImage(
-              results,
-            ),
+            reason: "Only image files (JPG, PNG) are allowed.",
+            validator: (results) => DefaultValidators().fileIsImage(results),
           ),
+          // Or use a more specific validator:
+          // FormBuilderValidator(
+          //   reason: "Only JPG or PNG images allowed.",
+          //   validator: (results) => DefaultValidators().fileIsCommonImage(results), // Checks common image types
+          // ),
         ],
       ),
+
+      // --- Another Text Field with Autocomplete ---
       ChampionTextField(
         id: "BottomText",
+        textFieldTitle: "Autocomplete Example 2",
+        hintText: "Start typing...",
         autoComplete: AutoCompleteBuilder(
-          initialOptions: [
-            AutoCompleteOption(value: "test1@gmail.com"),
-            AutoCompleteOption(value: "test2@gmail.com"),
-            AutoCompleteOption(value: "test3@gmail.com"),
-            AutoCompleteOption(value: "test4@gmail.com"),
-            AutoCompleteOption(value: "test5@gmail.com"),
-            AutoCompleteOption(value: "test6@gmail.com"),
-            AutoCompleteOption(value: "test7@gmail.com"),
-          ],
-        ),
+            initialOptions: [
+              AutoCompleteOption(value: "Apple"),
+              AutoCompleteOption(value: "Banana"),
+              AutoCompleteOption(value: "Cherry"),
+              AutoCompleteOption(value: "Date"),
+              AutoCompleteOption(value: "Fig"),
+              AutoCompleteOption(value: "Grape"),
+            ],
+            // Simple filtering on initial options
+            updateOptions: (searchValue) async {
+              return [
+                AutoCompleteOption(value: "Apple"),
+                AutoCompleteOption(value: "Banana"),
+                AutoCompleteOption(value: "Cherry"),
+                AutoCompleteOption(value: "Date"),
+                AutoCompleteOption(value: "Fig"),
+                AutoCompleteOption(value: "Grape"),
+              ]
+                  .where((opt) => opt.value
+                      .toLowerCase()
+                      .contains(searchValue.toLowerCase()))
+                  .toList();
+            }),
       )
     ];
 
+    // --- Building the UI ---
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: const Text("Champion Forms Example"),
+        title: Text(widget.title),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            // The ChampionForm widget actually displays a form.
-            // Throw in the fields defined above.
-            // The ID keeps forms seperate when pulling results.
-            // If two forms have the same ID and different fields, then all fields
-            // will appear in the results when the form is evaluated.
-            ChampionForm(
-              theme: softBlueColorTheme(context),
-              controller: controller,
-              spacing: 10,
-              fields: fields,
-            ),
-            ElevatedButton(
-                child: const Text("Set Values"),
-                onPressed: () {
-                  controller.updateTextFieldValue("Email", "Hello@hello.com");
-                  controller.toggleMultiSelectValue("DropdownField",
-                      toggleOn: ["Value 3", "Value 2"]);
-                  controller.toggleMultiSelectValue(
-                    "SelectBox",
-                    toggleOn: ["Hi", "Yoz"],
-                    toggleOff: ["Hiya"],
-                  );
-                }),
-          ],
+        // Use SingleChildScrollView for long forms
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0), // Add padding around the form
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              // --- ChampionForm Widget ---
+              ChampionForm(
+                // theme: specificTheme, // Optionally override the global theme here
+                controller: controller,
+                spacing: 12, // Spacing between fields
+                fieldPadding: const EdgeInsets.symmetric(
+                    vertical: 8.0), // Padding *within* each field layout
+                fields: fields,
+              ),
+              const SizedBox(height: 20),
+              // --- Buttons ---
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                      onPressed: _setValuesProgrammatically,
+                      child: const Text("Set Values")),
+                  ElevatedButton(
+                      onPressed: _executeLogin, // Trigger submission/validation
+                      child: const Text("Submit Form")),
+                ],
+              )
+            ],
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _executeLogin,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      // Floating action button removed for clarity, using ElevatedButton instead.
     );
   }
 }

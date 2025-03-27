@@ -37,3 +37,6 @@ export 'package:championforms/functions/defaultvalidators/defaultvalidators.dart
 
 // Export the global theme singleton
 export 'package:championforms/models/theme_singleton.dart';
+
+// Export FormResults type
+export 'package:championforms/models/formresults.dart';
