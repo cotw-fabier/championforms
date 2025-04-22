@@ -1,6 +1,7 @@
 import 'package:championforms/models/autocomplete/autocomplete_class.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class ChampionTextField extends FormFieldDef {
   // Define the type of field type
@@ -33,6 +34,15 @@ class ChampionTextField extends FormFieldDef {
 
   // These are the default values for the field. Use the specific one you need depending on the input required.
   final String? defaultValue;
+
+  /// Text Input type. Defaults to normal input.
+  /// But if you want a numeric only field you can use this to set it to numeric
+  /// Direct passthrough of default field
+  final TextInputType? keyboardType;
+
+  /// Text input formatters. Defaults to empty.
+  /// Direct passthrough of inputFormatters from TextField
+  final List<TextInputFormatter>? inputFormatters;
 
   // Add a builder for defining the field style
 
@@ -72,6 +82,8 @@ class ChampionTextField extends FormFieldDef {
     super.requestFocus,
     this.password = false,
     this.defaultValue,
+    this.keyboardType,
+    this.inputFormatters,
     super.validators,
     super.validateLive,
     super.onSubmit,

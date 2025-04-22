@@ -3,6 +3,7 @@ import 'package:championforms/functions/inputdecoration_from_theme.dart';
 import 'package:championforms/functions/textstyle_from_theme.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 // Take in a TextFormField and override specific values with important ones we want to include.
 TextField overrideTextField({
@@ -23,6 +24,8 @@ TextField overrideTextField({
   bool? obscureText = false,
   bool? autocorrect = false,
   int? maxLength,
+  TextInputType? keyboardType,
+  List<TextInputFormatter>? inputFormatters,
 }) {
   // Determine the current InputDecoration or use a fallback.
   final originalDecoration = baseField.decoration;
@@ -56,7 +59,8 @@ TextField overrideTextField({
     controller: controller ?? baseField.controller,
     focusNode: focusNode ?? baseField.focusNode,
     decoration: effectiveInputDecoration,
-    keyboardType: baseField.keyboardType,
+    keyboardType: keyboardType ?? baseField.keyboardType,
+    inputFormatters: inputFormatters ?? baseField.inputFormatters,
     onSubmitted: onSubmitted ?? baseField.onSubmitted,
     textInputAction: baseField.textInputAction,
     textCapitalization: baseField.textCapitalization,
@@ -82,7 +86,6 @@ TextField overrideTextField({
     onChanged: baseField.onChanged,
     onEditingComplete: baseField.onEditingComplete,
     onAppPrivateCommand: baseField.onAppPrivateCommand,
-    inputFormatters: baseField.inputFormatters,
     enabled: baseField.enabled,
     ignorePointers: baseField.ignorePointers,
     cursorWidth: baseField.cursorWidth,

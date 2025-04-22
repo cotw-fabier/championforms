@@ -68,6 +68,60 @@ class FieldResults {
     return output != "" ? output : fallback;
   }
 
+  /// Converts the object's string representation to a double.
+  ///
+  /// Uses [asString] internally to get the string value, optionally filtered by [id].
+  /// Throws a [FormatException] if the resulting string cannot be parsed into a double.
+  /// Does not use the 'delimiter' or 'fallback' parameters of [asString].
+  double asDouble({String? id, double? fallback}) {
+    // Call asString, potentially getting a specific value if id is provided.
+    // We avoid passing fallback to ensure we only parse the actual value or an empty string.
+    final stringValue = asString(id: id, fallback: "");
+
+    try {
+      // Attempt to parse the string. This throws FormatException if invalid.
+      return double.parse(stringValue);
+    } on FormatException catch (e) {
+      if (fallback != null) {
+        return fallback;
+      }
+
+      // Re-throw the exception or a custom one.
+      // Adding the problematic string value to the message can be helpful for debugging.
+      throw FormatException(
+          "Input string cannot be parsed as a double: '$stringValue'",
+          e.source,
+          e.offset);
+    }
+  }
+
+  /// Converts the object's string representation to an integer.
+  ///
+  /// Uses [asString] internally to get the string value, optionally filtered by [id].
+  /// Throws a [FormatException] if the resulting string cannot be parsed into an integer.
+  /// Does not use the 'delimiter' or 'fallback' parameters of [asString].
+  int asInt({String? id, int? fallback}) {
+    // Call asString, potentially getting a specific value if id is provided.
+    // We avoid passing fallback to ensure we only parse the actual value or an empty string.
+    final stringValue = asString(id: id, fallback: "");
+
+    try {
+      // Attempt to parse the string. This throws FormatException if invalid.
+      return int.parse(stringValue);
+    } on FormatException catch (e) {
+      // If there is a fallback
+      if (fallback != null) {
+        return fallback;
+      }
+
+      // Re-throw the exception or a custom one.
+      throw FormatException(
+          "Input string cannot be parsed as an int: '$stringValue'",
+          e.source,
+          e.offset);
+    }
+  }
+
   List<String> asStringList({String? id, List<String> fallback = const []}) {
     List<String> output = [];
     if (type == FieldType.bool) {
@@ -115,6 +169,63 @@ class FieldResults {
       ]);
     }
     return output.isNotEmpty ? output : fallback;
+  }
+
+  /// Converts the object's string list representation to a list of doubles.
+  ///
+  /// Uses [asStringList] internally to get the list of strings, optionally
+  /// filtered by [id].
+  /// Attempts to parse each string into a double using [double.tryParse].
+  /// Strings that cannot be parsed are ignored.
+  ///
+  /// If the resulting list of doubles is empty (either because the initial
+  /// string list was empty or no strings could be parsed), the provided [fallback]
+  /// list is returned. If [fallback] is null, an empty list `[]` is returned.
+  List<double> asDoubleList({String? id, List<double>? fallback}) {
+    // Call asStringList. Note: We don't pass a fallback here,
+    // let asStringList return its default (usually empty list) if applicable.
+    final stringList = asStringList(id: id);
+    final List<double> resultList = [];
+
+    for (final str in stringList) {
+      final double? parsedValue = double.tryParse(str);
+      if (parsedValue != null) {
+        resultList.add(parsedValue);
+      }
+      // Ignore strings that don't parse (parsedValue is null)
+    }
+
+    // If the list is empty after trying to parse, return the fallback.
+    // Otherwise, return the list of successfully parsed doubles.
+    return resultList.isNotEmpty ? resultList : (fallback ?? const []);
+  }
+
+  /// Converts the object's string list representation to a list of integers.
+  ///
+  /// Uses [asStringList] internally to get the list of strings, optionally
+  /// filtered by [id].
+  /// Attempts to parse each string into an integer using [int.tryParse].
+  /// Strings that cannot be parsed are ignored.
+  ///
+  /// If the resulting list of integers is empty (either because the initial
+  /// string list was empty or no strings could be parsed), the provided [fallback]
+  /// list is returned. If [fallback] is null, an empty list `[]` is returned.
+  List<int> asIntList({String? id, List<int>? fallback}) {
+    // Call asStringList.
+    final stringList = asStringList(id: id);
+    final List<int> resultList = [];
+
+    for (final str in stringList) {
+      final int? parsedValue = int.tryParse(str);
+      if (parsedValue != null) {
+        resultList.add(parsedValue);
+      }
+      // Ignore strings that don't parse (parsedValue is null)
+    }
+
+    // If the list is empty after trying to parse, return the fallback.
+    // Otherwise, return the list of successfully parsed integers.
+    return resultList.isNotEmpty ? resultList : (fallback ?? const []);
   }
 
   List<bool> asBool({String? id}) {

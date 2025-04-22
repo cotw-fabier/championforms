@@ -472,6 +472,8 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
           icon: widget.field.icon,
           labelText: widget.labelText,
           hintText: widget.hintText,
+          keyboardType: widget.field.keyboardType,
+          inputFormatters: widget.field.inputFormatters,
           controller: _controller,
           focusNode: _focusNode,
           obscureText: widget.password,
