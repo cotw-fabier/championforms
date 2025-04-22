@@ -453,6 +453,7 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
     _pasteFocusNode.dispose();
     _focusNode.dispose();
     _removeOverlay();
+    _debounceTimer?.cancel(); // Ensure timer is cancelled
     _scrollController.dispose();
     super.dispose();
   }

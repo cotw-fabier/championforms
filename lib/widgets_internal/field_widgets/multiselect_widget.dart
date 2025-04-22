@@ -37,6 +37,8 @@ class _MultiselectWidgetState extends State<MultiselectWidget> {
 
     _focusNode.addListener(_onLoseFocus);
 
+    // widget.controller.addListener(_onControllerChanged);
+
     if (widget.requestFocus) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _requestFocusOnFirstChild();

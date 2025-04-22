@@ -1,11 +1,11 @@
 // We are going to build one giant controller to handle all aspects of our form.
 
 import 'package:championforms/models/field_types/championoptionselect.dart';
-import 'package:championforms/models/field_types/formfieldbase.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/formcontroller/field_controller.dart';
 import 'package:championforms/models/formcontroller/field_focus.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
+import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/formvalues/multiselect_form_field_value_by_id.dart';
 import 'package:championforms/models/formvalues/text_form_field_value_by_id.dart';
 import 'package:championforms/models/multiselect_option.dart';
@@ -294,6 +294,12 @@ class ChampionFormController extends ChangeNotifier {
           ]);
     }
 
+    // Trigger any onChange functions
+    if (field.onChange != null) {
+      field
+          .onChange!(FormResults.getResults(controller: this, fields: [field]));
+    }
+    // Notify listeners
     notifyListeners();
   }
 
@@ -307,6 +313,7 @@ class ChampionFormController extends ChangeNotifier {
   void updateMultiselectValues(String id, List<MultiselectOption> newValue,
       {bool multiselect = false, bool overwrite = false}) {
     final reference = findMultiselectValueIndex(id);
+    final field = fields.firstWhereOrNull((fieldData) => fieldData.id == id);
 
     // if overwrite is true then we don't need to merge, just replace the current list
     // This is used for file uploads
@@ -372,7 +379,12 @@ class ChampionFormController extends ChangeNotifier {
                     : [])
       ];
     }
-
+    // Trigger any onChange functions
+    if (field?.onChange != null) {
+      field!
+          .onChange!(FormResults.getResults(controller: this, fields: [field]));
+    }
+    // Notify listeners
     notifyListeners();
   }
 
@@ -391,8 +403,19 @@ class ChampionFormController extends ChangeNotifier {
     final reference = findMultiselectValueIndex(fieldId);
     if (reference != null) {
       multiselectValues.removeAt(reference);
+
+      final field =
+          fields.firstWhereOrNull((fieldData) => fieldData.id == fieldId);
+
+      // Trigger any onChange functions
+      if (field?.onChange != null) {
+        field!.onChange!(
+            FormResults.getResults(controller: this, fields: [field]));
+      }
+
       notifyListeners();
     }
+
     return;
   }
 
