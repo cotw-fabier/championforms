@@ -90,7 +90,11 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
   }
 
   void _rebuildOnControllerUpdate() {
-    Future.delayed(Duration.zero, () => setState(() {}));
+    Future.delayed(Duration.zero, () {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   void _updateDefaults() {
