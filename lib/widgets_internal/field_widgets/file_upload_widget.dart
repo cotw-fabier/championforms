@@ -205,6 +205,7 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
             _files,
             multiselect: widget.field.multiselect,
             overwrite: true,
+            noOnChange: true,
           );
           // Report back that a file has been uploaded
           widget.onFileOptionChange(option);
@@ -250,6 +251,7 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
         _files,
         multiselect: widget.field.multiselect,
         overwrite: true,
+        noOnChange: true,
       );
       // Let the builder know
       widget.onFileOptionChange(option);

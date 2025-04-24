@@ -269,6 +269,7 @@ class ChampionFormController extends ChangeNotifier {
     List<String> toggleOn = const [],
     List<String> toggleOff = const [],
     bool noNotify = false,
+    bool noOnChange = false,
   }) {
     final field =
         fields.firstWhereOrNull((fieldData) => fieldData.id == fieldId);
@@ -315,7 +316,7 @@ class ChampionFormController extends ChangeNotifier {
     }
 
     // Trigger any onChange functions
-    if (field.onChange != null) {
+    if (field.onChange != null && !noOnChange) {
       field
           .onChange!(FormResults.getResults(controller: this, fields: [field]));
     }
@@ -338,6 +339,7 @@ class ChampionFormController extends ChangeNotifier {
     bool multiselect = false,
     bool overwrite = false,
     bool noNotify = false,
+    bool noOnChange = false,
   }) {
     final reference = findMultiselectValueIndex(id);
     final field = fields.firstWhereOrNull((fieldData) => fieldData.id == id);
@@ -407,7 +409,7 @@ class ChampionFormController extends ChangeNotifier {
       ];
     }
     // Trigger any onChange functions
-    if (field?.onChange != null) {
+    if (field?.onChange != null && !noOnChange) {
       field!
           .onChange!(FormResults.getResults(controller: this, fields: [field]));
     }
@@ -432,6 +434,7 @@ class ChampionFormController extends ChangeNotifier {
     String fieldId, {
     // Disable notify listeners. This can prevent notification loops breaking widgets.
     bool noNotify = false,
+    bool noOnChange = false,
   }) {
     final reference = findMultiselectValueIndex(fieldId);
     if (reference != null) {
@@ -441,7 +444,7 @@ class ChampionFormController extends ChangeNotifier {
           fields.firstWhereOrNull((fieldData) => fieldData.id == fieldId);
 
       // Trigger any onChange functions
-      if (field?.onChange != null) {
+      if (field?.onChange != null && !noOnChange) {
         field!.onChange!(
             FormResults.getResults(controller: this, fields: [field]));
       }
