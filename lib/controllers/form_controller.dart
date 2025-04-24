@@ -98,7 +98,7 @@ class ChampionFormController extends ChangeNotifier {
     bool noNotify = false,
   }) {
     // start by cleaning any fields with the same IDs
-    removeActiveFields(fields, notify: false);
+    removeActiveFields(fields, noNotify: true);
 
     activeFields = [...activeFields, ...fields];
 
