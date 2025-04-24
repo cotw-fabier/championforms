@@ -92,25 +92,35 @@ class ChampionFormController extends ChangeNotifier {
   /// Merges in a list of fields being actively displayed
   /// This is called by formbuilder on widget build
   /// to create a running list of active fields.
-  void updateActiveFields(List<FormFieldDef> fields) {
+  void updateActiveFields(
+    List<FormFieldDef> fields, {
+    // Disable notify listeners. This can prevent notification loops breaking widgets.
+    bool noNotify = false,
+  }) {
     // start by cleaning any fields with the same IDs
     removeActiveFields(fields, notify: false);
 
     activeFields = [...activeFields, ...fields];
 
-    notifyListeners();
+    if (!noNotify) {
+      notifyListeners();
+    }
   }
 
   /// Remove active fields.
   /// Removes a list of fields from active fields
   /// this is called in FormBuilder when it is being
   /// torn down.
-  void removeActiveFields(List<FormFieldDef> fields, {bool notify = true}) {
+  void removeActiveFields(
+    List<FormFieldDef> fields, {
+    // Disable notify listeners. This can prevent notification loops breaking widgets.
+    bool noNotify = false,
+  }) {
     activeFields = activeFields
         .where((field) => !fields.any((f) => f.id == field.id))
         .toList();
 
-    if (notify) {
+    if (!noNotify) {
       notifyListeners();
     }
   }
@@ -154,9 +164,15 @@ class ChampionFormController extends ChangeNotifier {
   /// the controller before an associated ChampionForm() widget is called.
   ///
   /// For example: a multi-page form handling more than one group of fields.
-  void addFields(List<FormFieldDef> newFields) {
+  void addFields(
+    List<FormFieldDef> newFields, {
+    // Disable notify listeners. This can prevent notification loops breaking widgets.
+    bool noNotify = false,
+  }) {
     fields = [...fields, ...newFields];
-    notifyListeners();
+    if (!noNotify) {
+      notifyListeners();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -199,7 +215,8 @@ class ChampionFormController extends ChangeNotifier {
   /// Call this to force a field update to a text field. This will
   /// update the text field value and also update anything listening
   /// to the controller.
-  void updateTextFieldValue(String id, String newValue) {
+  void updateTextFieldValue(String id, String newValue,
+      {bool noNotify = false}) {
     final reference = findTextFieldValueIndex(id);
     if (reference != null) {
       textFieldValues[reference] =
@@ -211,7 +228,9 @@ class ChampionFormController extends ChangeNotifier {
       ];
     }
 
-    notifyListeners();
+    if (!noNotify) {
+      notifyListeners();
+    }
   }
 
   /// Use this function to find the value of a text field.
@@ -249,6 +268,7 @@ class ChampionFormController extends ChangeNotifier {
     String fieldId, {
     List<String> toggleOn = const [],
     List<String> toggleOff = const [],
+    bool noNotify = false,
   }) {
     final field =
         fields.firstWhereOrNull((fieldData) => fieldData.id == fieldId);
@@ -300,7 +320,9 @@ class ChampionFormController extends ChangeNotifier {
           .onChange!(FormResults.getResults(controller: this, fields: [field]));
     }
     // Notify listeners
-    notifyListeners();
+    if (!noNotify) {
+      notifyListeners();
+    }
   }
 
   /// This takes in a list of MultiselectOptions and will toggle those values on and off.
@@ -310,8 +332,13 @@ class ChampionFormController extends ChangeNotifier {
   ///
   /// If you want to force their setting on and off, then set the bool overwrite to
   /// ensure they are set with the value being on when being added.
-  void updateMultiselectValues(String id, List<MultiselectOption> newValue,
-      {bool multiselect = false, bool overwrite = false}) {
+  void updateMultiselectValues(
+    String id,
+    List<MultiselectOption> newValue, {
+    bool multiselect = false,
+    bool overwrite = false,
+    bool noNotify = false,
+  }) {
     final reference = findMultiselectValueIndex(id);
     final field = fields.firstWhereOrNull((fieldData) => fieldData.id == id);
 
@@ -385,7 +412,9 @@ class ChampionFormController extends ChangeNotifier {
           .onChange!(FormResults.getResults(controller: this, fields: [field]));
     }
     // Notify listeners
-    notifyListeners();
+    if (!noNotify) {
+      notifyListeners();
+    }
   }
 
   /// Reset a multi-select field to zero options. Useful for removing choices from a MultiSelect field.
@@ -399,7 +428,11 @@ class ChampionFormController extends ChangeNotifier {
   }
 
   /// Resets all choices on any multiselect field to false.
-  void resetMultiselectChoices(String fieldId) {
+  void resetMultiselectChoices(
+    String fieldId, {
+    // Disable notify listeners. This can prevent notification loops breaking widgets.
+    bool noNotify = false,
+  }) {
     final reference = findMultiselectValueIndex(fieldId);
     if (reference != null) {
       multiselectValues.removeAt(reference);
@@ -413,7 +446,9 @@ class ChampionFormController extends ChangeNotifier {
             FormResults.getResults(controller: this, fields: [field]));
       }
 
-      notifyListeners();
+      if (!noNotify) {
+        notifyListeners();
+      }
     }
 
     return;
@@ -441,25 +476,44 @@ class ChampionFormController extends ChangeNotifier {
     return formErrors.where((error) => error.fieldId == fieldId).toList();
   }
 
-  void clearErrors(String fieldId) {
+  void clearErrors(
+    String fieldId, {
+    // Disable notify listeners. This can prevent notification loops breaking widgets.
+    bool noNotify = false,
+  }) {
     formErrors = formErrors.where((error) => error.fieldId != fieldId).toList();
-    notifyListeners();
+    if (!noNotify) {
+      notifyListeners();
+    }
 
     return;
   }
 
-  void clearError(String fieldId, int errorPosition) {
+  void clearError(
+    String fieldId,
+    int errorPosition, {
+    // Disable notify listeners. This can prevent notification loops breaking widgets.
+    bool noNotify = false,
+  }) {
     formErrors = formErrors
         .where((error) => error.validatorPosition != errorPosition)
         .toList();
 
-    notifyListeners();
+    if (!noNotify) {
+      notifyListeners();
+    }
     return;
   }
 
-  void addError(FormBuilderError error) {
+  void addError(
+    FormBuilderError error, {
+    // Disable notify listeners. This can prevent notification loops breaking widgets.
+    bool noNotify = false,
+  }) {
     formErrors = [error, ...formErrors];
-    notifyListeners();
+    if (!noNotify) {
+      notifyListeners();
+    }
   }
 
   // Lets Handle FocusNodes
@@ -476,7 +530,13 @@ class ChampionFormController extends ChangeNotifier {
   }
 
   // Set field focus
-  void setFieldFocus(String fieldId, bool focused, FormFieldDef activeField) {
+  void setFieldFocus(
+    String fieldId,
+    bool focused,
+    FormFieldDef activeField, {
+    // Disable notify listeners. This can prevent notification loops breaking widgets.
+    bool noNotify = false,
+  }) {
     // Update the active field
     updateFocusedField(activeField);
 
@@ -495,7 +555,9 @@ class ChampionFormController extends ChangeNotifier {
         ...fieldFocus
       ];
     }
-    notifyListeners();
+    if (!noNotify) {
+      notifyListeners();
+    }
   }
 
   int? findFieldFocusIndex(String fieldId) {
