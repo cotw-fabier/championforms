@@ -1,4 +1,5 @@
 import 'package:championforms/controllers/form_controller.dart';
+import 'package:championforms/core/field_builder_registry.dart';
 import 'package:championforms/functions/gather_child_errors.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/field_types/championcolumn.dart';
@@ -51,6 +52,12 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
   void initState() {
     super.initState();
     widget.controller.addListener(_rebuildOnControllerUpdate);
+
+    // --- Ensure core builders are registered ---
+    if (!ChampionFormFieldRegistry.instance.hasBuilderFor(ChampionTextField)) {
+      ChampionFormFieldRegistry.instance
+          .registerCoreBuilders(); // Call your registration logic
+    }
 
     // We're going to loop through the incoming fields and set defaults for chip values
     WidgetsBinding.instance.addPostFrameCallback((_) {
