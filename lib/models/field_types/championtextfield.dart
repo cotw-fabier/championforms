@@ -1,10 +1,14 @@
 import 'package:championforms/models/autocomplete/autocomplete_class.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
+import 'package:championforms/models/formresults.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class ChampionTextField extends FormFieldDef {
   // Define the type of field type
+
+  @override
+  FieldType get fieldType => FieldType.string;
 
   // Add a TextField override so we could write our own widget if we prefer. This will override the default field.
   final TextField? fieldOverride;

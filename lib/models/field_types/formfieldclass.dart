@@ -1,16 +1,11 @@
-import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/colorscheme.dart';
-import 'package:championforms/models/field_types/championoptionselect.dart';
-import 'package:championforms/models/fieldstate.dart';
+import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/field_types/formfieldbase.dart';
 import 'package:championforms/models/formresults.dart';
-import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/models/themes.dart';
 import 'package:championforms/models/validatorclass.dart';
 import 'package:championforms/widgets_external/field_backgrounds/simplewrapper.dart';
-import 'package:championforms/widgets_external/field_builders/checkboxfield_builder.dart';
-import 'package:championforms/widgets_external/field_builders/dropdownfield_builder.dart';
 import 'package:championforms/widgets_external/field_layouts/simple_layout.dart';
 import 'package:flutter/material.dart';
 
@@ -40,7 +35,7 @@ class FormFieldChoiceOption {
   }) : name = name ?? value;
 }
 
-abstract class FormFieldDef implements FormFieldBase {
+abstract class FormFieldDef<T> implements FormFieldBase {
   // Add an ID
   @override
   final String id;
@@ -85,6 +80,25 @@ abstract class FormFieldDef implements FormFieldBase {
   final Widget Function(BuildContext context, FormFieldDef fieldDetails,
           FieldColorScheme currentColors, Widget renderedField)
       fieldBackground; // This is the background around the field itself.
+
+  /// The default value for this field, matching the field's type.
+  T? get defaultValue;
+
+  // --- Conversion Function Getters ---
+
+  /// Function to convert the raw value `T` to a display String.
+  String Function(T value) get asStringConverter;
+
+  /// Function to convert the raw value `T` to a List of Strings.
+  List<String> Function(T value) get asStringListConverter;
+
+  /// Function to convert the raw value `T` to a Boolean representation.
+  /// (e.g., is the value considered "truthy" or "set"?)
+  bool Function(T value) get asBoolConverter;
+
+  /// Function to convert the raw value `T` to a List<FileModel>.
+  /// Returns null if the field type does not support files.
+  List<FileModel> Function(T value)? get asFileListConverter;
 
   FormFieldDef({
     required this.id,

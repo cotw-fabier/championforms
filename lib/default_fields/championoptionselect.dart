@@ -22,9 +22,8 @@ Widget buildChampionOptionSelect(
       currentState,
       currentColors,
       controller
-              .findMultiselectValue(field.id)
-              ?.values
-              .map((v) => v.value ?? '')
+              .getFieldValue<List<MultiselectOption>>(field.id)
+              ?.map((v) => v.value)
               .toList() ??
           [], // Get current value for default
       updateFocus, (MultiselectOption? selectedOption) {

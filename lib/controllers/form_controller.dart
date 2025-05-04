@@ -1,13 +1,9 @@
 // We are going to build one giant controller to handle all aspects of our form.
 
-import 'package:championforms/models/field_types/championoptionselect.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
-import 'package:championforms/models/formcontroller/field_controller.dart';
 import 'package:championforms/models/formcontroller/field_focus.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';
-import 'package:championforms/models/formvalues/multiselect_form_field_value_by_id.dart';
-import 'package:championforms/models/formvalues/text_form_field_value_by_id.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/widgets.dart';
@@ -209,9 +205,9 @@ class ChampionFormController extends ChangeNotifier {
 
   /// Update the value for any field ID.
   /// Notifies listeners unless noNotify is true.
-  void updateFieldValue(String fieldId, dynamic newValue,
-      {bool noNotify = false}) {
-    _fieldValues[fieldId] = newValue;
+  void updateFieldValue<T>(String id, T newValue, {bool noNotify = false}) {
+    // final reference = findTextFieldValueIndex(id);
+    _fieldValues[id] = newValue;
 
     if (!noNotify) {
       notifyListeners();
@@ -224,7 +220,7 @@ class ChampionFormController extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   /// Query if a text editing controller exists for a field
-  bool textEditingControllerExists(String fieldId) {
+  bool controllerExists(String fieldId) {
     return _fieldControllers[fieldId] != null;
   }
 
@@ -251,267 +247,139 @@ class ChampionFormController extends ChangeNotifier {
     _fieldControllers[fieldId] = controller;
   }
 
-  /// Update text field values
-  /// Call this to force a field update to a text field. This will
-  /// update the text field value and also update anything listening
-  /// to the controller.
-  void updateTextFieldValue(String id, String newValue,
-      {bool noNotify = false}) {
-    final reference = findTextFieldValueIndex(id);
-    if (reference != null) {
-      textFieldValues[reference] =
-          TextFormFieldValueById(id: id, value: newValue);
-    } else {
-      textFieldValues = [
-        TextFormFieldValueById(id: id, value: newValue),
-        ...textFieldValues
-      ];
-    }
-
-    if (!noNotify) {
-      notifyListeners();
-    }
-  }
-
-  /// Use this function to find the value of a text field.
-  /// Returned value is a TextFormFieldValueById which
-  /// has the properties of id and value. Simple class
-  /// so you can track which value is associated with which field.
-  TextFormFieldValueById? findTextFieldValue(String id) {
-    final reference = findTextFieldValueIndex(id);
-    if (reference != null) {
-      return textFieldValues[reference];
-    }
-    return null;
-  }
-
-  int? findTextFieldValueIndex(String id) {
-    for (int i = 0; i < textFieldValues.length; i++) {
-      if (textFieldValues[i].id == id) {
-        return i;
-      }
-    }
-    return null;
-  }
-
   // ---------------------------------------------------------------------------
   // Multiselect public Functions. Checkboxes, Dropdowns, File Uploads, and more.
   // These functions manage text fields.
   // ---------------------------------------------------------------------------
 
-  /// This is a helper function so you can find the field options and then toggle them via a list of string values.
-  /// toggleOn to enable the values and toggleOff to disable the values.
-  /// This is different than updateMultiSelectValues() because this assumes the values have already been established
-  /// in the controller via the "options:" parameter when creating
-  /// a multiselect field. This simply enables or disables the values that are already in the controller.
-  void toggleMultiSelectValue(
-    String fieldId, {
-    List<String> toggleOn = const [],
-    List<String> toggleOff = const [],
-    bool noNotify = false,
-    bool noOnChange = false,
-  }) {
-    final field =
-        fields.firstWhereOrNull((fieldData) => fieldData.id == fieldId);
-
-    if (field == null || field is! ChampionOptionSelect) {
-      debugPrint(
-          "Tried to toggle values on a field that doesn't seem to exist: $fieldId");
-      return;
-    }
-
-    final List<MultiselectOption> selectOptions = field.options
-        .where((option) => toggleOn.contains(option.value))
-        .toList();
-
-    final List<MultiselectOption> deSelectOptions = field.options
-        .where((option) => toggleOn.contains(option.value))
-        .toList();
-    // Run the logic to add and remove these values
-    final reference = findMultiselectValueIndex(id);
-
-    if (reference == null) {
-      multiselectValues = [
-        MultiselectFormFieldValueById(
-          id: field.id,
-          values: selectOptions,
-        ),
-        ...multiselectValues,
-      ];
-    } else {
-      multiselectValues[reference] = MultiselectFormFieldValueById(
-          id: multiselectValues[reference].id,
-          values: [
-            // original values minus the addition and subtracted values
-            // Leave original selections intact
-            ...multiselectValues[reference].values.where((value) =>
-                !selectOptions
-                    .any((selected) => selected.value == value.value) &&
-                !deSelectOptions
-                    .any((deSelected) => deSelected.value == value.value)),
-
-            // The new values we're adding in
-            ...selectOptions,
-          ]);
-    }
-
-    // Trigger any onChange functions
-    if (field.onChange != null && !noOnChange) {
-      field
-          .onChange!(FormResults.getResults(controller: this, fields: [field]));
-    }
-    // Notify listeners
-    if (!noNotify) {
-      notifyListeners();
-    }
-  }
-
-  /// This takes in a list of MultiselectOptions and will toggle those values on and off.
-  /// If the values are not in the controller as options then it will add them.
-  /// If the values are already present then they will be updated to the reverse toggle
-  /// as they were before running this function (true -> false and vice versa).
+  /// Updates the selected value(s) for a field.
   ///
-  /// If you want to force their setting on and off, then set the bool overwrite to
-  /// ensure they are set with the value being on when being added.
+  /// - `id`: The ID of the field to update.
+  /// - `newValue`: The list of `MultiselectOption` to set.
+  /// - `multiselect`: If `true`, allows multiple selections. If `false`, only the first item in `newValue` (if any) is kept.
+  /// - `overwrite`:
+  ///    - If `true`, `newValue` completely replaces the current selection. (Useful for file uploads or direct replacements).
+  ///    - If `false` (default), the function toggles the selection state of items in `newValue`:
+  ///      - If an option from `newValue` is already selected, it's deselected.
+  ///      - If an option from `newValue` is not selected, it's selected.
+  /// - `noNotify`: If `true`, suppresses the `notifyListeners()` call.
+  /// - `noOnChange`: If `true`, suppresses the field's `onChange` callback.
   void updateMultiselectValues(
     String id,
     List<MultiselectOption> newValue, {
-    bool multiselect = false,
+    bool multiselect = false, // Default consistent with previous behavior
     bool overwrite = false,
     bool noNotify = false,
     bool noOnChange = false,
   }) {
-    final reference = findMultiselectValueIndex(id);
     final field = fields.firstWhereOrNull((fieldData) => fieldData.id == id);
+    // It's good practice to check if the field exists, though onChange might fail silently if not.
+    // if (field == null) {
+    //   debugPrint("ChampionFormController: Attempted to update non-existent field $id");
+    //  return;
+    // }
 
-    // if overwrite is true then we don't need to merge, just replace the current list
-    // This is used for file uploads
+    // Get current values or default to empty list
+    List<MultiselectOption> currentValues = List<MultiselectOption>.from(
+        getFieldValue<List<MultiselectOption>>(id) ?? []);
+    List<MultiselectOption> finalValue;
+
     if (overwrite) {
-      if (reference != null) {
-        multiselectValues[reference] = MultiselectFormFieldValueById(
-            id: id,
-            values: multiselect
-                ? newValue
-                : newValue.isNotEmpty
-                    ? [newValue.first]
-                    : []);
+      // Directly replace the current list with the new list (respecting multiselect flag)
+      if (multiselect) {
+        finalValue = newValue;
       } else {
-        multiselectValues = [
-          ...multiselectValues,
-          MultiselectFormFieldValueById(
-              id: id,
-              values: multiselect
-                  ? newValue
-                  : newValue.isNotEmpty
-                      ? [newValue.first]
-                      : [])
-        ];
+        finalValue = newValue.isNotEmpty ? [newValue.first] : [];
       }
-      return;
-    }
-
-    if (reference != null) {
-      // Lets do some massaging to the values to see if we need to remove some items based on this list.
-
-      // Lets subtract any values that are already stored, and then add any values which should be added.
-      final listToRemove = newValue
-          .where((value) => multiselectValues[reference]
-              .values
-              .any((existingValue) => existingValue.value == value.value))
-          .toList();
-
-      final updatedValue = [
-        // Any Additional new values minus the ones which we removed.
-        ...newValue.where((value) =>
-            !listToRemove.any((removeVar) => removeVar.value == value.value)),
-        // original values minus the values we should be removing (because they were selected again)
-        ...multiselectValues[reference].values.where((value) =>
-            !listToRemove.any((removeVar) => removeVar.value == value.value)),
-      ];
-
-      multiselectValues[reference] = MultiselectFormFieldValueById(
-          id: id,
-          values: multiselect
-              ? updatedValue
-              : updatedValue.isNotEmpty
-                  ? [updatedValue.first]
-                  : []);
     } else {
-      multiselectValues = [
-        ...multiselectValues,
-        MultiselectFormFieldValueById(
-            id: id,
-            values: multiselect
-                ? newValue
-                : newValue.isNotEmpty
-                    ? [newValue.first]
-                    : [])
-      ];
+      // Toggle logic based on current selection
+      final Set<String> newValueValues = newValue.map((o) => o.value).toSet();
+      final Set<String> currentValuesSet =
+          currentValues.map((o) => o.value).toSet();
+
+      List<MultiselectOption> mergedValues = [];
+
+      if (multiselect) {
+        // Add options from currentValues that are NOT in newValue (keep untoggled ones)
+        mergedValues.addAll(currentValues
+            .where((option) => !newValueValues.contains(option.value)));
+        // Add options from newValue that are NOT in currentValues (add newly toggled ones)
+        mergedValues.addAll(newValue
+            .where((option) => !currentValuesSet.contains(option.value)));
+      } else {
+        // Single select toggle:
+        // If newValue is empty, deselect everything.
+        // If newValue has items, check if the *first* item is already selected.
+        // If it is selected, deselect it (resulting in empty).
+        // If it's not selected, select it (replacing any previous single selection).
+        if (newValue.isNotEmpty) {
+          final firstNewOption = newValue.first;
+          if (!currentValuesSet.contains(firstNewOption.value)) {
+            mergedValues = [firstNewOption]; // Select the new one
+          } else {
+            mergedValues = []; // Deselect if it was already selected
+          }
+        } else {
+          mergedValues = []; // Deselect if newValue is empty
+        }
+      }
+      finalValue = mergedValues;
     }
-    // Trigger any onChange functions
+
+    // Update the central value store
+    updateFieldValue<List<MultiselectOption>>(id, finalValue,
+        noNotify: true); // Use internal method, notify later
+
+    // Trigger any onChange functions if the field definition exists
     if (field?.onChange != null && !noOnChange) {
       field!
           .onChange!(FormResults.getResults(controller: this, fields: [field]));
     }
-    // Notify listeners
+
+    // Notify listeners if required
     if (!noNotify) {
       notifyListeners();
     }
   }
 
-  /// Reset a multi-select field to zero options. Useful for removing choices from a MultiSelect field.
-  /// or resetting a field to zero files.
-  void removeMultiSelectOptions(String fieldId) {
+  /// Helper to clear all selected options for a multiselect field.
+  /// Equivalent to setting the value to an empty list.
+  /// Optionally triggers onChange and notifies listeners.
+  void removeMultiSelectOptions(
+    String fieldId, {
+    bool noNotify = false,
+    bool noOnChange = false,
+  }) {
+    // Call updateMultiselectValues with an empty list and overwrite: true
     updateMultiselectValues(
       fieldId,
       [],
       overwrite: true,
+      noNotify: noNotify, // Pass through notification flags
+      noOnChange: noOnChange, // Pass through onChange flag
     );
   }
 
-  /// Resets all choices on any multiselect field to false.
+  /// Resets a multiselect field by clearing its selected values.
+  /// This effectively calls `removeMultiSelectOptions`.
   void resetMultiselectChoices(
     String fieldId, {
-    // Disable notify listeners. This can prevent notification loops breaking widgets.
     bool noNotify = false,
     bool noOnChange = false,
   }) {
-    final reference = findMultiselectValueIndex(fieldId);
-    if (reference != null) {
-      multiselectValues.removeAt(reference);
-
-      final field =
-          fields.firstWhereOrNull((fieldData) => fieldData.id == fieldId);
-
-      // Trigger any onChange functions
-      if (field?.onChange != null && !noOnChange) {
-        field!.onChange!(
-            FormResults.getResults(controller: this, fields: [field]));
-      }
-
-      if (!noNotify) {
-        notifyListeners();
-      }
-    }
-
-    return;
+    // The concept of "removing the entry" is replaced by setting the value to empty list.
+    removeMultiSelectOptions(
+      fieldId,
+      noNotify: noNotify,
+      noOnChange: noOnChange,
+    );
   }
 
-  MultiselectFormFieldValueById? findMultiselectValue(String id) {
-    final reference = findMultiselectValueIndex(id);
-    if (reference != null) {
-      return multiselectValues[reference];
-    }
-    return null;
-  }
-
-  int? findMultiselectValueIndex(String id) {
-    for (int i = 0; i < multiselectValues.length; i++) {
-      if (multiselectValues[i].id == id) {
-        return i;
-      }
-    }
-    return null;
+  /// Get the currently selected options for a multiselect field.
+  /// Returns `null` if the field hasn't been interacted with or has no value set.
+  /// Returns an empty list `[]` if the field is set but has no options selected.
+  List<MultiselectOption>? getMultiselectValue(String fieldId) {
+    return getFieldValue<List<MultiselectOption>>(fieldId);
   }
 
   // Manage Errors

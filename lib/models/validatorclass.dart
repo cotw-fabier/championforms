@@ -1,7 +1,5 @@
-import 'package:championforms/models/formresults.dart';
-
-class FormBuilderValidator {
-  final bool Function(FieldResults results) validator;
+class FormBuilderValidator<T> {
+  final bool Function(T value) validator;
   final String reason;
 
   FormBuilderValidator({
