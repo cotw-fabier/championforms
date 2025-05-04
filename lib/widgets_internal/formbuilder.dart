@@ -11,6 +11,7 @@ import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/models/themes.dart';
 import 'package:championforms/widgets_internal/field_widgets/textfieldwidget.dart';
+import 'package:championforms/widgets_internal/rowcolumn_widgets/column_builder.dart';
 import 'package:championforms/widgets_internal/rowcolumn_widgets/row_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
@@ -81,11 +82,12 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
 
   @override
   void dispose() {
-    // Clean up active fields.
-    widget.controller
-        .removeActiveFields(widget.fields.whereType<FormFieldDef>().toList());
-
     widget.controller.removeListener(_rebuildOnControllerUpdate);
+    // Clean up active fields.
+    widget.controller.removeActiveFields(
+      widget.fields.whereType<FormFieldDef>().toList(),
+      // noNotify: true,
+    );
     super.dispose();
   }
 
@@ -192,111 +194,184 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
 
       // Determine the field layout and the field background
 
-      switch (field) {
-        // Row and Column
-        // if you see a row, run displaylogic and then call this widget recursively.
-        // ---- CHAMPION ROW ----
-        case ChampionRow rowField:
-          {
-            List<FormBuilderError> childErrors = [];
+      if (field is FormFieldDef) {
+        // Use the registry to build the field
+        outputWidget = ChampionFormFieldRegistry.instance.buildField(
+          context,
+          widget.controller,
+          field,
+          fieldState, // calculated state
+          fieldColors, // calculated colors
+          (focused) {
+            // Pass the focus update callback
+            widget.controller.setFieldFocus(field.id, focused, field);
+          },
+        );
+      } else if (field is ChampionRow) {
+        List<FormBuilderError> childErrors = [];
 
-            if (rowField.rollUpErrors) {
-              // Gather child errors from all columns inside the row
-              childErrors = gatherAllChildErrors(
-                rowField.columns.expand((c) => c.fields).toList(),
-                widget.controller,
-              );
-            }
-
-            // If rowField.rollUpErrors is true, the row
-            // should display all child errors.
-            // Otherwise the row only displays its own direct errors.
-            final rowErrors =
-                rowField.rollUpErrors ? childErrors : errorsForThisField;
-
-            // Determine row color state from rowErrors
-            final rowHasErrors = rowErrors.isNotEmpty;
-            final rowState = rowHasErrors ? FieldState.error : fieldState;
-            final rowColor =
-                rowHasErrors ? mergedTheme.errorColorScheme! : fieldColors;
-
-            // Finally build the row
-            outputWidget = ChampionRowWidget(
-              rowField: rowField,
-              columns: rowField.columns,
-              errors: rowErrors.isEmpty ? null : rowErrors,
-              colorScheme: rowColor,
-              controller: widget.controller,
-              theme: mergedTheme,
-              fieldPadding: widget.fieldPadding,
-            );
-
-            break;
-          }
-
-        case ChampionTextField():
-          outputWidget = TextFieldWidget(
-            controller: widget.controller,
-            field: field,
-            fieldOverride: field.fieldOverride,
-            fieldState: fieldState,
-            colorScheme: fieldColors,
-            fieldId: field.id,
-            onDrop: field.onDrop,
-            onPaste: field.onPaste,
-            draggable: field.draggable,
-            onSubmitted: field.onSubmit,
-            onChanged: field.onChange,
-            password: field.password,
-            requestFocus: field.requestFocus,
-            validate: validate,
-            initialValue: field.defaultValue,
-            labelText: field.textFieldTitle,
-            hintText: field.hintText,
-            maxLines: field.maxLines,
-          );
-
-          break;
-
-        case ChampionOptionSelect():
-          outputWidget = field.fieldBuilder(
-            context,
+        if (field.rollUpErrors) {
+          // Gather child errors from all columns inside the row
+          childErrors = gatherAllChildErrors(
+            field.columns.expand((c) => c.fields).toList(),
             widget.controller,
-            field.options,
-            field,
-            fieldState,
-            fieldColors,
-            widget.controller
-                    .findMultiselectValue(field.id)
-                    ?.values
-                    .map((option) => option.value)
-                    .toList() ??
-                [],
-            (focus) {
-              widget.controller.setFieldFocus(field.id, focus, field);
-            },
-            (MultiselectOption? selectedOption) {
-              if (selectedOption != null) {
-                widget.controller.updateMultiselectValues(
-                    field.id, [selectedOption],
-                    multiselect: field.multiselect);
-              } else {
-                widget.controller.resetMultiselectChoices(field.id);
-              }
-              if (field.validateLive == true) {
-                // Run validation
-                FormResults.getResults(
-                    controller: widget.controller, fields: [field]);
-              }
-            },
           );
+        }
 
-          break;
+        // If rowField.rollUpErrors is true, the row
+        // should display all child errors.
+        // Otherwise the row only displays its own direct errors.
+        final rowErrors = field.rollUpErrors ? childErrors : errorsForThisField;
 
-        default:
-          outputWidget = Container();
-          break;
+        // Determine row color state from rowErrors
+        final rowHasErrors = rowErrors.isNotEmpty;
+        final rowState = rowHasErrors ? FieldState.error : fieldState;
+        final rowColor =
+            rowHasErrors ? mergedTheme.errorColorScheme! : fieldColors;
+
+        // Finally build the row
+        outputWidget = ChampionRowWidget(
+          rowField: field,
+          columns: field.columns,
+          errors: rowErrors.isEmpty ? null : rowErrors,
+          colorScheme: rowColor,
+          controller: widget.controller,
+          theme: mergedTheme,
+          fieldPadding: widget.fieldPadding,
+        );
+      } else if (field is ChampionColumn) {
+        // This case might not be hit directly if columns are always inside rows,
+        // but handle it for completeness or direct column usage.
+        List<FormBuilderError> colChildErrors = [];
+        if (field.rollUpErrors) {
+          colChildErrors =
+              gatherAllChildErrors(field.fields, widget.controller);
+        }
+        final colErrors =
+            field.rollUpErrors ? colChildErrors : errorsForThisField;
+        final colHasErrors = colErrors.isNotEmpty;
+        final colColor =
+            colHasErrors ? mergedTheme.errorColorScheme! : fieldColors;
+
+        outputWidget = ChampionColumnWidget(
+          columnField: field,
+          errors: colErrors.isEmpty ? null : colErrors,
+          colorScheme: colColor, // Pass calculated color
+          controller: widget.controller,
+          columnWrapper: field.columnWrapper,
+          theme: mergedTheme, // Pass theme
+          fieldPadding: widget.fieldPadding, // Pass padding
+        );
+      } else {
+        // Should not happen if all fields extend FormFieldBase
+        outputWidget = const SizedBox.shrink(); // Or an error widget
       }
+
+      // switch (field) {
+      //   // Row and Column
+      //   // if you see a row, run displaylogic and then call this widget recursively.
+      //   // ---- CHAMPION ROW ----
+      //   case ChampionRow rowField:
+      //     {
+      //       List<FormBuilderError> childErrors = [];
+
+      //       if (rowField.rollUpErrors) {
+      //         // Gather child errors from all columns inside the row
+      //         childErrors = gatherAllChildErrors(
+      //           rowField.columns.expand((c) => c.fields).toList(),
+      //           widget.controller,
+      //         );
+      //       }
+
+      //       // If rowField.rollUpErrors is true, the row
+      //       // should display all child errors.
+      //       // Otherwise the row only displays its own direct errors.
+      //       final rowErrors =
+      //           rowField.rollUpErrors ? childErrors : errorsForThisField;
+
+      //       // Determine row color state from rowErrors
+      //       final rowHasErrors = rowErrors.isNotEmpty;
+      //       final rowState = rowHasErrors ? FieldState.error : fieldState;
+      //       final rowColor =
+      //           rowHasErrors ? mergedTheme.errorColorScheme! : fieldColors;
+
+      //       // Finally build the row
+      //       outputWidget = ChampionRowWidget(
+      //         rowField: rowField,
+      //         columns: rowField.columns,
+      //         errors: rowErrors.isEmpty ? null : rowErrors,
+      //         colorScheme: rowColor,
+      //         controller: widget.controller,
+      //         theme: mergedTheme,
+      //         fieldPadding: widget.fieldPadding,
+      //       );
+
+      //       break;
+      //     }
+
+      //   case ChampionTextField():
+      //     outputWidget = TextFieldWidget(
+      //       controller: widget.controller,
+      //       field: field,
+      //       fieldOverride: field.fieldOverride,
+      //       fieldState: fieldState,
+      //       colorScheme: fieldColors,
+      //       fieldId: field.id,
+      //       onDrop: field.onDrop,
+      //       onPaste: field.onPaste,
+      //       draggable: field.draggable,
+      //       onSubmitted: field.onSubmit,
+      //       onChanged: field.onChange,
+      //       password: field.password,
+      //       requestFocus: field.requestFocus,
+      //       validate: validate,
+      //       initialValue: field.defaultValue,
+      //       labelText: field.textFieldTitle,
+      //       hintText: field.hintText,
+      //       maxLines: field.maxLines,
+      //     );
+
+      //     break;
+
+      //   case ChampionOptionSelect():
+      //     outputWidget = field.fieldBuilder(
+      //       context,
+      //       widget.controller,
+      //       field.options,
+      //       field,
+      //       fieldState,
+      //       fieldColors,
+      //       widget.controller
+      //               .findMultiselectValue(field.id)
+      //               ?.values
+      //               .map((option) => option.value)
+      //               .toList() ??
+      //           [],
+      //       (focus) {
+      //         widget.controller.setFieldFocus(field.id, focus, field);
+      //       },
+      //       (MultiselectOption? selectedOption) {
+      //         if (selectedOption != null) {
+      //           widget.controller.updateMultiselectValues(
+      //               field.id, [selectedOption],
+      //               multiselect: field.multiselect);
+      //         } else {
+      //           widget.controller.resetMultiselectChoices(field.id);
+      //         }
+      //         if (field.validateLive == true) {
+      //           // Run validation
+      //           FormResults.getResults(
+      //               controller: widget.controller, fields: [field]);
+      //         }
+      //       },
+      //     );
+
+      //     break;
+
+      //   default:
+      //     outputWidget = Container();
+      //     break;
+      // }
 
       // Add padding to the form field if it was defined.
       if (widget.fieldPadding != null &&

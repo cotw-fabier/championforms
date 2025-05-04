@@ -20,11 +20,18 @@ class ChampionFormController extends ChangeNotifier {
   /// Link Fields to this controller
   List<FormFieldDef> fields;
 
+  /// Generic field value storage
+  /// Stores all the values from all registered fields
+  /// This replaces textFieldValues and multiselectvalues
+  final Map<String, dynamic> _fieldValues = {};
+
   /// Handle text field default values
-  List<TextFormFieldValueById> textFieldValues;
+  /// depreciated
+  // List<TextFormFieldValueById> textFieldValues;
 
   /// Handle multiselect field default values
-  List<MultiselectFormFieldValueById> multiselectValues;
+  /// depreciated
+  // List<MultiselectFormFieldValueById> multiselectValues;
 
   /// Handle form focus controllers
   List<FieldFocus> fieldFocus;
@@ -35,8 +42,15 @@ class ChampionFormController extends ChangeNotifier {
   /// Currently active field. This follows field focus
   FormFieldDef? activeField;
 
+  /// Generic storage for field controllers
+  /// this allows us to hold and manage controllers
+  /// for any type of field.
+  /// Map<fieldId, controller>
+  final Map<String, dynamic> _fieldControllers = {};
+
   /// List of texteditingcontrollers for direct access to text fields
-  final List<FieldController> _textControllers = [];
+  /// depreciated
+  // final List<FieldController> _textControllers = [];
 
   /// Active Fields
   /// This contains an updated list of fields currently
@@ -54,8 +68,8 @@ class ChampionFormController extends ChangeNotifier {
   ChampionFormController({
     String? id,
     this.fields = const [],
-    this.textFieldValues = const [],
-    this.multiselectValues = const [],
+    // this.textFieldValues = const [],
+    // this.multiselectValues = const [],
     this.fieldFocus = const [],
     this.formErrors = const [],
     this.activeField,
@@ -80,10 +94,12 @@ class ChampionFormController extends ChangeNotifier {
   @override
   void dispose() {
     // Dispose text controllers:
-    for (final fc in _textControllers) {
-      fc.controller.dispose();
-    }
-    _textControllers.clear();
+    _fieldControllers.forEach((key, controller) {
+      if (controller is ChangeNotifier) {
+        controller.dispose();
+      }
+    });
+    _fieldControllers.clear();
 
     super.dispose();
   }
@@ -175,6 +191,33 @@ class ChampionFormController extends ChangeNotifier {
     }
   }
 
+  // ----------------------------------------
+  // Functions related to managing generic field data
+  // ----------------------------------------
+  //
+
+  /// Get the value for any field ID. Returns null if not found.
+  /// Use type T for type safety if you know the expected type.
+  T? getFieldValue<T>(String fieldId) {
+    final value = _fieldValues[fieldId];
+    if (value is T) {
+      return value;
+    }
+    // Optional: Handle type mismatch (e.g., log warning, return null)
+    return null;
+  }
+
+  /// Update the value for any field ID.
+  /// Notifies listeners unless noNotify is true.
+  void updateFieldValue(String fieldId, dynamic newValue,
+      {bool noNotify = false}) {
+    _fieldValues[fieldId] = newValue;
+
+    if (!noNotify) {
+      notifyListeners();
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Text Field public Functions.
   // These functions manage text fields.
@@ -182,33 +225,30 @@ class ChampionFormController extends ChangeNotifier {
 
   /// Query if a text editing controller exists for a field
   bool textEditingControllerExists(String fieldId) {
-    return _textControllers.firstWhereOrNull((fc) => fc.fieldId == fieldId) !=
-        null;
+    return _fieldControllers[fieldId] != null;
   }
 
-  /// Get Text Field Controller
-  /// This gives you direct access to the TextFieldController for a
+  /// Get Field Controller
+  /// This gives you direct access to the controller for a
   /// given field ID. This can be useful if you want to manipulate any functions
   /// associated with that controller. For example, moving the cursor position or highlighting text.
   ///
-  /// Generally, it may be better to modify the field value using updateTextFieldValue().
+  /// Generally, it may be better to modify the field value using the associated updateValue function().
   /// It is possible that by calling this directly you may unsync the values in ChampionFormController
-  /// and the TextFieldController.
-  TextEditingController getTextEditingController(String fieldId) {
+  /// and the Controller.
+  T? getFieldController<T>(String fieldId) {
     // Check if we already have a FieldController for this field:
-    final existing =
-        _textControllers.firstWhereOrNull((fc) => fc.fieldId == fieldId);
-    if (existing != null) {
-      return existing.controller;
+    final existing = _fieldControllers[fieldId];
+    if (existing is T) {
+      return existing;
     }
 
-    // Otherwise, create a new TextEditingController:
-    final newController = TextEditingController();
-    _textControllers.add(
-      FieldController(fieldId: fieldId, controller: newController),
-    );
+    return null;
+  }
 
-    return newController;
+  /// Add a new controller
+  void addFieldController<T>(String fieldId, T controller) {
+    _fieldControllers[fieldId] = controller;
   }
 
   /// Update text field values

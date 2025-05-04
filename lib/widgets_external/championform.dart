@@ -1,4 +1,5 @@
 import 'package:championforms/controllers/form_controller.dart';
+import 'package:championforms/core/field_builder_registry.dart';
 import 'package:championforms/models/field_types/formfieldbase.dart';
 import 'package:championforms/models/themes.dart';
 import 'package:championforms/widgets_external/form_wrappers/simple_wrapper.dart';
@@ -79,6 +80,15 @@ class ChampionForm extends StatefulWidget {
 }
 
 class _ChampionFormWidgetState extends State<ChampionForm> {
+  @override
+  void initState() {
+    super.initState();
+    // Register the default builders on first launch.
+    if (!ChampionFormFieldRegistry.instance.isInitialized) {
+      ChampionFormFieldRegistry.instance.registerCoreBuilders();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Setup defaults for the theme. This allows us to pass Theme.of(context) into the build.

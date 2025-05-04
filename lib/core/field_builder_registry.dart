@@ -1,3 +1,7 @@
+import 'package:championforms/default_fields/championoptionselect.dart';
+import 'package:championforms/default_fields/championtextfield.dart';
+import 'package:championforms/models/field_types/championoptionselect.dart';
+import 'package:championforms/models/field_types/championtextfield.dart';
 import 'package:flutter/material.dart';
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
@@ -16,12 +20,16 @@ typedef FormFieldBuilder<T extends FormFieldDef> = Widget Function(
 );
 
 class ChampionFormFieldRegistry {
+  bool initialized = false;
+
   // Private constructor
   ChampionFormFieldRegistry._internal();
 
   // Singleton instance
   static final ChampionFormFieldRegistry instance =
       ChampionFormFieldRegistry._internal();
+
+  bool get isInitialized => initialized;
 
   // The registry map: Type maps to a builder function
   final Map<Type, Function> _builders =
@@ -90,11 +98,11 @@ class ChampionFormFieldRegistry {
 
   // Method to register core library builders (call this internally)
   void registerCoreBuilders() {
-    // Example: Assuming you refactor textFieldBuilder etc. to match the typedef
-    // registerBuilder<ChampionTextField>(yourRefactoredTextFieldBuilder);
-    // registerBuilder<ChampionOptionSelect>(yourRefactoredOptionSelectBuilder);
-    // ... etc
-    // Make sure your existing builders conform to the FormFieldBuilder signature
+    initialized = true;
+    ChampionFormFieldRegistry.instance
+        .registerBuilder<ChampionTextField>(buildChampionTextField);
+    ChampionFormFieldRegistry.instance
+        .registerBuilder<ChampionOptionSelect>(buildChampionOptionSelect);
   }
 }
 
