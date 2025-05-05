@@ -1,7 +1,12 @@
+import 'package:championforms/championforms.dart';
+import 'package:championforms/default_fields/championcheckboxselect.dart';
+import 'package:championforms/default_fields/championchipselect.dart';
+import 'package:championforms/default_fields/championfileupload.dart';
 import 'package:championforms/default_fields/championoptionselect.dart';
 import 'package:championforms/default_fields/championtextfield.dart';
 import 'package:championforms/models/field_types/championoptionselect.dart';
 import 'package:championforms/models/field_types/championtextfield.dart';
+import 'package:championforms/models/field_types/convienence_classes/championchipselect.dart';
 import 'package:flutter/material.dart';
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
@@ -103,6 +108,12 @@ class ChampionFormFieldRegistry {
         .registerBuilder<ChampionTextField>(buildChampionTextField);
     ChampionFormFieldRegistry.instance
         .registerBuilder<ChampionOptionSelect>(buildChampionOptionSelect);
+    ChampionFormFieldRegistry.instance
+        .registerBuilder<ChampionCheckboxSelect>(buildChampionCheckboxSelect);
+    ChampionFormFieldRegistry.instance
+        .registerBuilder<ChampionFileUpload>(buildChampionFileUpload);
+    ChampionFormFieldRegistry.instance
+        .registerBuilder<ChampionChipSelect>(buildChampionChipSelect);
   }
 }
 

@@ -127,22 +127,15 @@ class DefaultValidators {
 
   /// Helper to safely extract FileModel from a MultiselectOption.
   FileModel? _getFileModelFromOption(MultiselectOption option) {
-    if (option.additionalData is FileModel) {
-      return option.additionalData as FileModel;
-    } else {
-      // Log a warning if data is missing or incorrect type during validation
-      debugPrint(
-          "Validation Warning: Expected FileModel in additionalData for option value '${option.value}', but found ${option.additionalData?.runtimeType ?? 'null'}.");
-      return null;
-    }
+    return option.additionalData as FileModel;
   }
 
   /// Checks if all files represented by the selected [options] have a mime type
   /// that starts with at least one of the strings in [matchStrings].
   /// Returns `true` if all files match (or if the list is null/empty), `false` otherwise.
   bool fileIsMimeType(
-      List<MultiselectOption>? options, List<String> matchStrings) {
-    if (options == null || options.isEmpty) {
+      List<MultiselectOption> options, List<String> matchStrings) {
+    if (options.isEmpty) {
       return true; // No files to validate, so it passes. Use listIsNotEmpty for required check.
     }
 
@@ -157,7 +150,7 @@ class DefaultValidators {
 
       if (mime == null) {
         debugPrint(
-            "Validation Warning: Mime type check failed for '${fileModel?.fileName ?? option.value}' because mimeData was null.");
+            "Validation Warning: Mime type check failed for '${fileModel?.fileName}' because mimeData was null.");
         return false; // Cannot validate without mime type
       }
       // Check if it starts with any pattern.
@@ -167,14 +160,14 @@ class DefaultValidators {
 
   /// Checks if all files represented by [options] have a mime type starting with "image/".
   /// Returns `true` if all are images, `false` otherwise.
-  bool fileIsImage(List<MultiselectOption>? options) {
+  bool fileIsImage(List<MultiselectOption> options) {
     return fileIsMimeType(
         options, ["image/"]); // Be more specific with trailing slash
   }
 
   /// Checks if all files represented by [options] have common image mime types.
   /// Returns `true` if all match, `false` otherwise.
-  bool fileIsCommonImage(List<MultiselectOption>? options) {
+  bool fileIsCommonImage(List<MultiselectOption> options) {
     return fileIsMimeType(options, const [
       "image/jpeg", // .jpg, .jpeg
       "image/png", // .png
@@ -187,7 +180,7 @@ class DefaultValidators {
 
   /// Checks if all files represented by [options] have common document mime types.
   /// Returns `true` if all match, `false` otherwise.
-  bool fileIsDocument(List<MultiselectOption>? options) {
+  bool fileIsDocument(List<MultiselectOption> options) {
     return fileIsMimeType(options, const [
       "application/msword", // .doc
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
@@ -217,7 +210,8 @@ class DefaultValidators {
     // Try getting as list first (covers multiselect, file upload)
     List? listValue = result.asRaw<List>(); // Try getting raw list
     if (listValue != null) {
-      return listIsEmpty(listValue); // Use the new list validator
+      return listValue.isEmpty;
+      // return listIsEmpty(listValue); // Use the new list validator
     }
 
     // Fallback to string check

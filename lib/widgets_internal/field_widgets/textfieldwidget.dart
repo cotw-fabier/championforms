@@ -120,7 +120,12 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
         widget.controller.controllerExists(widget.field.id);
 
     // 1. Get or create the appropriate TextEditingController from ChampionFormController:
-    _controller = widget.controller.getFieldController(widget.field.id);
+    if (!textEditingControllerExists) {
+      widget.controller.addFieldController<TextEditingController>(
+          widget.fieldId, TextEditingController());
+    }
+    _controller = widget.controller
+        .getFieldController<TextEditingController>(widget.fieldId)!;
 
     // If you have a default initialValue you want to set right away:
     if ((widget.initialValue ?? "").isNotEmpty &&

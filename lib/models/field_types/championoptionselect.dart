@@ -1,7 +1,6 @@
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
-import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_external/field_builders/dropdownfield_builder.dart';

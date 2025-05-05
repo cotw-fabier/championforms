@@ -2,10 +2,8 @@ import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';
-import 'package:championforms/models/validatorclass.dart';
 import 'package:collection/collection.dart';
 
-import 'package:collection/collection.dart'; // Ensure this import is present for firstWhereOrNull
 import 'package:flutter/foundation.dart'; // For debugPrint
 
 // Assuming FormFieldDef, BaseFieldResults, FieldResults, ChampionFormController,
@@ -32,6 +30,13 @@ List<FormBuilderError> getFormBuilderErrors({
       continue;
     }
 
+    final FieldResultAccessor fieldAccessor;
+    if (baseResult is! FieldResults) {
+      debugPrint(
+          "Error in getFormBuilderErrors: Result for '$fieldId' is not a FieldResults instance. Skipping.");
+      continue;
+    }
+
     // Skip validation if the field is hidden or disabled
     if (fieldDef.hideField == true) {
       debugPrint("Skipping validation for $fieldId: Field is hidden.");
@@ -39,13 +44,6 @@ List<FormBuilderError> getFormBuilderErrors({
     }
     if (fieldDef.disabled == true) {
       debugPrint("Skipping validation for $fieldId: Field is disabled.");
-      continue;
-    }
-
-    // Ensure the baseResult is actually a FieldResults instance to get the value
-    if (baseResult is! FieldResults) {
-      debugPrint(
-          "Error in getFormBuilderErrors: Result for '$fieldId' is not a FieldResults instance. Skipping.");
       continue;
     }
 

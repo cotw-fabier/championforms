@@ -1,7 +1,6 @@
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/field_types/championoptionselect.dart';
-import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_internal/field_widgets/multiselect_widget.dart';
 import 'package:flutter/material.dart';
@@ -12,27 +11,33 @@ Widget checkboxFieldBuilder(
   ChampionOptionSelect field,
   FieldColorScheme currentColors,
   Function(bool focused) updateFocus,
+  // updateSelectedOption is no longer directly needed here as we use toggleMultiSelectValue
   Function(MultiselectOption? selectedOption) updateSelectedOption,
 ) {
+  // Listen to the controller to rebuild when the value changes
+  // Use ListenableBuilder or Selector for more targeted rebuilds if needed,
+  // but here we rely on the parent FormBuilder rebuilding.
+
+  // Get the current selected options directly from the controller's value storage
+  final List<MultiselectOption> currentSelectedOptions =
+      controller.getFieldValue<List<MultiselectOption>>(field.id) ?? [];
+
   return MultiselectWidget(
     id: field.id,
     controller: controller,
     requestFocus: field.requestFocus,
     field: field,
+    // The focus update is handled by MultiselectWidget internally via FocusNode listener
+    // We don't need to explicitly pass updateFocus down if MultiselectWidget manages it.
+    // Let's assume MultiselectWidget handles focus notification correctly.
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // If you still want an "input decoration" style, you can add a label or similar.
-        // Otherwise, just display the checkboxes.
-        // e.g.:
-        // if (field.label != null) Text(field.label, style: TextStyle(...)),
-
         ...field.options.map(
           (option) {
-            // Check if this option is in the defaultValue (list of strings)
-            final bool isChecked = field.defaultValue
-                .map((checked) => option.value == checked.value)
-                .isNotEmpty;
+            // Determine if this specific option is currently selected
+            final bool isChecked = currentSelectedOptions
+                .any((selected) => selected.value == option.value);
 
             return CheckboxListTile(
               controlAffinity: ListTileControlAffinity.leading,
@@ -40,31 +45,32 @@ Widget checkboxFieldBuilder(
                 option.label,
                 style: TextStyle(color: currentColors.textColor),
               ),
-              activeColor: currentColors.textColor,
-              hoverColor: currentColors.hintTextColor,
+              activeColor:
+                  currentColors.iconColor, // Use theme color for active
+              checkColor:
+                  currentColors.backgroundColor, // Color of the check mark
+              hoverColor: currentColors.borderColor,
               tileColor: currentColors.backgroundColor,
-              value: isChecked,
-              onChanged: (bool? value) {
-                // The user checked this box
-                updateSelectedOption(option);
+              value: isChecked, // Use the current state from the controller
+              onChanged: (bool? newValue) {
+                // newValue is the target state after click
+                if (newValue == null) return; // Should not happen
 
-                // Handle onChanged behavior if provided
-                if (field.onChange != null) {
-                  final FormResults results = FormResults.getResults(
-                    controller: controller,
-                    fields: [field],
-                  );
-                  field.onChange!(results);
+                // Use the dedicated toggle function in the controller.
+                // This function handles adding/removing the value, triggering
+                // live validation (if enabled), and calling onChange (if defined).
+                if (newValue) {
+                  // If the checkbox should become checked
+                  controller.toggleMultiSelectValue(field.id,
+                      toggleOn: [option.value]);
+                } else {
+                  // If the checkbox should become unchecked
+                  controller.toggleMultiSelectValue(field.id,
+                      toggleOff: [option.value]);
                 }
 
-                // If you also want to handle onSubmit when toggling checkboxes
-                if (field.onSubmit != null) {
-                  final FormResults results = FormResults.getResults(
-                    controller: controller,
-                    fields: [field],
-                  );
-                  field.onSubmit!(results);
-                }
+                // No need to manually call validation or onChange here,
+                // toggleMultiSelectValue -> updateFieldValue handles it.
               },
             );
           },

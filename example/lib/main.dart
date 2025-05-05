@@ -195,12 +195,12 @@ class _MyHomePageState extends State<MyHomePage> {
                 validators: [
                   FormBuilderValidator(
                     validator: (results) =>
-                        DefaultValidators().isEmpty(results),
+                        DefaultValidators().stringIsEmpty(results),
                     reason: "Email cannot be empty.",
                   ),
                   FormBuilderValidator(
                     validator: (results) =>
-                        DefaultValidators().isEmail(results),
+                        DefaultValidators().stringIsEmail(results),
                     reason: "Please enter a valid email address.",
                   ),
                 ],
@@ -238,7 +238,11 @@ class _MyHomePageState extends State<MyHomePage> {
       ChampionOptionSelect(
         id: "DropdownField",
         title: "Select an Option",
+        // multiselect: true,
         description: "Choose one from the list.",
+        defaultValue: [
+          MultiselectOption(label: "Option 1", value: "Value 1"),
+        ],
         options: [
           MultiselectOption(label: "Option 1", value: "Value 1"),
           MultiselectOption(label: "Option 2", value: "Value 2"),
@@ -253,13 +257,17 @@ class _MyHomePageState extends State<MyHomePage> {
         id: "SelectBox",
         title: "Choose Multiple",
         description: "Select all that apply.",
-        multiselect: true, // Allow multiple selections
+        // multiselect: true, // Allow multiple selections
         validateLive: true,
         validators: [
           // Example: require at least one selection
           FormBuilderValidator(
-              validator: (results) => DefaultValidators().isEmpty(results),
+              validator: (results) =>
+                  DefaultValidators().listIsNotEmpty(results),
               reason: "Please select at least one option."),
+        ],
+        defaultValue: [
+          MultiselectOption(value: "Hiya", label: "Wat"),
         ],
         options: [
           MultiselectOption(value: "Hi", label: "Hello"),

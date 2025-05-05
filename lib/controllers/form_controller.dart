@@ -382,7 +382,7 @@ class ChampionFormController extends ChangeNotifier {
 
     // Add new errors if any
     if (currentFieldErrors.isNotEmpty) {
-      formErrors.addAll(currentFieldErrors);
+      formErrors = [...currentFieldErrors, ...formErrors];
       errorsChanged = true; // Mark change if new errors were added
     }
 
@@ -498,6 +498,61 @@ class ChampionFormController extends ChangeNotifier {
     // Note: onChange and validation are now handled within updateFieldValue
     // if (field?.onChange != null && !noOnChange) { ... } // No longer needed here
     // if (field?.validateLive ?? false) { ... } // No longer needed here
+  }
+
+  /// Helper function to toggle options on and off.
+  void toggleMultiSelectValue(
+    String fieldId, {
+    List<String> toggleOn = const [],
+    List<String> toggleOff = const [],
+    bool noNotify = false,
+    // bool noOnChange = false, // No longer explicitly needed here
+  }) {
+    // 1. Get the field definition
+    final fieldDef = _fieldDefinitions[fieldId];
+
+    // 2. Validate the field exists and is the correct type
+    if (fieldDef == null || fieldDef is! ChampionOptionSelect) {
+      debugPrint(
+          "Warning: Tried to toggle values on field '$fieldId', but it's not found or not a ChampionOptionSelect.");
+      return;
+    }
+
+    // 3. Get the currently selected options
+    final List<MultiselectOption> currentSelectedOptions =
+        getFieldValue<List<MultiselectOption>>(fieldId) ?? [];
+
+    // 4. Create a mutable set of the *values* currently selected for efficient modification
+    final Set<String> newSelectedValues =
+        currentSelectedOptions.map((o) => o.value).toSet();
+
+    // 5. Apply the toggle logic
+    // Ensure specified options are selected
+    for (final valueToSelect in toggleOn) {
+      newSelectedValues.add(valueToSelect);
+    }
+    // Ensure specified options are deselected
+    for (final valueToDeselect in toggleOff) {
+      newSelectedValues.remove(valueToDeselect);
+    }
+
+    // 6. Convert the final set of string values back to MultiselectOption objects
+    //    using the options defined in the field definition.
+    final List<MultiselectOption> finalSelectedOptions = fieldDef.options
+        .where((option) => newSelectedValues.contains(option.value))
+        .toList();
+
+    // 7. Update the field's value using the generic update method.
+    //    This handles storing the value, triggering onChange (if value changed),
+    //    running live validation, and notifying listeners (unless suppressed).
+    updateFieldValue<List<MultiselectOption>>(
+      fieldId,
+      finalSelectedOptions,
+      noNotify: noNotify, // Pass the notification suppression flag
+    );
+
+    // Manual onChange and notifyListeners calls are no longer needed here,
+    // as updateFieldValue handles them based on whether the value actually changed.
   }
 
   /// Helper to clear all selected options for a multiselect field.
