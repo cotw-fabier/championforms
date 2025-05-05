@@ -1,5 +1,6 @@
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/field_types/championoptionselect.dart';
+import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_external/field_builders/fileupload_field_builder.dart';
 import 'package:flutter/material.dart';
@@ -52,4 +53,24 @@ class ChampionFileUpload extends ChampionOptionSelect {
           fieldBuilder: fileUploadFieldBuilder,
           options: [],
         );
+
+  // --- Override asFileListConverter ---
+
+  /// Extracts FileModel objects from the additionalData of selected options.
+  @override
+  List<FileModel> Function(List<MultiselectOption> value)?
+      get asFileListConverter => (options) {
+            List<FileModel> files = [];
+            for (final option in options) {
+              // Assumes FileModel is stored in additionalData for file uploads
+              if (option.additionalData is FileModel) {
+                files.add(option.additionalData as FileModel);
+              } else {
+                // Log a warning if data is missing or incorrect type
+                debugPrint(
+                    "Warning: ChampionFileUpload field '${super.id}' encountered an option ('${option.value}') without a FileModel in additionalData.");
+              }
+            }
+            return files;
+          };
 }

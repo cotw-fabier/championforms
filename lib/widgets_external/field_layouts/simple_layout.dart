@@ -1,15 +1,17 @@
+import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/colorscheme.dart';
-import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/widgets_external/helper_widgets/fading_opacity.dart';
 import 'package:flutter/material.dart';
 
 Widget fieldSimpleLayout(
-    BuildContext context,
-    FormFieldDef fieldDetails,
-    FieldColorScheme currentColors,
-    List<FormBuilderError> errors,
-    Widget renderedField) {
+  BuildContext context,
+  FormFieldDef fieldDetails,
+  ChampionFormController controller,
+  FieldColorScheme currentColors,
+  Widget renderedField,
+) {
+  final errors = controller.findErrors(fieldDetails.id);
   return AnimatedSize(
     duration: Duration(milliseconds: 300),
     child: Column(

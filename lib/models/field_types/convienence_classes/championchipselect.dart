@@ -12,11 +12,8 @@ class ChampionChipSelect extends ChampionOptionSelect {
   Widget Function(
     BuildContext context,
     ChampionFormController controller,
-    List<MultiselectOption> choices,
     ChampionOptionSelect field,
-    FieldState currentState,
     FieldColorScheme currentColors,
-    List<String>? defaultValue,
     Function(bool focused) updateFocus,
     Function(MultiselectOption? selectedOption) updateSelectedOption,
   ) fieldBuilder;

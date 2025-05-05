@@ -1,14 +1,11 @@
 import 'package:championforms/models/autocomplete/autocomplete_class.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
-import 'package:championforms/models/formresults.dart';
+import 'package:championforms/models/file_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class ChampionTextField extends FormFieldDef {
+class ChampionTextField extends FormFieldDef<String> {
   // Define the type of field type
-
-  @override
-  FieldType get fieldType => FieldType.string;
 
   // Add a TextField override so we could write our own widget if we prefer. This will override the default field.
   final TextField? fieldOverride;
@@ -98,4 +95,27 @@ class ChampionTextField extends FormFieldDef {
     super.fieldLayout,
     super.fieldBackground,
   });
+
+  // --- Implementation of FormFieldDef<String> Converters ---
+
+  /// Converts the String value to a String (identity function).
+  /// Assumes non-null input based on FormFieldDef<T> signature.
+  @override
+  String Function(String value) get asStringConverter => (value) => value;
+
+  /// Converts the String value into a List containing that single String.
+  /// Assumes non-null input.
+  @override
+  List<String> Function(String value) get asStringListConverter =>
+      (value) => [value];
+
+  /// Converts the String value to bool (true if not empty, false otherwise).
+  /// Assumes non-null input.
+  @override
+  bool Function(String value) get asBoolConverter =>
+      (value) => value.isNotEmpty;
+
+  /// Text fields do not represent files. Returns null.
+  @override
+  List<FileModel> Function(String value)? get asFileListConverter => null;
 }

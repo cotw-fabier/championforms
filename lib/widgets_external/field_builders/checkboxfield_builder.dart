@@ -1,7 +1,6 @@
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/field_types/championoptionselect.dart';
-import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_internal/field_widgets/multiselect_widget.dart';
@@ -10,11 +9,8 @@ import 'package:flutter/material.dart';
 Widget checkboxFieldBuilder(
   BuildContext context,
   ChampionFormController controller,
-  List<MultiselectOption> choices,
   ChampionOptionSelect field,
-  FieldState currentState,
   FieldColorScheme currentColors,
-  List<String>? defaultValue,
   Function(bool focused) updateFocus,
   Function(MultiselectOption? selectedOption) updateSelectedOption,
 ) {
@@ -34,8 +30,9 @@ Widget checkboxFieldBuilder(
         ...field.options.map(
           (option) {
             // Check if this option is in the defaultValue (list of strings)
-            final bool isChecked =
-                defaultValue?.contains(option.value.toString()) ?? false;
+            final bool isChecked = field.defaultValue
+                .map((checked) => option.value == checked.value)
+                .isNotEmpty;
 
             return CheckboxListTile(
               controlAffinity: ListTileControlAffinity.leading,

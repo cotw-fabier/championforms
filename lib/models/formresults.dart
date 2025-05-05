@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:championforms/championforms.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
-import 'package:championforms/models/mime_data.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/widgets.dart';
@@ -21,6 +20,122 @@ class FieldResults<T> extends BaseFieldResults {
     required super.id,
     required this.value,
   });
+}
+
+/// Provides access to a single field's result value and its conversion methods.
+/// Returned by FormResults.grab().
+class FieldResultAccessor {
+  final String _id;
+  final dynamic _value; // The raw value from FieldResults<dynamic>
+  final FormFieldDef<dynamic> _definition; // The corresponding field definition
+
+  FieldResultAccessor._(this._id, this._value, this._definition);
+
+  /// Get the raw value cast to type T.
+  /// Returns null if the field's actual value is not of type T.
+  T? asRaw<T>() {
+    if (_value is T) {
+      return _value as T;
+    }
+    debugPrint(
+        "asRaw failed for field '$_id'. Expected $T, found ${_value?.runtimeType}");
+    return null;
+  }
+
+  /// Get the value converted to a String using the field's definition.
+  String asString({String fallback = ""}) {
+    try {
+      // Access the converter function stored in the definition
+      return _definition.asStringConverter(_value);
+    } catch (e) {
+      debugPrint("Error calling asStringConverter for field '$_id': $e");
+      return fallback;
+    }
+  }
+
+  /// Get the value converted to a List<String> using the field's definition.
+  List<String> asStringList({List<String> fallback = const []}) {
+    try {
+      return _definition.asStringListConverter(_value);
+    } catch (e) {
+      debugPrint("Error calling asStringListConverter for field '$_id': $e");
+      return fallback;
+    }
+  }
+
+  /// Get the value converted to a bool using the field's definition.
+  bool asBool({bool fallback = false}) {
+    try {
+      return _definition.asBoolConverter(_value);
+    } catch (e) {
+      debugPrint("Error calling asBoolConverter for field '$_id': $e");
+      return fallback;
+    }
+  }
+
+  /// Get the value as a List<MultiselectOption>.
+  /// Returns an empty list if the value is null or not the correct type.
+  List<MultiselectOption> asMultiselectList() {
+    // Check if the field definition is for a ChampionOptionSelect or subclass
+    if (_definition is ChampionOptionSelect) {
+      final List<dynamic>? rawList =
+          asRaw<List<dynamic>>(); // Try getting as List<dynamic> first
+      if (rawList != null) {
+        // Attempt to cast each element safely
+        final List<MultiselectOption> options = rawList
+            .whereType<
+                MultiselectOption>() // Filter only MultiselectOption elements
+            .toList();
+        // Optional: Check if lengths match to see if there were non-MultiselectOption items
+        if (options.length != rawList.length) {
+          debugPrint(
+              "Warning for field '$_id': asMultiselectList found items that were not MultiselectOption.");
+        }
+        return options;
+      } else {
+        debugPrint(
+            "asMultiselectList failed for field '$_id'. Value is null or not a List.");
+        return []; // Return empty list if not a list or null
+      }
+    } else {
+      debugPrint(
+          "asMultiselectList called on field '$_id' which is not a ChampionOptionSelect type (${_definition.runtimeType}).");
+      return []; // Not an option select field
+    }
+  }
+
+  /// Get a single MultiselectOption from the list by its value (ID).
+  /// Returns null if the field is not a multiselect type, the list is empty,
+  /// or no option with the matching value is found.
+  MultiselectOption? asMultiselect(String optionValue) {
+    final List<MultiselectOption> options = asMultiselectList();
+    if (options.isEmpty) {
+      // Debug print already handled in asMultiselectList if field type mismatch or null/empty value
+      return null;
+    }
+    // Use firstWhereOrNull from collection package for efficiency and null safety
+    return options.firstWhereOrNull((option) => option.value == optionValue);
+  }
+
+  /// Get the value converted to a List<FileModel> using the field's definition.
+  /// Returns fallback if the field doesn't exist or doesn't support file conversion.
+  List<FileModel> asFileList({List<FileModel> fallback = const []}) {
+    final converter = _definition.asFileListConverter;
+    if (converter != null) {
+      try {
+        return converter(_value);
+      } catch (e) {
+        debugPrint("Error calling asFileListConverter for field '$_id': $e");
+        return fallback;
+      }
+    } else {
+      // Field type doesn't support file conversion
+      return fallback;
+    }
+  }
+
+  // Add other `as...` methods here mirroring the converters in FormFieldDef
+  // e.g., asDouble, asInt, asFile, etc.
 }
 
 class FileResultData {
@@ -127,7 +242,11 @@ class FormResults {
       // TODO: Update getFormBuilderErrors to work with the new structure
       // It will need access to 'collectedResults' and 'definitions'
       // to get both the value and the validation function from the definition.
-      // formErrors.addAll(getFormBuilderErrors(results: collectedResults, definitions: definitions));
+      formErrors.addAll(getFormBuilderErrors(
+        controller: controller,
+        results: collectedResults,
+        definitions: definitions,
+      ));
       if (formErrors.isNotEmpty) {
         errorState = true;
       }
@@ -178,72 +297,29 @@ class FormResults {
     return null;
   }
 
-  /// Get the value converted to a String using the field's definition.
-  String getAsString(String id, {String fallback = ""}) {
-    final data = _getResultAndDef<dynamic>(id); // Use dynamic initially
-    if (data.result != null && data.definition != null) {
-      try {
-        // Call the converter from the definition with the value from the result
-        return data.definition!.asStringConverter(data.result!.value);
-      } catch (e) {
-        debugPrint("Error calling asStringConverter for field '$id': $e");
-        return fallback; // Return fallback on error
-      }
-    }
-    return fallback; // Return fallback if field not found
-  }
+  FieldResultAccessor grab(String id) {
+    // Find the raw result object (which should be FieldResults<dynamic>)
+    final baseResult = results.firstWhereOrNull((item) => item.id == id);
+    // Find the corresponding field definition
+    final definition = fieldDefinitions[id];
 
-  /// Get the value converted to a List<String> using the field's definition.
-  List<String> getAsStringList(String id, {List<String> fallback = const []}) {
-    final data = _getResultAndDef<dynamic>(id);
-    if (data.result != null && data.definition != null) {
-      try {
-        return data.definition!.asStringListConverter(data.result!.value);
-      } catch (e) {
-        debugPrint("Error calling asStringListConverter for field '$id': $e");
-        return fallback;
-      }
-    }
-    return fallback;
-  }
-
-  /// Get the value converted to a bool using the field's definition.
-  bool getAsBool(String id, {bool fallback = false}) {
-    final data = _getResultAndDef<dynamic>(id);
-    if (data.result != null && data.definition != null) {
-      try {
-        return data.definition!.asBoolConverter(data.result!.value);
-      } catch (e) {
-        debugPrint("Error calling asBoolConverter for field '$id': $e");
-        return fallback;
-      }
-    }
-    return fallback;
-  }
-
-  /// Get the value converted to a List<FileModel> using the field's definition.
-  /// Returns fallback if the field doesn't exist or doesn't support file conversion.
-  List<FileModel> getAsFileList(String id,
-      {List<FileModel> fallback = const []}) {
-    final data = _getResultAndDef<dynamic>(id);
-    if (data.result != null && data.definition != null) {
-      final converter = data.definition!.asFileListConverter;
-      if (converter != null) {
-        try {
-          return converter(data.result!.value);
-        } catch (e) {
-          debugPrint("Error calling asFileListConverter for field '$id': $e");
-          return fallback;
-        }
+    if (baseResult != null && definition != null) {
+      // Ensure baseResult is actually a FieldResults instance to access its value
+      if (baseResult is FieldResults) {
+        // Create and return the accessor, passing the value and definition
+        return FieldResultAccessor._(id, baseResult.value, definition);
       } else {
-        // Field type doesn't support file conversion
-        return fallback;
+        // This shouldn't happen if getResults is implemented correctly
+        // debugPrint(
+        //     "Error in grab(): Found result for '$id' but it's not a FieldResults instance.");
+        throw (Exception(
+            "Error in grab(): Found result for '$id' but it's not a FieldResults instance."));
+        // return null;
       }
     }
-    return fallback;
-  }
 
-  // FieldResults grab(String id) {
-  //   return results.firstWhere((item) => item.id == id);
-  // }
+    // Field not found
+    throw (Exception(
+        "Error in grab(): Attempting to find data for a field that doesn't exist '$id'."));
+  }
 }

@@ -10,11 +10,8 @@ import 'package:flutter/material.dart';
 Widget fileUploadFieldBuilder(
   BuildContext context,
   ChampionFormController controller,
-  List<MultiselectOption> choices,
   ChampionOptionSelect field,
-  FieldState currentState,
   FieldColorScheme currentColors,
-  List<String>? defaultValue,
   Function(bool focused) updateFocus,
   Function(MultiselectOption? selectedOption) updateSelectedOption,
 ) {
@@ -22,9 +19,7 @@ Widget fileUploadFieldBuilder(
     id: field.id,
     controller: controller,
     field: field,
-    currentState: currentState,
     currentColors: currentColors,
-    defaultValue: defaultValue ?? [],
     onFocusChange: (bool focus) => updateFocus(focus),
     onFileOptionChange: (MultiselectOption? option) {
       // Commented out because we don't know what file options we have previously to uploading files.

@@ -2,8 +2,6 @@ import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/functions/inputdecoration_from_theme.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/field_types/championoptionselect.dart';
-import 'package:championforms/models/fieldstate.dart';
-import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_internal/field_widgets/multiselect_widget.dart';
@@ -12,11 +10,8 @@ import 'package:flutter/material.dart';
 Widget dropdownFieldBuilder(
   BuildContext context,
   ChampionFormController controller,
-  List<MultiselectOption> choices,
   ChampionOptionSelect field,
-  FieldState currentState,
   FieldColorScheme currentColors,
-  List<String>? defaultValue,
   Function(bool focused) updateFocus,
   Function(MultiselectOption? selectedOption) updateSelectedOption,
 ) {
@@ -26,8 +21,8 @@ Widget dropdownFieldBuilder(
     field: field,
     requestFocus: field.requestFocus,
     child: DropdownButtonFormField<String>(
-      value: defaultValue != null && defaultValue.isNotEmpty
-          ? defaultValue.first
+      value: field.defaultValue != null && field.defaultValue.isNotEmpty
+          ? field.defaultValue.first.value
           : null,
       dropdownColor: currentColors.backgroundColor,
       items: field.options

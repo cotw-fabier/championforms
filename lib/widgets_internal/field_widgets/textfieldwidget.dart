@@ -7,7 +7,6 @@ import 'package:championforms/models/autocomplete/autocomplete_type.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/field_types/championtextfield.dart';
 import 'package:championforms/models/fieldstate.dart';
-import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/widgets_internal/fieldwrapperdefault.dart';
 import 'package:flutter/material.dart';
@@ -118,10 +117,10 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
 
     // Track if we're making a new controller or not
     final textEditingControllerExists =
-        widget.controller.textEditingControllerExists(widget.field.id);
+        widget.controller.controllerExists(widget.field.id);
 
     // 1. Get or create the appropriate TextEditingController from ChampionFormController:
-    _controller = widget.controller.getTextEditingController(widget.field.id);
+    _controller = widget.controller.getFieldController(widget.field.id);
 
     // If you have a default initialValue you want to set right away:
     if ((widget.initialValue ?? "").isNotEmpty &&
@@ -192,8 +191,7 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
 
   Future<void> _onLoseFocus() async {
     // Transmit focus state to the controller.
-    widget.controller
-        .setFieldFocus(widget.field.id, _anyFocusActive, widget.field);
+    widget.controller.setFieldFocus(widget.field.id, _anyFocusActive);
 
     setState(() {
       _gotFocus = true;
@@ -223,7 +221,7 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
 
   void _onControllerValueUpdated() {
     final newValue =
-        widget.controller.findTextFieldValue(widget.field.id)?.value ?? "";
+        widget.controller.getFieldValue<String>(widget.field.id) ?? "";
     if (newValue != _controller.text) {
       final currentValue = _controller.value;
       _controller.value = currentValue.copyWith(
@@ -267,7 +265,7 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
 
       // Store the last value so we can see if the controller meaningfully changed
       _lastTextValue = newText;
-      widget.controller.updateTextFieldValue(widget.field.id, newText);
+      widget.controller.updateFieldValue<String>(widget.field.id, newText);
 
       if (widget.onChanged != null) {
         widget.onChanged!(FormResults.getResults(
@@ -338,7 +336,7 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
     setState(() {
       _controller.text = picked.value;
       _lastPickedOption = picked;
-      widget.controller.updateTextFieldValue(widget.field.id, picked.value);
+      widget.controller.updateFieldValue<String>(widget.field.id, picked.value);
       if (picked.callback != null) {
         picked.callback!(picked);
       }

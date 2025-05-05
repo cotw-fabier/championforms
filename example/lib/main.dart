@@ -96,12 +96,15 @@ class _MyHomePageState extends State<MyHomePage> {
           "Autocomplete Field: ${results.grab("BottomText").asString()}");
 
       // --- Accessing File Upload Results ---
-      final fileResults = results.grab("fileUpload").asFile(); // Use asFile()
+      final fileResults =
+          results.grab("fileUpload").asFileList(); // Use asFileList()
       if (fileResults.isNotEmpty) {
         debugPrint("Uploaded Files (${fileResults.length}):");
         for (final fileData in fileResults) {
+          // TODO: Fix path for file uploads
+          // Path: ${fileData.filePath},
           debugPrint(
-              "  - Name: ${fileData.name}, Path: ${fileData.path}, Mime: ${fileData.fileDetails?.mimeData?.mime ?? 'N/A'}");
+              "  - Name: ${fileData.fileName}, Mime: ${fileData.mimeData?.mime ?? 'N/A'}");
           // You can access file bytes (if fully read) or stream via fileData.fileDetails
           // Example: Accessing bytes (might be null if not read)
           // Uint8List? bytes = await fileData.fileDetails?.getFileBytes();
@@ -122,8 +125,8 @@ class _MyHomePageState extends State<MyHomePage> {
   // --- Interacting with Controller ---
   void _setValuesProgrammatically() {
     // Update text fields
-    controller.updateTextFieldValue("Email", "programmatic@example.com");
-    controller.updateTextFieldValue("Password", "newPassword123");
+    controller.updateFieldValue("Email", "programmatic@example.com");
+    controller.updateFieldValue("Password", "newPassword123");
 
     // Toggle options in multiselect fields (like dropdowns, checkboxes)
     // Uses the 'value' property of the MultiselectOption

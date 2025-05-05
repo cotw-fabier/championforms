@@ -1,11 +1,12 @@
 // We are going to build one giant controller to handle all aspects of our form.
 
+import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/models/field_types/championoptionselect.dart';
+import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
-import 'package:championforms/models/formcontroller/field_focus.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/widgets.dart';
 import 'package:uuid/uuid.dart';
 
@@ -21,6 +22,14 @@ class ChampionFormController extends ChangeNotifier {
   /// This replaces textFieldValues and multiselectvalues
   final Map<String, dynamic> _fieldValues = {};
 
+  // --- State Storage ---
+  final Map<String, FieldState> _fieldStates = {};
+  // Keep track of field definitions for checking 'disabled' status
+  final Map<String, FormFieldDef<dynamic>> _fieldDefinitions = {};
+
+  /// Stores the focus state for each field. true if focused, false or absent otherwise.
+  final Map<String, bool> _fieldFocusStates = {};
+
   /// Handle text field default values
   /// depreciated
   // List<TextFormFieldValueById> textFieldValues;
@@ -30,13 +39,15 @@ class ChampionFormController extends ChangeNotifier {
   // List<MultiselectFormFieldValueById> multiselectValues;
 
   /// Handle form focus controllers
-  List<FieldFocus> fieldFocus;
+  /// Depreciated
+  // List<FieldFocus> fieldFocus;
 
   /// Form Error Data
   List<FormBuilderError> formErrors;
 
   /// Currently active field. This follows field focus
-  FormFieldDef? activeField;
+  /// DEPRECIATED? (Using currentlyFocusedFieldId getter now)
+  // FormFieldDef? activeField;
 
   /// Generic storage for field controllers
   /// this allows us to hold and manage controllers
@@ -66,9 +77,7 @@ class ChampionFormController extends ChangeNotifier {
     this.fields = const [],
     // this.textFieldValues = const [],
     // this.multiselectValues = const [],
-    this.fieldFocus = const [],
     this.formErrors = const [],
-    this.activeField,
     this.activeFields = const [],
     Map<String, List<FormFieldDef>>? pageFields,
   })  : id = id ?? Uuid().v4(),
@@ -89,13 +98,24 @@ class ChampionFormController extends ChangeNotifier {
   /// this controller manages, or the fields will break.
   @override
   void dispose() {
-    // Dispose text controllers:
     _fieldControllers.forEach((key, controller) {
       if (controller is ChangeNotifier) {
         controller.dispose();
       }
+      // Also dispose FocusNodes if they are stored here directly
+      // For example, if _fieldControllers stored {'someId_focusNode': FocusNode}
+      else if (controller is FocusNode) {
+        controller.dispose();
+      }
     });
     _fieldControllers.clear();
+    _fieldStates.clear();
+    _fieldDefinitions.clear();
+    _fieldFocusStates.clear();
+    _fieldValues.clear();
+    formErrors.clear();
+    activeFields.clear();
+    pageFields.clear();
 
     super.dispose();
   }
@@ -167,6 +187,47 @@ class ChampionFormController extends ChangeNotifier {
     }
   }
 
+  /// Gets the current state of a field. Defaults to normal if not found.
+  FieldState getFieldState(String fieldId) {
+    // Ensure disabled state takes precedence if the field definition says so
+    if (_fieldDefinitions[fieldId]?.disabled ?? false) {
+      return FieldState.disabled;
+    }
+    return _fieldStates[fieldId] ?? FieldState.normal;
+  }
+
+  /// Recalculates and updates the state for a given field.
+  /// Notifies listeners if the state actually changes.
+  void _updateFieldState(String fieldId) {
+    final fieldDef = _fieldDefinitions[fieldId];
+    if (fieldDef == null) return;
+
+    final oldState = _fieldStates[fieldId] ?? FieldState.normal;
+    FieldState newState;
+
+    final hasErrors = findErrors(fieldId).isNotEmpty;
+    // MODIFIED: Read from the focus map
+    final isFocused = isFieldFocused(fieldId);
+
+    if (fieldDef.disabled) {
+      newState = FieldState.disabled;
+    } else if (hasErrors) {
+      newState = FieldState.error;
+    } else if (isFocused) {
+      newState = FieldState.active;
+    } else {
+      newState = FieldState.normal;
+    }
+
+    if (oldState != newState) {
+      _fieldStates[fieldId] = newState;
+      // Notification is usually handled by the calling method (addFocus, removeFocus, updateErrors)
+      // to avoid redundant notifications if multiple states change at once.
+      debugPrint(
+          "Internal: Field '$fieldId' state calculated as $newState (was $oldState)");
+    }
+  }
+
   /// Lets start by managing all the fields this controller is responsible for.
   /// This function allows us to connect disparate championform instances together into one controller.
   ///
@@ -178,11 +239,27 @@ class ChampionFormController extends ChangeNotifier {
   /// For example: a multi-page form handling more than one group of fields.
   void addFields(
     List<FormFieldDef> newFields, {
-    // Disable notify listeners. This can prevent notification loops breaking widgets.
     bool noNotify = false,
   }) {
-    fields = [...fields, ...newFields];
-    if (!noNotify) {
+    bool changed = false;
+    for (final field in newFields) {
+      // Only add if it's not already present or if the definition differs
+      // (Note: Deep equality check for FormFieldDef might be complex/costly)
+      if (!_fieldDefinitions.containsKey(field.id)) {
+        _fieldDefinitions[field.id] = field;
+        // Ensure initial focus state is false (or absent)
+        _fieldFocusStates.putIfAbsent(field.id, () => false);
+        // Calculate initial state
+        _updateFieldState(field.id); // Calculate and store initial state
+        changed = true;
+      } else if (_fieldDefinitions[field.id] != field) {
+        // Handle update if definition changes (e.g., 'disabled' toggled)
+        _fieldDefinitions[field.id] = field;
+        _updateFieldState(field.id); // Recalculate state if def changed
+        changed = true;
+      }
+    }
+    if (changed && !noNotify) {
       notifyListeners();
     }
   }
@@ -199,18 +276,122 @@ class ChampionFormController extends ChangeNotifier {
     if (value is T) {
       return value;
     }
+
+    // Return default value from definition if value is null/absent
+    if (value == null) {
+      final defaultValue = _fieldDefinitions[fieldId]?.defaultValue;
+      if (defaultValue is T) {
+        return defaultValue;
+      }
+    }
+
     // Optional: Handle type mismatch (e.g., log warning, return null)
     return null;
   }
 
   /// Update the value for any field ID.
   /// Notifies listeners unless noNotify is true.
-  void updateFieldValue<T>(String id, T newValue, {bool noNotify = false}) {
-    // final reference = findTextFieldValueIndex(id);
-    _fieldValues[id] = newValue;
+  /// Update the value for any field ID.
+  void updateFieldValue<T>(String id, T? newValue, {bool noNotify = false}) {
+    final T? oldValue =
+        _fieldValues.containsKey(id) ? _fieldValues[id] as T? : null;
 
-    if (!noNotify) {
-      notifyListeners();
+    // Store or remove the value
+    if (newValue != null) {
+      _fieldValues[id] = newValue;
+    } else {
+      _fieldValues
+          .remove(id); // Remove if null to potentially revert to default
+    }
+
+    // Trigger onChange if defined and value actually changed
+    if (oldValue != newValue) {
+      final fieldDef = _fieldDefinitions[id];
+      if (fieldDef?.onChange != null) {
+        // Use try-catch for safety, as onChange is external code
+        try {
+          // Get results *after* updating the value
+          final results = FormResults.getResults(
+              controller: this, fields: [if (fieldDef != null) fieldDef]);
+          fieldDef!.onChange!(results);
+        } catch (e) {
+          debugPrint("Error executing onChange for field '$id': $e");
+        }
+      }
+
+      // If validation is live, check for errors after change
+      if (fieldDef?.validateLive ?? false) {
+        _validateField(id); // Separate validation logic
+      }
+
+      // Notify listeners only if value changed and notification not suppressed
+      if (!noNotify) {
+        notifyListeners();
+      }
+    }
+  }
+
+  /// Runs validators for a specific field and updates errors/state.
+  void _validateField(String fieldId, {bool notify = true}) {
+    final fieldDef = _fieldDefinitions[fieldId];
+    final validators = fieldDef?.validators;
+    if (fieldDef == null || validators == null || validators.isEmpty) {
+      // If no validators, ensure any existing errors are cleared
+      final hadErrors = findErrors(fieldId).isNotEmpty;
+      if (hadErrors) {
+        clearErrors(fieldId,
+            noNotify: !notify); // Clear errors, notify if requested
+      }
+      return; // No validation needed or possible
+    }
+
+    final value = getFieldValue<dynamic>(fieldId); // Get current value
+    List<FormBuilderError> currentFieldErrors = [];
+    bool errorsChanged = false;
+
+    // Clear previous errors for this field *before* running validators
+    final previousErrors = findErrors(fieldId);
+    if (previousErrors.isNotEmpty) {
+      formErrors.removeWhere((err) => err.fieldId == fieldId);
+      errorsChanged = true; // Mark that errors *might* change overall
+    }
+
+    // Run validators
+    for (int i = 0; i < validators.length; i++) {
+      final validator = validators[i];
+      try {
+        // We need to cast the validator's function to the expected type.
+        // This relies on the validator being correctly typed for the field.
+        final bool isValid = (validator.validator as dynamic)(value);
+
+        if (!isValid) {
+          final newError = FormBuilderError(
+            reason: validator.reason,
+            fieldId: fieldId,
+            validatorPosition: i,
+          );
+          currentFieldErrors.add(newError);
+        }
+      } catch (e) {
+        debugPrint(
+            "Error running validator $i for field '$fieldId': $e. Ensure validator function type matches field value type (${value?.runtimeType}).");
+        // Optionally add a generic error?
+        // currentFieldErrors.add(FormBuilderError(reason: "Validation Error", fieldId: fieldId, validatorPosition: i));
+      }
+    }
+
+    // Add new errors if any
+    if (currentFieldErrors.isNotEmpty) {
+      formErrors.addAll(currentFieldErrors);
+      errorsChanged = true; // Mark change if new errors were added
+    }
+
+    // Update state and notify if errors changed
+    if (errorsChanged) {
+      _updateFieldState(fieldId); // Update state based on new error status
+      if (notify) {
+        notifyListeners();
+      }
     }
   }
 
@@ -248,74 +429,57 @@ class ChampionFormController extends ChangeNotifier {
   }
 
   // ---------------------------------------------------------------------------
-  // Multiselect public Functions. Checkboxes, Dropdowns, File Uploads, and more.
-  // These functions manage text fields.
+  // Multiselect public Functions (Checkboxes, Dropdowns, File Uploads)
   // ---------------------------------------------------------------------------
 
-  /// Updates the selected value(s) for a field.
-  ///
-  /// - `id`: The ID of the field to update.
-  /// - `newValue`: The list of `MultiselectOption` to set.
-  /// - `multiselect`: If `true`, allows multiple selections. If `false`, only the first item in `newValue` (if any) is kept.
-  /// - `overwrite`:
-  ///    - If `true`, `newValue` completely replaces the current selection. (Useful for file uploads or direct replacements).
-  ///    - If `false` (default), the function toggles the selection state of items in `newValue`:
-  ///      - If an option from `newValue` is already selected, it's deselected.
-  ///      - If an option from `newValue` is not selected, it's selected.
-  /// - `noNotify`: If `true`, suppresses the `notifyListeners()` call.
-  /// - `noOnChange`: If `true`, suppresses the field's `onChange` callback.
+  /// Updates the selected value(s) for a multiselect/option field.
+  /// Handles single/multi select logic, overwrite/toggle behavior.
   void updateMultiselectValues(
     String id,
     List<MultiselectOption> newValue, {
-    bool multiselect = false, // Default consistent with previous behavior
+    bool? multiselect, // Optional: If null, infer from field definition
     bool overwrite = false,
     bool noNotify = false,
     bool noOnChange = false,
   }) {
-    final field = fields.firstWhereOrNull((fieldData) => fieldData.id == id);
-    // It's good practice to check if the field exists, though onChange might fail silently if not.
-    // if (field == null) {
-    //   debugPrint("ChampionFormController: Attempted to update non-existent field $id");
-    //  return;
-    // }
+    final field = _fieldDefinitions[id];
+    // Infer multiselect capability if not provided
+    final isMultiselect =
+        multiselect ?? (field is ChampionOptionSelect && field.multiselect);
 
-    // Get current values or default to empty list
     List<MultiselectOption> currentValues = List<MultiselectOption>.from(
         getFieldValue<List<MultiselectOption>>(id) ?? []);
     List<MultiselectOption> finalValue;
 
     if (overwrite) {
-      // Directly replace the current list with the new list (respecting multiselect flag)
-      if (multiselect) {
-        finalValue = newValue;
+      // Directly replace, respecting multiselect flag
+      if (isMultiselect) {
+        finalValue =
+            List<MultiselectOption>.from(newValue); // Ensure new list instance
       } else {
         finalValue = newValue.isNotEmpty ? [newValue.first] : [];
       }
     } else {
-      // Toggle logic based on current selection
+      // Toggle logic
       final Set<String> newValueValues = newValue.map((o) => o.value).toSet();
       final Set<String> currentValuesSet =
           currentValues.map((o) => o.value).toSet();
-
       List<MultiselectOption> mergedValues = [];
 
-      if (multiselect) {
-        // Add options from currentValues that are NOT in newValue (keep untoggled ones)
+      if (isMultiselect) {
+        // Keep existing options not part of the toggle action
         mergedValues.addAll(currentValues
             .where((option) => !newValueValues.contains(option.value)));
-        // Add options from newValue that are NOT in currentValues (add newly toggled ones)
+        // Add new options that weren't already selected
         mergedValues.addAll(newValue
             .where((option) => !currentValuesSet.contains(option.value)));
       } else {
-        // Single select toggle:
-        // If newValue is empty, deselect everything.
-        // If newValue has items, check if the *first* item is already selected.
-        // If it is selected, deselect it (resulting in empty).
-        // If it's not selected, select it (replacing any previous single selection).
+        // Single select toggle logic
         if (newValue.isNotEmpty) {
           final firstNewOption = newValue.first;
+          // If the new option wasn't selected, select it. If it was, deselect (empty list).
           if (!currentValuesSet.contains(firstNewOption.value)) {
-            mergedValues = [firstNewOption]; // Select the new one
+            mergedValues = [firstNewOption];
           } else {
             mergedValues = []; // Deselect if it was already selected
           }
@@ -326,20 +490,14 @@ class ChampionFormController extends ChangeNotifier {
       finalValue = mergedValues;
     }
 
-    // Update the central value store
+    // Use the generic updateFieldValue, triggering its onChange and validation logic
     updateFieldValue<List<MultiselectOption>>(id, finalValue,
-        noNotify: true); // Use internal method, notify later
+        noNotify: noNotify // Pass notification suppression flag
+        );
 
-    // Trigger any onChange functions if the field definition exists
-    if (field?.onChange != null && !noOnChange) {
-      field!
-          .onChange!(FormResults.getResults(controller: this, fields: [field]));
-    }
-
-    // Notify listeners if required
-    if (!noNotify) {
-      notifyListeners();
-    }
+    // Note: onChange and validation are now handled within updateFieldValue
+    // if (field?.onChange != null && !noOnChange) { ... } // No longer needed here
+    // if (field?.validateLive ?? false) { ... } // No longer needed here
   }
 
   /// Helper to clear all selected options for a multiselect field.
@@ -382,101 +540,194 @@ class ChampionFormController extends ChangeNotifier {
     return getFieldValue<List<MultiselectOption>>(fieldId);
   }
 
-  // Manage Errors
+  // ---------------------------------------------------------------------------
+  // Error Management
+  // ---------------------------------------------------------------------------
+
+  /// Find all errors associated with a specific field ID.
   List<FormBuilderError> findErrors(String fieldId) {
     return formErrors.where((error) => error.fieldId == fieldId).toList();
   }
 
+  /// Clear all errors for a specific field ID.
   void clearErrors(
     String fieldId, {
-    // Disable notify listeners. This can prevent notification loops breaking widgets.
     bool noNotify = false,
   }) {
-    formErrors = formErrors.where((error) => error.fieldId != fieldId).toList();
-    if (!noNotify) {
-      notifyListeners();
+    final hadErrors = formErrors.any((error) => error.fieldId == fieldId);
+    if (hadErrors) {
+      formErrors =
+          formErrors.where((error) => error.fieldId != fieldId).toList();
+      _updateFieldState(fieldId); // Update state after clearing errors
+      if (!noNotify) {
+        notifyListeners();
+      }
     }
-
-    return;
   }
 
+  /// Clear a specific error based on its validator position.
+  /// (Less common, usually clear all for the field)
   void clearError(
     String fieldId,
     int errorPosition, {
-    // Disable notify listeners. This can prevent notification loops breaking widgets.
     bool noNotify = false,
   }) {
+    final initialCount = formErrors.length;
     formErrors = formErrors
-        .where((error) => error.validatorPosition != errorPosition)
+        .where((error) => !(error.fieldId == fieldId &&
+            error.validatorPosition == errorPosition))
         .toList();
 
-    if (!noNotify) {
-      notifyListeners();
-    }
-    return;
-  }
-
-  void addError(
-    FormBuilderError error, {
-    // Disable notify listeners. This can prevent notification loops breaking widgets.
-    bool noNotify = false,
-  }) {
-    formErrors = [error, ...formErrors];
-    if (!noNotify) {
-      notifyListeners();
-    }
-  }
-
-  // Lets Handle FocusNodes
-
-  bool isFieldFocused(String fieldId) {
-    return fieldFocus.firstWhereOrNull((field) => field.id == fieldId)?.focus ??
-        false;
-  }
-
-  /// This updates the focused field in the controller.
-  /// Use this so the controller can track which field has focus
-  void updateFocusedField(FormFieldDef newField) {
-    activeField = newField;
-  }
-
-  // Set field focus
-  void setFieldFocus(
-    String fieldId,
-    bool focused,
-    FormFieldDef activeField, {
-    // Disable notify listeners. This can prevent notification loops breaking widgets.
-    bool noNotify = false,
-  }) {
-    // Update the active field
-    updateFocusedField(activeField);
-
-    final reference = findFieldFocusIndex(fieldId);
-    if (reference != null) {
-      fieldFocus[reference] = FieldFocus(
-        id: fieldId,
-        focus: focused,
-      );
-    } else {
-      fieldFocus = [
-        FieldFocus(
-          id: fieldId,
-          focus: focused,
-        ),
-        ...fieldFocus
-      ];
-    }
-    if (!noNotify) {
-      notifyListeners();
-    }
-  }
-
-  int? findFieldFocusIndex(String fieldId) {
-    for (int i = 0; i < fieldFocus.length; i++) {
-      if (fieldFocus[i].id == id) {
-        return i;
+    if (formErrors.length < initialCount) {
+      // If an error was actually removed
+      _updateFieldState(fieldId); // Recalculate state
+      if (!noNotify) {
+        notifyListeners();
       }
     }
-    return null;
+  }
+
+  /// Add a new error to the form.
+  void addError(
+    FormBuilderError error, {
+    bool noNotify = false,
+  }) {
+    // Avoid adding duplicate errors (same field, same validator position)
+    final exists = formErrors.any((e) =>
+        e.fieldId == error.fieldId &&
+        e.validatorPosition == error.validatorPosition);
+    if (!exists) {
+      formErrors = [error, ...formErrors]; // Add to beginning
+      _updateFieldState(error.fieldId); // Update state after adding error
+      if (!noNotify) {
+        notifyListeners();
+      }
+    }
+  }
+  // Lets Handle FocusNodes
+  //
+
+  // --- Focus Management Methods ---
+
+  /// Sets focus to the specified field, removing focus from any other field.
+  void addFocus(String fieldId) {
+    final previouslyFocusedId = currentlyFocusedFieldId;
+
+    // If the field is already focused, do nothing
+    if (previouslyFocusedId == fieldId) {
+      return;
+    }
+
+    // Remove focus from the previously focused field, if there was one
+    if (previouslyFocusedId != null) {
+      _fieldFocusStates[previouslyFocusedId] = false;
+      _updateFieldState(
+          previouslyFocusedId); // Update state for the unfocused field
+    }
+
+    // Set focus for the new field
+    _fieldFocusStates[fieldId] = true;
+    _updateFieldState(fieldId); // Update state for the newly focused field
+
+    debugPrint(
+        "Focus added to '$fieldId'. Previously focused: '$previouslyFocusedId'");
+    notifyListeners();
+  }
+
+  /// Removes focus from the specified field.
+  void removeFocus(String fieldId) {
+    // Only act if the field is currently focused
+    if (_fieldFocusStates[fieldId] == true) {
+      _fieldFocusStates[fieldId] =
+          false; // Or _fieldFocusStates.remove(fieldId);
+      _updateFieldState(fieldId); // Update its state
+
+      debugPrint("Focus removed from '$fieldId'");
+      notifyListeners();
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Focus Management
+  // ---------------------------------------------------------------------------
+
+  /// Called by field widgets when their focus changes.
+  /// Manages the internal focus map (`_fieldFocusStates`) and updates field states.
+  void setFieldFocus(String fieldId, bool isFocused) {
+    // Ensure the field definition is tracked
+    // This should ideally happen in addFields, but double-check
+    if (!_fieldDefinitions.containsKey(fieldId)) {
+      debugPrint("Warning: setFieldFocus called for unknown field '$fieldId'");
+      // Optionally try to find the field def?
+      // final field = fields.firstWhereOrNull((f) => f.id == fieldId);
+      // if (field != null) _fieldDefinitions.putIfAbsent(field.id, () => field);
+      // else return; // Exit if definition truly unknown
+      return;
+    }
+
+    final currentlyFocused = currentlyFocusedFieldId;
+    final bool alreadyHadFocus = _fieldFocusStates[fieldId] ?? false;
+
+    if (isFocused) {
+      // If this field is gaining focus
+      if (currentlyFocused != fieldId) {
+        // Remove focus from the previously focused field (if any)
+        if (currentlyFocused != null) {
+          _fieldFocusStates[currentlyFocused] = false;
+          _updateFieldState(
+              currentlyFocused); // Update state of unfocused field
+        }
+        // Set focus for the new field
+        _fieldFocusStates[fieldId] = true;
+        _updateFieldState(fieldId); // Update state of newly focused field
+        debugPrint(
+            "Focus CHANGED to '$fieldId'. Previously: '$currentlyFocused'");
+        notifyListeners(); // Notify about the focus change
+      } else {
+        // Already focused, state likely calculated correctly, do nothing unless forced update needed
+        debugPrint("Focus remained on '$fieldId'.");
+      }
+    } else {
+      // If this field is losing focus
+      // Only act if *this* field was the one losing focus
+      if (currentlyFocused == fieldId) {
+        _fieldFocusStates[fieldId] = false;
+        _updateFieldState(fieldId); // Update state of unfocused field
+        debugPrint("Focus REMOVED from '$fieldId'.");
+        notifyListeners(); // Notify about the focus change
+      } else {
+        // A blur event occurred for a field that wasn't marked as focused.
+        // This can happen. Ensure its state is non-active.
+        if (alreadyHadFocus) {
+          // If it was incorrectly marked as focused before
+          _fieldFocusStates[fieldId] = false;
+          _updateFieldState(fieldId); // Ensure state is updated
+          debugPrint(
+              "Focus corrected (removed) for '$fieldId' which wasn't the primary focus.");
+          notifyListeners();
+        } else {
+          debugPrint(
+              "Blur event for '$fieldId', but it wasn't the actively focused field ('$currentlyFocused'). No state change needed based on focus.");
+        }
+      }
+    }
+  }
+
+  /// Checks if a specific field is currently marked as focused in the internal map.
+  bool isFieldFocused(String fieldId) {
+    return _fieldFocusStates[fieldId] ?? false;
+  }
+
+  /// Helper to get the ID of the field currently marked as focused.
+  String? get currentlyFocusedFieldId {
+    try {
+      // Find the first entry where the value is true
+      return _fieldFocusStates.entries
+          .firstWhere((entry) => entry.value == true)
+          .key;
+    } catch (e) {
+      // Handles case where no entry has value == true (NoSuchMethodError or similar)
+      return null;
+    }
   }
 }

@@ -20,9 +20,7 @@ class FileUploadWidget extends StatefulWidget {
   final String id;
   final ChampionFormController controller;
   final ChampionOptionSelect field;
-  final FieldState currentState;
   final FieldColorScheme currentColors;
-  final List<String> defaultValue;
   final ValueChanged<bool> onFocusChange;
   final Function(MultiselectOption? file) onFileOptionChange;
 
@@ -31,9 +29,7 @@ class FileUploadWidget extends StatefulWidget {
     required this.id,
     required this.controller,
     required this.field,
-    required this.currentState,
     required this.currentColors,
-    required this.defaultValue,
     required this.onFocusChange,
     required this.onFileOptionChange,
   });
@@ -57,8 +53,9 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
     });
 
     // Initialize current files from controller
-    final existing =
-        widget.controller.findMultiselectValue(widget.field.id)?.values ?? [];
+    final existing = widget.controller
+            .getFieldValue<List<MultiselectOption>>(widget.field.id) ??
+        [];
     _files = List<MultiselectOption>.from(existing);
 
     widget.controller.addListener(_onControllerUpdate);
@@ -66,8 +63,9 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
 
   void _onControllerUpdate() {
     // We'll read from the controller and see if the value changed
-    final existing =
-        widget.controller.findMultiselectValue(widget.field.id)?.values ?? [];
+    final existing = widget.controller
+            .getFieldValue<List<MultiselectOption>>(widget.field.id) ??
+        [];
     if (existing.length != _files.length) {
       setState(() {
         _files = List<MultiselectOption>.from(existing);

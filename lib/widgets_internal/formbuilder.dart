@@ -3,14 +3,11 @@ import 'package:championforms/core/field_builder_registry.dart';
 import 'package:championforms/functions/gather_child_errors.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/field_types/championcolumn.dart';
-import 'package:championforms/models/field_types/championoptionselect.dart';
 import 'package:championforms/models/field_types/championrow.dart';
 import 'package:championforms/models/field_types/championtextfield.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formresults.dart';
-import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/models/themes.dart';
-import 'package:championforms/widgets_internal/field_widgets/textfieldwidget.dart';
 import 'package:championforms/widgets_internal/rowcolumn_widgets/column_builder.dart';
 import 'package:championforms/widgets_internal/rowcolumn_widgets/row_builder.dart';
 import 'package:flutter/material.dart';
@@ -100,6 +97,8 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
   }
 
   void _updateDefaults() {
+    final fieldDefs = widget.fields.whereType<FormFieldDef>().toList();
+
     // We're going to add all fields from this widget into our controller
     widget.controller
         .addFields(widget.fields.whereType<FormFieldDef>().toList());
@@ -107,22 +106,46 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
     // Replace with your default values for chips
 
     for (final field in widget.fields) {
+      final fieldDefs = widget.fields.whereType<FormFieldDef>().toList();
+
+      // Add fields to controller (registers definitions, calculates initial state)
+      widget.controller.addFields(fieldDefs,
+          noNotify: true); // noNotify true likely okay here
+
       if (field is FormFieldDef) {
         // populate default values for the text fields
-        if (field is ChampionTextField) {
+        // Only set if the value isn't already present or differs from default
+        final currentValue = widget.controller.getFieldValue<dynamic>(field.id);
+        if (currentValue == null && field.defaultValue != null) {
           widget.controller
-              .updateTextFieldValue(field.id, field.defaultValue ?? "");
-        } else if (field is ChampionOptionSelect) {
-          final defaultValues = field.options
-              .where((option) => field.defaultValue.contains(option.value))
-              .toList();
-          if (defaultValues.isNotEmpty) {
-            widget.controller.updateMultiselectValues(field.id, defaultValues,
-                multiselect: field.multiselect, overwrite: true);
-          }
+              .updateFieldValue(field.id, field.defaultValue, noNotify: true);
         }
+        // if (field is ChampionTextField) {
+        // } else if (field is ChampionOptionSelect) {
+        //   final defaultValues = field.options
+        //       .where((option) => field.defaultValue.contains(option.value))
+        //       .toList();
+        //   if (defaultValues.isNotEmpty) {
+        //     widget.controller.updateMultiselectValues(field.id, defaultValues,
+        //         multiselect: field.multiselect, overwrite: true);
+        // }
+        // }
       }
     }
+    // Update active fields list in the controller
+    widget.controller.updateActiveFields(fieldDefs, noNotify: true);
+
+    // Update page fields if applicable
+    if (widget.pageName != null && widget.pageName != "default") {
+      widget.controller.updatePageFields(widget.pageName!, fieldDefs);
+    }
+
+    // Initial validation check if needed? Usually done on submit/interaction.
+    // If initial errors are desired:
+    // FormResults.getResults(controller: widget.controller, fields: fieldDefs);
+
+    // Trigger a rebuild if initial values were set
+    setState(() {});
   }
 
   @override
@@ -132,6 +155,13 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
     // Listen for the form fields as long as this form is active
 
     for (final field in widget.fields) {
+      // --- Skip hidden fields ---
+      if (field is ChampionRow && field.hideField ||
+          field is ChampionColumn && field.hideField ||
+          field is FormFieldDef && field.hideField) {
+        continue;
+      }
+
       // If we have validators and we're doing live validation lets setup the function now
       Function(String value)? validate;
       if (field is FormFieldDef) {
@@ -168,6 +198,8 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
           ? widget.theme.copyWith(theme: field.theme)
           : widget.theme;
 
+      // --- Process Based on Field Type ---
+
       // Determine field color state from errors or focus
       FieldState fieldState;
       FieldColorScheme fieldColors;
@@ -176,58 +208,107 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
           ? widget.controller.isFieldFocused(field.id)
           : false;
 
-      if (hasErrors) {
-        fieldState = FieldState.error;
-        fieldColors = mergedTheme.errorColorScheme!;
-      } else if (field is FormFieldDef && field.disabled) {
-        fieldState = FieldState.disabled;
-        fieldColors = mergedTheme.disabledColorScheme!;
-      } else if (isFocused) {
-        fieldState = FieldState.active;
-        fieldColors = mergedTheme.activeColorScheme!;
-      } else {
-        fieldState = FieldState.normal;
-        fieldColors = mergedTheme.colorScheme!;
-      }
-
+      // ---- Process based on field type ----
       Widget outputWidget;
 
       // Determine the field layout and the field background
 
       if (field is FormFieldDef) {
-        // Use the registry to build the field
+        // 1. Get the state from the controller
+        final FieldState fieldState = widget.controller.getFieldState(field.id);
+
+        // 2. Determine colors based on the retrieved state and theme
+        final FieldColorScheme fieldColors;
+        switch (fieldState) {
+          case FieldState.error:
+            fieldColors = mergedTheme.errorColorScheme!;
+            break;
+          case FieldState.disabled:
+            fieldColors = mergedTheme.disabledColorScheme!;
+            break;
+          case FieldState.active:
+            fieldColors = mergedTheme.activeColorScheme!;
+            break;
+          case FieldState.normal:
+          default:
+            fieldColors = mergedTheme.colorScheme!;
+            break;
+        }
+
+        // 3. Get errors for potential display (only if not rolled up by parent)
+        final List<FormBuilderError> errorsForDisplay =
+            widget.parentErrors == null
+                ? widget.controller.findErrors(field.id)
+                : []; // Don't display if parent handles it
+
+        // 4. Build the field using the registry
         outputWidget = ChampionFormFieldRegistry.instance.buildField(
           context,
           widget.controller,
-          field,
-          fieldState, // calculated state
-          fieldColors, // calculated colors
-          (focused) {
-            // Pass the focus update callback
-            widget.controller.setFieldFocus(field.id, focused, field);
+          field, // The field definition
+          fieldState, // The state retrieved from controller
+          fieldColors, // The colors determined by state & theme
+          (bool focused) {
+            // Focus change callback -> Notify controller
+            widget.controller.setFieldFocus(field.id, focused);
           },
+          // Pass other necessary parameters if buildField requires them
+        );
+
+        // 5. Apply Padding if specified
+        if (widget.fieldPadding != null &&
+            widget.fieldPadding != EdgeInsets.zero) {
+          outputWidget =
+              Padding(padding: widget.fieldPadding!, child: outputWidget);
+        }
+
+        // 6. Wrap with standard field layout (title, description, errors)
+        output.add(
+          field.fieldLayout(
+            context,
+            field,
+            widget.controller,
+            fieldColors,
+            field.fieldBackground(
+              context,
+              field,
+              widget.controller,
+              fieldColors,
+              outputWidget, // The widget built by the registry
+            ),
+          ),
         );
       } else if (field is ChampionRow) {
+        // --- Handle Row Layout ---
         List<FormBuilderError> childErrors = [];
+        bool rowHasDirectErrors = widget.controller
+            .findErrors(field.id)
+            .isNotEmpty; // Check if row itself has errors assigned
 
         if (field.rollUpErrors) {
-          // Gather child errors from all columns inside the row
           childErrors = gatherAllChildErrors(
             field.columns.expand((c) => c.fields).toList(),
             widget.controller,
           );
         }
 
+        // Errors to potentially display *at the row level*
+        final rowErrorsForDisplay = field.rollUpErrors
+            ? childErrors
+            : (rowHasDirectErrors
+                ? widget.controller.findErrors(field.id)
+                : []);
+        final bool rowShouldHighlightError = rowErrorsForDisplay.isNotEmpty;
+
+        // Determine Row's appearance based on its errors (rolled up or direct)
+        final rowColor = rowShouldHighlightError
+            ? mergedTheme.errorColorScheme!
+            : mergedTheme.colorScheme!;
+
         // If rowField.rollUpErrors is true, the row
         // should display all child errors.
         // Otherwise the row only displays its own direct errors.
         final rowErrors = field.rollUpErrors ? childErrors : errorsForThisField;
-
-        // Determine row color state from rowErrors
-        final rowHasErrors = rowErrors.isNotEmpty;
-        final rowState = rowHasErrors ? FieldState.error : fieldState;
-        final rowColor =
-            rowHasErrors ? mergedTheme.errorColorScheme! : fieldColors;
 
         // Finally build the row
         outputWidget = ChampionRowWidget(
@@ -239,173 +320,46 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
           theme: mergedTheme,
           fieldPadding: widget.fieldPadding,
         );
+
+        output.add(outputWidget); // Add column directly
       } else if (field is ChampionColumn) {
-        // This case might not be hit directly if columns are always inside rows,
-        // but handle it for completeness or direct column usage.
+        // --- Handle Column Layout (Usually within a Row) ---
         List<FormBuilderError> colChildErrors = [];
+        bool colHasDirectErrors =
+            widget.controller.findErrors(field.id).isNotEmpty;
+
         if (field.rollUpErrors) {
           colChildErrors =
               gatherAllChildErrors(field.fields, widget.controller);
         }
-        final colErrors =
-            field.rollUpErrors ? colChildErrors : errorsForThisField;
-        final colHasErrors = colErrors.isNotEmpty;
-        final colColor =
-            colHasErrors ? mergedTheme.errorColorScheme! : fieldColors;
+
+        final List<FormBuilderError>? colErrorsForDisplay = field.rollUpErrors
+            ? colChildErrors
+            : (colHasDirectErrors
+                ? widget.controller.findErrors(field.id)
+                : []);
+        final bool colShouldHighlightError =
+            colErrorsForDisplay?.isNotEmpty ?? false;
+
+        final colColor = colShouldHighlightError
+            ? mergedTheme.errorColorScheme!
+            : mergedTheme.colorScheme!;
 
         outputWidget = ChampionColumnWidget(
           columnField: field,
-          errors: colErrors.isEmpty ? null : colErrors,
+          errors: colErrorsForDisplay?.isEmpty ?? false
+              ? null
+              : colErrorsForDisplay,
           colorScheme: colColor, // Pass calculated color
           controller: widget.controller,
           columnWrapper: field.columnWrapper,
           theme: mergedTheme, // Pass theme
           fieldPadding: widget.fieldPadding, // Pass padding
         );
+        output.add(outputWidget); // Add column directly
       } else {
         // Should not happen if all fields extend FormFieldBase
         outputWidget = const SizedBox.shrink(); // Or an error widget
-      }
-
-      // switch (field) {
-      //   // Row and Column
-      //   // if you see a row, run displaylogic and then call this widget recursively.
-      //   // ---- CHAMPION ROW ----
-      //   case ChampionRow rowField:
-      //     {
-      //       List<FormBuilderError> childErrors = [];
-
-      //       if (rowField.rollUpErrors) {
-      //         // Gather child errors from all columns inside the row
-      //         childErrors = gatherAllChildErrors(
-      //           rowField.columns.expand((c) => c.fields).toList(),
-      //           widget.controller,
-      //         );
-      //       }
-
-      //       // If rowField.rollUpErrors is true, the row
-      //       // should display all child errors.
-      //       // Otherwise the row only displays its own direct errors.
-      //       final rowErrors =
-      //           rowField.rollUpErrors ? childErrors : errorsForThisField;
-
-      //       // Determine row color state from rowErrors
-      //       final rowHasErrors = rowErrors.isNotEmpty;
-      //       final rowState = rowHasErrors ? FieldState.error : fieldState;
-      //       final rowColor =
-      //           rowHasErrors ? mergedTheme.errorColorScheme! : fieldColors;
-
-      //       // Finally build the row
-      //       outputWidget = ChampionRowWidget(
-      //         rowField: rowField,
-      //         columns: rowField.columns,
-      //         errors: rowErrors.isEmpty ? null : rowErrors,
-      //         colorScheme: rowColor,
-      //         controller: widget.controller,
-      //         theme: mergedTheme,
-      //         fieldPadding: widget.fieldPadding,
-      //       );
-
-      //       break;
-      //     }
-
-      //   case ChampionTextField():
-      //     outputWidget = TextFieldWidget(
-      //       controller: widget.controller,
-      //       field: field,
-      //       fieldOverride: field.fieldOverride,
-      //       fieldState: fieldState,
-      //       colorScheme: fieldColors,
-      //       fieldId: field.id,
-      //       onDrop: field.onDrop,
-      //       onPaste: field.onPaste,
-      //       draggable: field.draggable,
-      //       onSubmitted: field.onSubmit,
-      //       onChanged: field.onChange,
-      //       password: field.password,
-      //       requestFocus: field.requestFocus,
-      //       validate: validate,
-      //       initialValue: field.defaultValue,
-      //       labelText: field.textFieldTitle,
-      //       hintText: field.hintText,
-      //       maxLines: field.maxLines,
-      //     );
-
-      //     break;
-
-      //   case ChampionOptionSelect():
-      //     outputWidget = field.fieldBuilder(
-      //       context,
-      //       widget.controller,
-      //       field.options,
-      //       field,
-      //       fieldState,
-      //       fieldColors,
-      //       widget.controller
-      //               .findMultiselectValue(field.id)
-      //               ?.values
-      //               .map((option) => option.value)
-      //               .toList() ??
-      //           [],
-      //       (focus) {
-      //         widget.controller.setFieldFocus(field.id, focus, field);
-      //       },
-      //       (MultiselectOption? selectedOption) {
-      //         if (selectedOption != null) {
-      //           widget.controller.updateMultiselectValues(
-      //               field.id, [selectedOption],
-      //               multiselect: field.multiselect);
-      //         } else {
-      //           widget.controller.resetMultiselectChoices(field.id);
-      //         }
-      //         if (field.validateLive == true) {
-      //           // Run validation
-      //           FormResults.getResults(
-      //               controller: widget.controller, fields: [field]);
-      //         }
-      //       },
-      //     );
-
-      //     break;
-
-      //   default:
-      //     outputWidget = Container();
-      //     break;
-      // }
-
-      // Add padding to the form field if it was defined.
-      if (widget.fieldPadding != null &&
-          widget.fieldPadding != EdgeInsets.all(0) &&
-          field is FormFieldDef) {
-        outputWidget =
-            Padding(padding: widget.fieldPadding!, child: outputWidget);
-      }
-
-      // Lets add the new form field with our layout
-      if (field is FormFieldDef) {
-        output.add(
-          field.fieldLayout(
-            context,
-            field,
-            fieldColors,
-            widget.parentErrors == null ? errorsForThisField : [],
-            field.fieldBackground(
-              context,
-              field,
-              fieldColors,
-              outputWidget,
-            ),
-          ),
-        );
-      } else if (field is ChampionRow || field is ChampionColumn) {
-        output.add(outputWidget);
-      }
-
-      // Add a simple spacer
-      if (widget.spacer != null) {
-        output.add(SizedBox(
-          height: widget.spacer!,
-        ));
       }
     }
 
@@ -424,47 +378,54 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
   }
 }
 
+// --- FormBuilderValidatorErrors Widget ---
 class FormBuilderValidatorErrors extends StatelessWidget {
   const FormBuilderValidatorErrors({
     super.key,
-    required this.field,
+    required this.fieldId, // Use fieldId instead of the whole field object
     required this.controller,
+    this.errorTextStyle, // Allow custom styling
   });
 
   final ChampionFormController controller;
-  final FormFieldDef field;
+  final String fieldId;
+  final TextStyle? errorTextStyle;
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
-    // determine if there is an error for this field.
-    // If there is, then we need to return it in order of validator
+  Widget build(BuildContext context) {
+    // Get errors directly from the controller for this field ID
+    final List<FormBuilderError> errors = controller.findErrors(fieldId);
 
-    //final int validatorCount = field.validators?.length ?? 0;
-
-    List<FormBuilderError> errors = [];
-
-    errors = [...errors, ...controller.findErrors(field.id)];
-
-    // We have zero errors, so we can return a blank list.
-    if (errors == []) {
-      return Container();
+    // If no errors, return an empty container
+    if (errors.isEmpty) {
+      return const SizedBox.shrink(); // Use SizedBox.shrink() for zero size
     }
+
+    // Default style if none provided
+    final style = errorTextStyle ??
+        Theme.of(context)
+            .textTheme
+            .bodySmall
+            ?.copyWith(color: Theme.of(context).colorScheme.error);
+
+    // Build the list of error texts
     List<Widget> output = [];
-
-    // Loop through, add each error reason to the list
-    for (final error in errors) {
-      output.add(
-          Text(error.reason, style: Theme.of(context).textTheme.labelSmall));
-      output.add(const SizedBox(
-        height: 10,
-      ));
+    for (int i = 0; i < errors.length; i++) {
+      output.add(Text(errors[i].reason, style: style));
+      // Add spacing between multiple errors, but not after the last one
+      if (i < errors.length - 1) {
+        output.add(const SizedBox(height: 4)); // Smaller spacing for errors
+      }
     }
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: output,
+    // Wrap errors in a column
+    return Padding(
+      padding: const EdgeInsets.only(top: 4.0), // Add some top padding
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start, // Align errors left
+        children: output,
+      ),
     );
   }
 }

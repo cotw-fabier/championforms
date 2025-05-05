@@ -54,8 +54,7 @@ class _MultiselectWidgetState extends State<MultiselectWidget> {
 
   void _onLoseFocus() {
     // transmit focus state to provider
-    widget.controller
-        .setFieldFocus(widget.id, _focusNode.hasFocus, widget.field);
+    widget.controller.setFieldFocus(widget.id, _focusNode.hasFocus);
   }
 
   @override

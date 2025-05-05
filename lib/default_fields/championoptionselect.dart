@@ -14,19 +14,9 @@ Widget buildChampionOptionSelect(
     FieldColorScheme currentColors,
     Function(bool focused) updateFocus) {
   // Use the field's own builder logic
-  return field.fieldBuilder(
-      context,
-      controller,
-      field.options, // Pass options
-      field,
-      currentState,
-      currentColors,
-      controller
-              .getFieldValue<List<MultiselectOption>>(field.id)
-              ?.map((v) => v.value)
-              .toList() ??
-          [], // Get current value for default
-      updateFocus, (MultiselectOption? selectedOption) {
+  return field
+      .fieldBuilder(context, controller, field, currentColors, updateFocus,
+          (MultiselectOption? selectedOption) {
     // Update selected logic
     if (selectedOption != null) {
       controller.updateMultiselectValues(field.id, [selectedOption],

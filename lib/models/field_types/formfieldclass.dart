@@ -1,3 +1,4 @@
+import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
@@ -71,15 +72,19 @@ abstract class FormFieldDef<T> implements FormFieldBase {
   final Function(FormResults results)? onChange;
 
   final Widget Function(
-          BuildContext context,
-          FormFieldDef fieldDetails,
-          FieldColorScheme currentColors,
-          List<FormBuilderError> errors,
-          Widget renderedField)
-      fieldLayout; // This is a wrapper around the entire field which adds things like title and description. You can override this with anything you want.
-  final Widget Function(BuildContext context, FormFieldDef fieldDetails,
-          FieldColorScheme currentColors, Widget renderedField)
-      fieldBackground; // This is the background around the field itself.
+    BuildContext context,
+    FormFieldDef fieldDetails,
+    ChampionFormController controller,
+    FieldColorScheme currentColors,
+    Widget renderedField,
+  ) fieldLayout; // This is a wrapper around the entire field which adds things like title and description. You can override this with anything you want.
+  final Widget Function(
+    BuildContext context,
+    FormFieldDef fieldDetails,
+    ChampionFormController controller,
+    FieldColorScheme currentColors,
+    Widget renderedField,
+  ) fieldBackground; // This is the background around the field itself.
 
   /// The default value for this field, matching the field's type.
   T? get defaultValue;
