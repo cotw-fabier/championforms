@@ -33,7 +33,7 @@ Widget checkboxFieldBuilder(
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ...field.options.map(
+        ...(field.options ?? []).map(
           (option) {
             // Determine if this specific option is currently selected
             final bool isChecked = currentSelectedOptions

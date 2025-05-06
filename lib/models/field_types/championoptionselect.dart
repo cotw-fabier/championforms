@@ -14,7 +14,7 @@ class ChampionOptionSelect extends FormFieldDef<List<MultiselectOption>> {
   final Widget? trailing;
 
   // Options
-  final List<MultiselectOption> options;
+  final List<MultiselectOption>? options;
 
   // Multiselect?
   final bool multiselect;

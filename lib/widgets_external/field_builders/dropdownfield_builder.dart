@@ -5,6 +5,7 @@ import 'package:championforms/models/field_types/championoptionselect.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_internal/field_widgets/multiselect_widget.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
 Widget dropdownFieldBuilder(
@@ -25,7 +26,7 @@ Widget dropdownFieldBuilder(
           ? field.defaultValue.first.value
           : null,
       dropdownColor: currentColors.backgroundColor,
-      items: field.options
+      items: (field.options ?? [])
           .map((option) => DropdownMenuItem<String>(
                 value: option.value.toString(),
                 child: Text(
@@ -46,8 +47,12 @@ Widget dropdownFieldBuilder(
       onChanged: (String? value) {
         // Find the value we're going to pass.
         if (value != null) {
-          final selectedOption =
-              field.options.firstWhere((val) => value == val.value.toString());
+          // Selects from options, or from default values, or makes a new value
+          final selectedOption = field.options
+                  ?.firstWhereOrNull((val) => value == val.value.toString()) ??
+              field.defaultValue
+                  .firstWhereOrNull((val) => value == val.value.toString()) ??
+              MultiselectOption(label: value, value: value);
 
           updateSelectedOption(selectedOption);
         } else {

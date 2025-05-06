@@ -2,7 +2,6 @@ import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/field_types/championoptionselect.dart';
 import 'package:championforms/models/fieldstate.dart';
-import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_internal/field_widgets/multiselect_widget.dart';
@@ -32,7 +31,7 @@ Widget checkboxFieldBuilder(
         // e.g.:
         // if (field.label != null) Text(field.label, style: TextStyle(...)),
 
-        ...field.options.map(
+        ...(field.options ?? []).map(
           (option) {
             // Check if this option is in the defaultValue (list of strings)
             final bool isChecked =
