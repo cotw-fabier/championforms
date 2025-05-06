@@ -91,19 +91,23 @@ abstract class FormFieldDef<T> implements FormFieldBase {
 
   // --- Conversion Function Getters ---
 
-  /// Function to convert the raw value `T` to a display String.
-  String Function(T value) get asStringConverter;
+  /// Function to convert the raw value `dynamic` (expected to be T) to a display String.
+  /// Throws a TypeError if the input value cannot be cast to T.
+  String Function(dynamic value) get asStringConverter;
 
-  /// Function to convert the raw value `T` to a List of Strings.
-  List<String> Function(T value) get asStringListConverter;
+  /// Function to convert the raw value `dynamic` (expected to be T) to a List of Strings.
+  /// Throws a TypeError if the input value cannot be cast to T.
+  List<String> Function(dynamic value) get asStringListConverter;
 
-  /// Function to convert the raw value `T` to a Boolean representation.
+  /// Function to convert the raw value `dynamic` (expected to be T) to a Boolean representation.
   /// (e.g., is the value considered "truthy" or "set"?)
-  bool Function(T value) get asBoolConverter;
+  /// Throws a TypeError if the input value cannot be cast to T.
+  bool Function(dynamic value) get asBoolConverter;
 
-  /// Function to convert the raw value `T` to a List<FileModel>.
+  /// Function to convert the raw value `dynamic` (expected to be T) to a List<FileModel>.
   /// Returns null if the field type does not support files.
-  List<FileModel> Function(T value)? get asFileListConverter;
+  /// Throws a TypeError if the input value cannot be cast to T and conversion is attempted.
+  List<FileModel>? Function(dynamic value)? get asFileListConverter;
 
   FormFieldDef({
     required this.id,

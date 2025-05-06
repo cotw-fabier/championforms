@@ -65,14 +65,14 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
       // Create a running list of visible fields for more refined error checking on
       // multipage forms which may not display all fields at once.
 
-      widget.controller
-          .updateActiveFields(widget.fields.whereType<FormFieldDef>().toList());
+      widget.controller.updateActiveFields(
+          widget.fields.whereType<FormFieldDef<Object>>().toList());
 
       // Update the pageFields
       // only run this if the page isn't set to "default"
       if (widget.pageName != null) {
-        widget.controller.updatePageFields(
-            widget.pageName!, widget.fields.whereType<FormFieldDef>().toList());
+        widget.controller.updatePageFields(widget.pageName!,
+            widget.fields.whereType<FormFieldDef<Object>>().toList());
       }
     });
   }
@@ -97,16 +97,17 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
   }
 
   void _updateDefaults() {
-    final fieldDefs = widget.fields.whereType<FormFieldDef>().toList();
+    final fieldDefs = widget.fields.whereType<FormFieldDef<Object>>().toList();
 
     // We're going to add all fields from this widget into our controller
     widget.controller
-        .addFields(widget.fields.whereType<FormFieldDef>().toList());
+        .addFields(widget.fields.whereType<FormFieldDef<Object>>().toList());
 
     // Replace with your default values for chips
 
     for (final field in widget.fields) {
-      final fieldDefs = widget.fields.whereType<FormFieldDef>().toList();
+      final fieldDefs =
+          widget.fields.whereType<FormFieldDef<Object>>().toList();
 
       // Add fields to controller (registers definitions, calculates initial state)
       widget.controller.addFields(fieldDefs,
@@ -115,7 +116,7 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
       if (field is FormFieldDef) {
         // populate default values for the text fields
         // Only set if the value isn't already present or differs from default
-        final currentValue = widget.controller.getFieldValue<dynamic>(field.id);
+        final currentValue = widget.controller.getFieldValue(field.id);
         if (currentValue == null && field.defaultValue != null) {
           widget.controller
               .updateFieldValue(field.id, field.defaultValue, noNotify: true);
@@ -164,7 +165,7 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
 
       // If we have validators and we're doing live validation lets setup the function now
       Function(String value)? validate;
-      if (field is FormFieldDef) {
+      if (field is FormFieldDef<Object>) {
         if (field.validateLive) {
           validate = (value) {
             // int validatorPosition = 0;

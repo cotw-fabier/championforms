@@ -25,7 +25,7 @@ class ChampionFormController extends ChangeNotifier {
   // --- State Storage ---
   final Map<String, FieldState> _fieldStates = {};
   // Keep track of field definitions for checking 'disabled' status
-  final Map<String, FormFieldDef<dynamic>> _fieldDefinitions = {};
+  final Map<String, FormFieldDef<Object>> _fieldDefinitions = {};
 
   /// Stores the focus state for each field. true if focused, false or absent otherwise.
   final Map<String, bool> _fieldFocusStates = {};
@@ -62,7 +62,7 @@ class ChampionFormController extends ChangeNotifier {
   /// Active Fields
   /// This contains an updated list of fields currently
   /// rendered in a championform widget.
-  List<FormFieldDef> activeFields;
+  List<FormFieldDef<Object>> activeFields;
 
   /// Page Fields
   /// Subsets of fields added as pages are identified.
@@ -108,14 +108,14 @@ class ChampionFormController extends ChangeNotifier {
         controller.dispose();
       }
     });
-    _fieldControllers.clear();
-    _fieldStates.clear();
-    _fieldDefinitions.clear();
-    _fieldFocusStates.clear();
-    _fieldValues.clear();
-    formErrors.clear();
-    activeFields.clear();
-    pageFields.clear();
+    // _fieldControllers.clear();
+    // _fieldStates.clear();
+    // _fieldDefinitions.clear();
+    // _fieldFocusStates.clear();
+    // _fieldValues.clear();
+    // formErrors.clear();
+    // activeFields.clear();
+    // pageFields.clear();
 
     super.dispose();
   }
@@ -125,7 +125,7 @@ class ChampionFormController extends ChangeNotifier {
   /// This is called by formbuilder on widget build
   /// to create a running list of active fields.
   void updateActiveFields(
-    List<FormFieldDef> fields, {
+    List<FormFieldDef<Object>> fields, {
     // Disable notify listeners. This can prevent notification loops breaking widgets.
     bool noNotify = false,
   }) {
@@ -238,11 +238,11 @@ class ChampionFormController extends ChangeNotifier {
   ///
   /// For example: a multi-page form handling more than one group of fields.
   void addFields(
-    List<FormFieldDef> newFields, {
+    List<FormFieldDef<Object>> newFields, {
     bool noNotify = false,
   }) {
     bool changed = false;
-    for (final field in newFields) {
+    for (final FormFieldDef<Object> field in newFields) {
       // Only add if it's not already present or if the definition differs
       // (Note: Deep equality check for FormFieldDef might be complex/costly)
       if (!_fieldDefinitions.containsKey(field.id)) {
@@ -273,7 +273,7 @@ class ChampionFormController extends ChangeNotifier {
   /// Use type T for type safety if you know the expected type.
   T? getFieldValue<T>(String fieldId) {
     final value = _fieldValues[fieldId];
-    if (value is T) {
+    if (value is T || T is dynamic) {
       return value;
     }
 

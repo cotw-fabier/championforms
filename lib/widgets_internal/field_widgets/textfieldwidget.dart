@@ -473,7 +473,7 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
           leading: widget.field.leading,
           trailing: widget.field.trailing,
           icon: widget.field.icon,
-          labelText: widget.labelText,
+          labelText: widget.field.textFieldTitle,
           hintText: widget.hintText,
           keyboardType: widget.field.keyboardType,
           inputFormatters: widget.field.inputFormatters,

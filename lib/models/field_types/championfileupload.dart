@@ -57,20 +57,31 @@ class ChampionFileUpload extends ChampionOptionSelect {
   // --- Override asFileListConverter ---
 
   /// Extracts FileModel objects from the additionalData of selected options.
+  /// The input `value` is dynamic, expected to be List<MultiselectOption>.
   @override
-  List<FileModel> Function(List<MultiselectOption> value)?
-      get asFileListConverter => (options) {
-            List<FileModel> files = [];
-            for (final option in options) {
-              // Assumes FileModel is stored in additionalData for file uploads
-              if (option.additionalData is FileModel) {
-                files.add(option.additionalData as FileModel);
-              } else {
-                // Log a warning if data is missing or incorrect type
-                debugPrint(
-                    "Warning: ChampionFileUpload field '${super.id}' encountered an option ('${option.value}') without a FileModel in additionalData.");
-              }
-            }
-            return files;
-          };
+  List<FileModel> Function(dynamic value)? get asFileListConverter =>
+      (dynamic value) {
+        List<MultiselectOption> effectiveOptions;
+        if (value is List<MultiselectOption>) {
+          effectiveOptions = value;
+        } else if (value == null) {
+          // Use the defaultValue from the superclass (ChampionOptionSelect)
+          // which should be an empty list for ChampionFileUpload if not specified otherwise.
+          effectiveOptions = defaultValue;
+        } else {
+          // If value is not List<MultiselectOption> and not null, it's an unexpected type.
+          throw TypeError();
+        }
+
+        List<FileModel> files = [];
+        for (final option in effectiveOptions) {
+          if (option.additionalData is FileModel) {
+            files.add(option.additionalData as FileModel);
+          } else {
+            debugPrint(
+                "Warning: ChampionFileUpload field '${super.id}' encountered an option ('${option.value}') without a FileModel in additionalData.");
+          }
+        }
+        return files;
+      };
 }

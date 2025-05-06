@@ -99,23 +99,46 @@ class ChampionTextField extends FormFieldDef<String> {
   // --- Implementation of FormFieldDef<String> Converters ---
 
   /// Converts the String value to a String (identity function).
-  /// Assumes non-null input based on FormFieldDef<T> signature.
   @override
-  String Function(String value) get asStringConverter => (value) => value;
+  String Function(dynamic value) get asStringConverter => (dynamic value) {
+        if (value is String) {
+          return value;
+        } else if (value == null && defaultValue != null) {
+          return defaultValue!;
+        } else if (value == null) {
+          return ""; // Or throw, depending on desired behavior for null non-defaulted
+        }
+        throw TypeError(); // Will be caught by FieldResultAccessor
+      };
 
   /// Converts the String value into a List containing that single String.
-  /// Assumes non-null input.
   @override
-  List<String> Function(String value) get asStringListConverter =>
-      (value) => [value];
+  List<String> Function(dynamic value) get asStringListConverter =>
+      (dynamic value) {
+        if (value is String) {
+          return [value];
+        } else if (value == null && defaultValue != null) {
+          return [defaultValue!];
+        } else if (value == null) {
+          return [];
+        }
+        throw TypeError();
+      };
 
   /// Converts the String value to bool (true if not empty, false otherwise).
-  /// Assumes non-null input.
   @override
-  bool Function(String value) get asBoolConverter =>
-      (value) => value.isNotEmpty;
+  bool Function(dynamic value) get asBoolConverter => (dynamic value) {
+        if (value is String) {
+          return value.isNotEmpty;
+        } else if (value == null && defaultValue != null) {
+          return defaultValue!.isNotEmpty;
+        } else if (value == null) {
+          return false;
+        }
+        throw TypeError();
+      };
 
   /// Text fields do not represent files. Returns null.
   @override
-  List<FileModel> Function(String value)? get asFileListConverter => null;
+  List<FileModel>? Function(dynamic value)? get asFileListConverter => null;
 }

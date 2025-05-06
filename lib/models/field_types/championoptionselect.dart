@@ -66,23 +66,61 @@ class ChampionOptionSelect extends FormFieldDef<List<MultiselectOption>> {
 
   /// Converts the list of selected options to a comma-separated string of their values.
   @override
-  String Function(List<MultiselectOption> value) get asStringConverter =>
-      (options) => options.map((opt) => opt.value).join(', ');
+  String Function(dynamic value) get asStringConverter => (dynamic value) {
+        List<MultiselectOption> effectiveValue;
+        if (value is List<MultiselectOption>) {
+          effectiveValue = value;
+        } else if (value == null) {
+          effectiveValue = defaultValue;
+        } else {
+          throw TypeError();
+        }
+        return effectiveValue.map((opt) => opt.value).join(', ');
+      };
 
   /// Converts the list of selected options to a list of their string values.
   @override
-  List<String> Function(List<MultiselectOption> value)
-      get asStringListConverter =>
-          (options) => options.map((opt) => opt.value).toList();
+  List<String> Function(dynamic value) get asStringListConverter =>
+      (dynamic value) {
+        List<MultiselectOption> effectiveValue;
+        if (value is List<MultiselectOption>) {
+          effectiveValue = value;
+        } else if (value == null) {
+          effectiveValue = defaultValue;
+        } else {
+          throw TypeError();
+        }
+        return effectiveValue.map((opt) => opt.value).toList();
+      };
 
   /// Returns true if at least one option is selected.
   @override
-  bool Function(List<MultiselectOption> value) get asBoolConverter =>
-      (options) => options.isNotEmpty;
+  bool Function(dynamic value) get asBoolConverter => (dynamic value) {
+        List<MultiselectOption> effectiveValue;
+        if (value is List<MultiselectOption>) {
+          effectiveValue = value;
+        } else if (value == null) {
+          effectiveValue = defaultValue;
+        } else {
+          throw TypeError();
+        }
+        return effectiveValue.isNotEmpty;
+      };
 
   /// Base ChampionOptionSelect does not handle files. Returns null.
   /// Subclasses like ChampionFileUpload should override this.
   @override
-  List<FileModel> Function(List<MultiselectOption> value)?
-      get asFileListConverter => null;
+  List<FileModel>? Function(dynamic value)? get asFileListConverter =>
+      (dynamic value) {
+        // This specific field type doesn't produce files directly from its primary value T.
+        // Subclasses must override if they store FileModel in T or handle it differently.
+        // If `value` were `List<MultiselectOption>` and additionalData held files,
+        // the logic would go here, but ChampionFileUpload overrides this.
+        if (value is List<MultiselectOption> || value == null) {
+          // It's the correct primary type (or null), but this base class doesn't convert it to files.
+          return null;
+        }
+        // If value is not List<MultiselectOption> and not null, it's an unexpected type.
+        throw TypeError();
+      };
 }
