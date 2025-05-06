@@ -538,9 +538,10 @@ class ChampionFormController extends ChangeNotifier {
 
     // 6. Convert the final set of string values back to MultiselectOption objects
     //    using the options defined in the field definition.
-    final List<MultiselectOption> finalSelectedOptions = fieldDef.options
-        .where((option) => newSelectedValues.contains(option.value))
-        .toList();
+    final List<MultiselectOption> finalSelectedOptions =
+        (fieldDef.options ?? [])
+            .where((option) => newSelectedValues.contains(option.value))
+            .toList();
 
     // 7. Update the field's value using the generic update method.
     //    This handles storing the value, triggering onChange (if value changed),

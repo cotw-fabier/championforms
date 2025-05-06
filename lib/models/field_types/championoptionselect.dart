@@ -38,7 +38,7 @@ class ChampionOptionSelect extends FormFieldDef<List<MultiselectOption>> {
   ChampionOptionSelect({
     required super.id,
     super.icon,
-    required this.options,
+    this.options,
     this.multiselect = false,
     this.leading,
     this.trailing,
