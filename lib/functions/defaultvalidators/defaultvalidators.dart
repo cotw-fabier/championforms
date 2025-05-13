@@ -21,26 +21,47 @@ class DefaultValidators {
 
   /// Checks if a String value is not null and not empty after trimming.
   /// Returns `true` if the string is valid (has content), `false` otherwise.
-  bool stringIsNotEmpty(String? value) {
-    return value != null && value.trim().isNotEmpty;
+  bool stringIsNotEmpty(dynamic value) {
+    if (value == null) {
+      // return false on null since it is technically empty.
+      return false;
+    }
+    if (value is! String) {
+      throw ArgumentError(
+          'Invalid type: Expected String, got ${value.runtimeType}');
+    }
+    return (value as String).trim().isNotEmpty;
   }
 
   /// Checks if a String value is null or empty after trimming.
   /// Returns `true` if the string is empty/null, `false` otherwise.
   /// Note: Often, `stringIsNotEmpty` is more useful for validation (e.g., required field).
-  bool stringIsEmpty(String? value) {
-    return value == null || value.trim().isEmpty;
+  bool stringIsEmpty(dynamic value) {
+    if (value == null) return true;
+    if (value is! String) {
+      throw ArgumentError(
+          'Invalid type: Expected String or null, got ${value.runtimeType}');
+    }
+    return (value as String).trim().isEmpty;
   }
 
   /// Checks if a String value's length is within the specified range (inclusive).
   /// Assumes the string should not be empty if ranges are specified.
   /// Returns `true` if the length is within range, `false` otherwise or if the value is null/empty.
-  bool stringLengthInRange(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      // If it's empty, it can't be in a specific length range unless minLength is 0.
+  bool stringLengthInRange(dynamic value) {
+    if (value == null) {
+      // If null, it can't be in a specific length range unless minLength is 0 and no maxLength or maxLength >= 0.
       return minLength == 0 && (maxLength == null || maxLength! >= 0);
     }
-    final length = value.trim().length;
+    if (value is! String) {
+      throw ArgumentError(
+          'Invalid type: Expected String or null, got ${value.runtimeType}');
+    }
+    final String strValue = value as String;
+    if (strValue.trim().isEmpty) {
+      return minLength == 0 && (maxLength == null || maxLength! >= 0);
+    }
+    final length = strValue.trim().length;
     final min = minLength;
     final max = maxLength;
 
@@ -51,74 +72,114 @@ class DefaultValidators {
     } else if (max != null) {
       return length <= max;
     }
-    // If no min or max is set, any length is considered "in range"
     return true;
   }
 
   /// Checks if a String value represents a valid double.
   /// Returns `true` if it's a double, `false` otherwise (including if null/empty).
-  bool stringIsDouble(String? value) {
-    if (value == null || value.trim().isEmpty) return false;
-    // Use double.tryParse for robustness
-    return double.tryParse(value.trim()) != null;
-    // Original Regex check (less robust than tryParse):
-    // return RegExp(r'^\d*\.?\d+$').hasMatch(value.trim());
+  bool stringIsDouble(dynamic value) {
+    if (value == null)
+      return false; // Or throw if null is not acceptable for this check
+    if (value is! String) {
+      throw ArgumentError(
+          'Invalid type: Expected String or null, got ${value.runtimeType}');
+    }
+    final String strValue = value as String;
+    if (strValue.trim().isEmpty) return false;
+    return double.tryParse(strValue.trim()) != null;
   }
 
   /// Checks if a String value is null, empty, or represents a valid double.
   /// Returns `true` if valid, `false` otherwise.
-  bool stringIsDoubleOrNull(String? value) {
-    if (value == null || value.trim().isEmpty) return true;
-    return double.tryParse(value.trim()) != null;
-    // Original Regex check:
-    // return RegExp(r'^\d*\.?\d+$').hasMatch(value.trim());
+  bool stringIsDoubleOrNull(dynamic value) {
+    if (value == null) return true;
+    if (value is! String) {
+      throw ArgumentError(
+          'Invalid type: Expected String or null, got ${value.runtimeType}');
+    }
+    final String strValue = value as String;
+    if (strValue.trim().isEmpty) return true;
+    return double.tryParse(strValue.trim()) != null;
   }
 
   /// Checks if a String value represents a valid integer.
   /// Returns `true` if it's an integer, `false` otherwise (including if null/empty).
-  bool stringIsInteger(String? value) {
-    if (value == null || value.trim().isEmpty) return false;
-    // Use int.tryParse for robustness
-    return int.tryParse(value.trim()) != null;
-    // Original Regex check:
-    // return RegExp(r'^\d+$').hasMatch(value.trim());
+  bool stringIsInteger(dynamic value) {
+    if (value == null) return false;
+    if (value is! String) {
+      throw ArgumentError(
+          'Invalid type: Expected String or null, got ${value.runtimeType}');
+    }
+    final String strValue = value as String;
+    if (strValue.trim().isEmpty) return false;
+    return int.tryParse(strValue.trim()) != null;
   }
 
   /// Checks if a String value is null, empty, or represents a valid integer.
   /// Returns `true` if valid, `false` otherwise.
-  bool stringIsIntegerOrNull(String? value) {
-    if (value == null || value.trim().isEmpty) return true;
-    return int.tryParse(value.trim()) != null;
-    // Original Regex check:
-    // return RegExp(r'^\d+$').hasMatch(value.trim());
+  bool stringIsIntegerOrNull(dynamic value) {
+    if (value == null) return true;
+    if (value is! String) {
+      throw ArgumentError(
+          'Invalid type: Expected String or null, got ${value.runtimeType}');
+    }
+    final String strValue = value as String;
+    if (strValue.trim().isEmpty) return true;
+    return int.tryParse(strValue.trim()) != null;
   }
 
   /// Checks if a String value is a valid email format.
   /// Returns `true` if it's a valid email, `false` otherwise (including if null/empty).
-  bool stringIsEmail(String? value) {
-    if (value == null || value.trim().isEmpty) return false;
-    return EmailValidator.validate(value.trim());
+  bool stringIsEmail(dynamic value) {
+    if (value == null) return false;
+    if (value is! String) {
+      throw ArgumentError(
+          'Invalid type: Expected String or null, got ${value.runtimeType}');
+    }
+    final String strValue = value as String;
+    if (strValue.trim().isEmpty) return false;
+    return EmailValidator.validate(strValue.trim());
   }
 
   /// Checks if a String value is a valid email format or is null/empty.
   /// Returns `true` if valid, `false` otherwise.
-  bool stringIsEmailOrNull(String? value) {
-    if (value == null || value.trim().isEmpty) return true;
-    return EmailValidator.validate(value.trim());
+  bool stringIsEmailOrNull(dynamic value) {
+    if (value == null) return true;
+    if (value is! String) {
+      throw ArgumentError(
+          'Invalid type: Expected String or null, got ${value.runtimeType}');
+    }
+    final String strValue = value as String;
+    if (strValue.trim().isEmpty) return true;
+    return EmailValidator.validate(strValue.trim());
   }
+
+  // --- List Validators (for Multiselect/File Uploads etc.) ---
 
   // --- List Validators (for Multiselect/File Uploads etc.) ---
 
   /// Checks if a List value is not null and not empty.
   /// Returns `true` if the list has items, `false` otherwise.
-  bool listIsNotEmpty(List? value) {
-    return value != null && value.isNotEmpty;
+  /// Throws ArgumentError if value is not null and not a List.
+  bool listIsNotEmpty(dynamic value) {
+    if (value == null) return false;
+    if (value is! List) {
+      throw ArgumentError(
+          'Invalid type: Expected List or null, got ${value.runtimeType}');
+    }
+    return (value as List).isNotEmpty;
   }
 
   /// Checks if a List value is null or empty.
   /// Returns `true` if the list is empty/null, `false` otherwise.
-  bool listIsEmpty(List? value) {
-    return value == null || value.isEmpty;
+  /// Throws ArgumentError if value is not null and not a List.
+  bool listIsEmpty(dynamic value) {
+    if (value == null) return true;
+    if (value is! List) {
+      throw ArgumentError(
+          'Invalid type: Expected List or null, got ${value.runtimeType}');
+    }
+    return (value as List).isEmpty;
   }
 
   // --- File Validators (Operating on List<MultiselectOption>) ---
@@ -127,25 +188,53 @@ class DefaultValidators {
 
   /// Helper to safely extract FileModel from a MultiselectOption.
   FileModel? _getFileModelFromOption(MultiselectOption option) {
-    return option.additionalData as FileModel;
+    // Ensure additionalData is FileModel or null
+    if (option.additionalData == null || option.additionalData is FileModel) {
+      return option.additionalData as FileModel?;
+    }
+    // Optionally, throw if additionalData is present but not a FileModel
+    // throw ArgumentError('Invalid additionalData type in MultiselectOption: Expected FileModel or null, got ${option.additionalData.runtimeType}');
+    debugPrint(
+        "Warning: MultiselectOption.additionalData was not a FileModel. For file validation, it should be.");
+    return null; // Or handle as an error case
   }
 
-  /// Checks if all files represented by the selected [options] have a mime type
+  List<MultiselectOption> _ensureListOfMultiselectOption(dynamic value,
+      {bool allowNull = false}) {
+    if (value == null) {
+      if (allowNull)
+        return []; // Or throw if null is not acceptable even if allowNull is true but means "empty list is ok"
+      throw ArgumentError(
+          'Invalid type: Expected List<MultiselectOption>, got null');
+    }
+    if (value is! List) {
+      throw ArgumentError(
+          'Invalid type: Expected List<MultiselectOption>, got ${value.runtimeType}');
+    }
+    if (!(value as List).every((e) => e is MultiselectOption)) {
+      final firstNonOption = (value as List)
+          .firstWhere((e) => e is! MultiselectOption, orElse: () => null);
+      throw ArgumentError(
+          'Invalid type: Expected List to contain only MultiselectOption elements, but found element of type ${firstNonOption?.runtimeType}');
+    }
+    return (value as List).cast<MultiselectOption>();
+  }
+
+  /// Checks if all files represented by the selected options have a mime type
   /// that starts with at least one of the strings in [matchStrings].
   /// Returns `true` if all files match (or if the list is null/empty), `false` otherwise.
-  bool fileIsMimeType(
-      List<MultiselectOption> options, List<String> matchStrings) {
+  /// Throws ArgumentError if value is not null and not a List<MultiselectOption>.
+  bool fileIsMimeType(dynamic value, List<String> matchStrings) {
+    // If value is null, treat as empty list for this validator's logic
+    final List<MultiselectOption> options =
+        _ensureListOfMultiselectOption(value, allowNull: true);
+
     if (options.isEmpty) {
       return true; // No files to validate, so it passes. Use listIsNotEmpty for required check.
     }
 
     return options.every((option) {
       final fileModel = _getFileModelFromOption(option);
-      // We *require* mimeData for this validation. If it's missing, validation fails.
-      // Note: mimeData might only be available *after* the file is read, which
-      // might not happen before validation runs. This validator might need
-      // adjustment based on when mime data is populated.
-      // Consider validating based on file extension initially if needed.
       final mime = fileModel?.mimeData?.mime;
 
       if (mime == null) {
@@ -153,42 +242,42 @@ class DefaultValidators {
             "Validation Warning: Mime type check failed for '${fileModel?.fileName}' because mimeData was null.");
         return false; // Cannot validate without mime type
       }
-      // Check if it starts with any pattern.
       return matchStrings.any((pattern) => mime.startsWith(pattern));
     });
   }
 
   /// Checks if all files represented by [options] have a mime type starting with "image/".
   /// Returns `true` if all are images, `false` otherwise.
-  bool fileIsImage(List<MultiselectOption> options) {
-    return fileIsMimeType(
-        options, ["image/"]); // Be more specific with trailing slash
+  /// Throws ArgumentError if value is not null and not a List<MultiselectOption>.
+  bool fileIsImage(dynamic value) {
+    // _ensureListOfMultiselectOption will be called by fileIsMimeType
+    return fileIsMimeType(value, ["image/"]);
   }
 
   /// Checks if all files represented by [options] have common image mime types.
   /// Returns `true` if all match, `false` otherwise.
-  bool fileIsCommonImage(List<MultiselectOption> options) {
-    return fileIsMimeType(options, const [
-      "image/jpeg", // .jpg, .jpeg
-      "image/png", // .png
-      "image/svg+xml", // .svg
-      "image/gif", // .gif
-      "image/webp", // .webp
-      // Add others if needed, e.g., "image/bmp"
+  /// Throws ArgumentError if value is not null and not a List<MultiselectOption>.
+  bool fileIsCommonImage(dynamic value) {
+    return fileIsMimeType(value, const [
+      "image/jpeg",
+      "image/png",
+      "image/svg+xml",
+      "image/gif",
+      "image/webp",
     ]);
   }
 
   /// Checks if all files represented by [options] have common document mime types.
   /// Returns `true` if all match, `false` otherwise.
-  bool fileIsDocument(List<MultiselectOption> options) {
-    return fileIsMimeType(options, const [
-      "application/msword", // .doc
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
-      "application/pdf", // .pdf
-      "text/plain", // .txt
-      "application/rtf", // .rtf
-      "application/vnd.oasis.opendocument.text" // .odt
-      // Add others if needed, e.g., "text/csv", "application/vnd.ms-excel"
+  /// Throws ArgumentError if value is not null and not a List<MultiselectOption>.
+  bool fileIsDocument(dynamic value) {
+    return fileIsMimeType(value, const [
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/pdf",
+      "text/plain",
+      "application/rtf",
+      "application/vnd.oasis.opendocument.text"
     ]);
   }
 

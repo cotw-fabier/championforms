@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:championforms/championforms.dart';
+import 'package:championforms/models/field_types/formfielddefnull.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/multiselect_option.dart';
@@ -473,13 +474,26 @@ class FormResults {
     final definition = fieldDefinitions[id];
 
     // Check if the definition exists. If yes, the field was processed.
+    // Check if the definition exists.
     if (definition != null) {
-      // Create the accessor, passing the (potentially null) value and the definition.
+      // If yes, the field was processed and has a valid definition.
+      // Create the accessor, passing the (potentially null) value and the actual definition.
       return FieldResultAccessor._(id, value, definition);
     } else {
-      // Throw an exception if the definition wasn't found, indicating an invalid field ID.
-      throw Exception(
-          "Error in grab(): Attempting to access field '$id' which does not exist in the form results or definitions. Available fields: ${fieldDefinitions.keys.join(', ')}");
+      // The definition wasn't found for this id.
+      debugPrint(// Using debugPrint as this is Flutter code
+          "Debug in grab(): Field definition for '$id' not found. " +
+              "Returning a FieldResultAccessor with a dummy definition. " +
+              "It could be that the field wasn't displayed and not added to the controller" +
+              "So returning default empty value" +
+              "Available field definition keys: ${fieldDefinitions.keys.join(', ')}");
+
+      // Create the "dummy" definition.
+      final FormFieldDef<dynamic> dummyDefinition = FormFieldNull(id: id);
+
+      // Create the accessor, passing null for the value (as it's an "empty" accessor
+      // due to missing definition) and the dummy definition.
+      return FieldResultAccessor._(id, null, dummyDefinition);
     }
   }
 
