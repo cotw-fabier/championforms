@@ -10,8 +10,8 @@ class MultiselectOption {
 
   MultiselectOption({
     required this.value,
-    this.label = this.value,
+    String? label,
     this.additionalData,
     this.hintText,
-  });
+  }) : label = label ?? value;
 }

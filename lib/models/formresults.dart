@@ -345,7 +345,7 @@ class FormResults {
         fields, // Optional: Process only specific fields.
   }) {
     // Determine the list of fields to process.
-    List<FormFieldDef<dynamic>> finalFields as List<FormFieldDef<Object>> = fields ?? controller.activeFields;
+    List<FormFieldDef<dynamic>> finalFields = fields ?? controller.activeFields;
 
     // Initialize containers for results, definitions, and errors.
     Map<String, dynamic> collectedResults = {};
