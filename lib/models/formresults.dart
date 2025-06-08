@@ -370,7 +370,7 @@ class FormResults {
       collectedResults[field.id] = rawValue;
 
       // --- Validation (if enabled) ---
-      _validateField(field, rawValue, controller, formErrors);
+      // _validateField(field, rawValue, controller, formErrors);
 
       if (rawValue is String) {
         _validateField<String>(
@@ -493,7 +493,7 @@ void _validateField<T>(
     return;
   }
 
-  controller.clearErrors(field.id, noNotify: true);
+  controller.clearErrors(field.id);
 
   for (int i = 0; i < field.validators!.length; i++) {
     final validator = field.validators![i];

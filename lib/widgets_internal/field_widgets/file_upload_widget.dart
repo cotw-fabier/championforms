@@ -3,7 +3,6 @@ import 'package:championforms/functions/filetype_from_mime.dart';
 import 'package:championforms/models/field_types/championfileupload.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/field_types/championoptionselect.dart';
-import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/mime_filetypes.dart';
