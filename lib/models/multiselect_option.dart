@@ -9,9 +9,9 @@ class MultiselectOption {
   final String value;
 
   MultiselectOption({
-    required this.label,
+    required this.value,
+    this.label = this.value,
     this.additionalData,
     this.hintText,
-    required this.value,
   });
 }
