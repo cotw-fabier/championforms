@@ -474,12 +474,12 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
           trailing: widget.field.trailing,
           icon: widget.field.icon,
           labelText: widget.field.textFieldTitle,
-          hintText: widget.hintText,
+          hintText: widget.field.hintText,
           keyboardType: widget.field.keyboardType,
           inputFormatters: widget.field.inputFormatters,
           controller: _controller,
           focusNode: _focusNode,
-          obscureText: widget.password,
+          obscureText: widget.field.password,
           colorScheme: widget.colorScheme,
           baseField: widget.fieldOverride != null
               ? widget.fieldOverride?.onSubmitted == null
@@ -496,7 +496,7 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
                     )
                   : widget.fieldOverride!
               : TextField(
-                  maxLines: widget.maxLines,
+                  maxLines: widget.field.maxLines,
                   onSubmitted: (value) {
                     if (widget.onSubmitted == null) return;
                     final formResults = FormResults.getResults(

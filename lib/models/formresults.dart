@@ -373,7 +373,11 @@ class FormResults {
       // --- Validation (if enabled) ---
       if (checkForErrors &&
           field.validators != null &&
-          field.validators!.isNotEmpty) {
+          field.validators!.isNotEmpty &&
+          !field.disabled) {
+        // Clear any existing errors for this field first
+        controller.clearErrors(field.id, noNotify: true);
+
         int validatorPos = 0; // Track position for error reporting.
         // Iterate through each validator defined for the field.
         for (final validatorDef in field.validators!) {
@@ -388,13 +392,15 @@ class FormResults {
 
             // If the validator returns false, add an error.
             if (!isValid) {
-              formErrors.add(FormBuilderError(
-                reason:
-                    validatorDef.reason, // User-defined reason for the error.
+              final error = FormBuilderError(
+                reason: validatorDef.reason,
                 fieldId: field.id,
                 validatorPosition: validatorPos,
-              ));
-              errorState = true; // Mark that at least one error occurred.
+              );
+              formErrors.add(error);
+              // Also add to controller's error list
+              controller.addError(error);
+              errorState = true;
             }
           } catch (e, s) {
             // Catch exceptions during validator invocation (e.g., type error inside validator).
