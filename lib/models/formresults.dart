@@ -341,11 +341,11 @@ class FormResults {
   factory FormResults.getResults({
     required ChampionFormController controller,
     bool checkForErrors = true, // Whether to run validation.
-    List<FormFieldDef<Object>>?
+    List<FormFieldDef<dynamic>>?
         fields, // Optional: Process only specific fields.
   }) {
     // Determine the list of fields to process.
-    List<FormFieldDef<Object>> finalFields = fields ?? controller.activeFields;
+    List<FormFieldDef<dynamic>> finalFields as List<FormFieldDef<Object>> = fields ?? controller.activeFields;
 
     // Initialize containers for results, definitions, and errors.
     Map<String, dynamic> collectedResults = {};
