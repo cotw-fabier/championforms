@@ -341,15 +341,14 @@ class FormResults {
   factory FormResults.getResults({
     required ChampionFormController controller,
     bool checkForErrors = true, // Whether to run validation.
-    List<FormFieldDef<dynamic>>?
-        fields, // Optional: Process only specific fields.
+    List<FormFieldDef>? fields, // Optional: Process only specific fields.
   }) {
     // Determine the list of fields to process.
-    List<FormFieldDef<dynamic>> finalFields = fields ?? controller.activeFields;
+    List<FormFieldDef> finalFields = fields ?? controller.activeFields;
 
     // Initialize containers for results, definitions, and errors.
     Map<String, dynamic> collectedResults = {};
-    Map<String, FormFieldDef<dynamic>> definitions = {};
+    Map<String, FormFieldDef> definitions = {};
     List<FormBuilderError> formErrors = [];
     bool errorState = false; // Track overall error status.
 
@@ -360,7 +359,7 @@ class FormResults {
 
       // Store the field definition, casting its type parameter to dynamic for the map.
       // The actual instance retains its specific type (e.g., FormFieldDef<String>).
-      definitions[field.id] = field as FormFieldDef<dynamic>;
+      definitions[field.id] = field;
 
       // Retrieve the raw value from the controller.
       // Use dynamic type hint. Fall back to the field's default value if controller returns null.
@@ -371,56 +370,30 @@ class FormResults {
       collectedResults[field.id] = rawValue;
 
       // --- Validation (if enabled) ---
-      if (checkForErrors &&
-          field.validators != null &&
-          field.validators!.isNotEmpty &&
-          !field.disabled) {
-        // Clear any existing errors for this field first
-        controller.clearErrors(field.id, noNotify: true);
+      _validateField(field, rawValue, controller, formErrors);
 
-        int validatorPos = 0; // Track position for error reporting.
-        // Iterate through each validator defined for the field.
-        for (final validatorDef in field.validators!) {
-          try {
-            // Get the validator function (static type Function).
-            final Function validatorFunc = validatorDef.validator;
-            // Dynamically invoke the validator using Function.apply.
-            // Pass the rawValue (which might be null) in a list.
-            // Cast the result to bool, assuming validators return boolean.
-            final bool isValid =
-                Function.apply(validatorFunc, [rawValue]) as bool;
+      if (rawValue is String) {
+        _validateField<String>(
+            field as FormFieldDef<String>, rawValue, controller, formErrors);
+      } else if (rawValue is int) {
+        _validateField<int>(
+            field as FormFieldDef<int>, rawValue, controller, formErrors);
+      } else if (rawValue is bool) {
+        _validateField<bool>(
+            field as FormFieldDef<bool>, rawValue, controller, formErrors);
+      } else if (rawValue is List<MultiselectOption>) {
+        _validateField<List<MultiselectOption>>(
+            field as FormFieldDef<List<MultiselectOption>>,
+            rawValue,
+            controller,
+            formErrors);
+      } else {
+        // Fallback to the safe validation method
+        _validateField(field, rawValue, controller, formErrors);
+      }
 
-            // If the validator returns false, add an error.
-            if (!isValid) {
-              final error = FormBuilderError(
-                reason: validatorDef.reason,
-                fieldId: field.id,
-                validatorPosition: validatorPos,
-              );
-              formErrors.add(error);
-              // Also add to controller's error list
-              controller.addError(error);
-              errorState = true;
-            }
-          } catch (e, s) {
-            // Catch exceptions during validator invocation (e.g., type error inside validator).
-            debugPrint(
-                "--- Validation Error --- \nField ID: '${field.id}' \nValidator Position: $validatorPos \nReason: ${validatorDef.reason} \nError: $e\nStack: $s");
-            debugPrint(" -> Value was: '$rawValue' (${rawValue?.runtimeType})");
-            debugPrint(
-                " -> Validator func type: ${validatorDef.validator.runtimeType}");
-            debugPrint("----------------------");
-            // Add a generic error indicating validation failure.
-            formErrors.add(FormBuilderError(
-              reason:
-                  "Validation failed for rule '${validatorDef.reason}'. Error: $e",
-              fieldId: field.id,
-              validatorPosition: validatorPos,
-            ));
-            errorState = true;
-          }
-          validatorPos++; // Increment validator position.
-        }
+      if (formErrors.isNotEmpty) {
+        errorState = true;
       }
     }
 
@@ -506,5 +479,44 @@ class FormResults {
   /// Convenience method to check if a field definition exists for a given ID.
   bool hasField(String id) {
     return fieldDefinitions.containsKey(id);
+  }
+}
+
+// Add this helper method to your FormResults class:
+void _validateField<T>(
+  FormFieldDef<T> field,
+  T? rawValue,
+  ChampionFormController controller,
+  List<FormBuilderError> formErrors,
+) {
+  if (field.validators == null || field.validators!.isEmpty || field.disabled) {
+    return;
+  }
+
+  controller.clearErrors(field.id, noNotify: true);
+
+  for (int i = 0; i < field.validators!.length; i++) {
+    final validator = field.validators![i];
+    try {
+      final bool isValid = validator.validator(rawValue as T);
+
+      if (!isValid) {
+        final error = FormBuilderError(
+          reason: validator.reason,
+          fieldId: field.id,
+          validatorPosition: i,
+        );
+        formErrors.add(error);
+        controller.addError(error);
+      }
+    } catch (e, s) {
+      // Handle validation errors
+      debugPrint("Validation error for field ${field.id}: $e");
+      formErrors.add(FormBuilderError(
+        reason: "Validation failed: $e",
+        fieldId: field.id,
+        validatorPosition: i,
+      ));
+    }
   }
 }

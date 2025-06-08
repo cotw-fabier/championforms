@@ -1,7 +1,6 @@
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/file_model.dart';
-import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/field_types/formfieldbase.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/themes.dart';
@@ -61,7 +60,7 @@ abstract class FormFieldDef<T> implements FormFieldBase {
   // This field will ask for focus. Best to only have one per form.
   final bool requestFocus;
 
-  final List<FormBuilderValidator>? validators;
+  final List<FormBuilderValidator<T>>? validators;
   final bool validateLive;
 
   // Functions
