@@ -222,8 +222,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 onSubmit: (results) => _executeLogin(), // Submit on Enter
                 validators: [
                   FormBuilderValidator(
-                      validator: (results) =>
-                          DefaultValidators().isEmpty(results),
+                      validator: DefaultValidators().stringIsNotEmpty,
                       reason: "Password cannot be empty."),
                   // Add more password validators if needed (e.g., length)
                 ],

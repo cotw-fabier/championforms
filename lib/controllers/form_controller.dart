@@ -70,7 +70,7 @@ class ChampionFormController extends ChangeNotifier {
   /// to a page. Then you can return
   /// a list of pages as needed by calling
   /// controller.getPageFields("pageID");
-  Map<String, List<FormFieldDef>> pageFields;
+  Map<String, List<FormFieldDef<Object>>> pageFields;
 
   ChampionFormController({
     String? id,
@@ -79,7 +79,7 @@ class ChampionFormController extends ChangeNotifier {
     // this.multiselectValues = const [],
     this.formErrors = const [],
     this.activeFields = const [],
-    Map<String, List<FormFieldDef>>? pageFields,
+    Map<String, List<FormFieldDef<Object>>>? pageFields,
   })  : id = id ?? Uuid().v4(),
         pageFields = pageFields ?? {};
 
@@ -168,7 +168,7 @@ class ChampionFormController extends ChangeNotifier {
 
   void updatePageFields(
     String pageName,
-    List<FormFieldDef> fields,
+    List<FormFieldDef<Object>> fields,
   ) {
     if (pageFields.containsKey(pageName)) {
       pageFields[pageName] = [...pageFields[pageName]!, ...fields];
@@ -179,7 +179,7 @@ class ChampionFormController extends ChangeNotifier {
 
   /// Grab page fields
   /// as a subset List<FormFieldDef>
-  List<FormFieldDef> getPageFields(String pageName) {
+  List<FormFieldDef<Object>> getPageFields(String pageName) {
     if (pageFields.containsKey(pageName)) {
       return pageFields[pageName] ?? [];
     } else {

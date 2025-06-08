@@ -341,10 +341,11 @@ class FormResults {
   factory FormResults.getResults({
     required ChampionFormController controller,
     bool checkForErrors = true, // Whether to run validation.
-    List<FormFieldDef>? fields, // Optional: Process only specific fields.
+    List<FormFieldDef<Object>>?
+        fields, // Optional: Process only specific fields.
   }) {
     // Determine the list of fields to process.
-    List<FormFieldDef> finalFields = fields ?? controller.activeFields;
+    List<FormFieldDef<Object>> finalFields = fields ?? controller.activeFields;
 
     // Initialize containers for results, definitions, and errors.
     Map<String, dynamic> collectedResults = {};
@@ -363,8 +364,7 @@ class FormResults {
 
       // Retrieve the raw value from the controller.
       // Use dynamic type hint. Fall back to the field's default value if controller returns null.
-      final rawValue =
-          controller.getFieldValue<dynamic>(field.id) ?? field.defaultValue;
+      final rawValue = controller.getFieldValue(field.id) ?? field.defaultValue;
 
       // Store the raw value (which could be null) in the results map.
       collectedResults[field.id] = rawValue;
