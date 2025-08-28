@@ -60,7 +60,7 @@ abstract class FormFieldDef implements FormFieldBase {
   // This field will ask for focus. Best to only have one per form.
   final bool requestFocus;
 
-  final List<FormBuilderValidator<T>>? validators;
+  final List<FormBuilderValidator>? validators;
   final bool validateLive;
 
   // Functions
