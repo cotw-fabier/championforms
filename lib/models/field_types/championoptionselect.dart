@@ -6,7 +6,7 @@ import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_external/field_builders/dropdownfield_builder.dart';
 import 'package:flutter/widgets.dart';
 
-class ChampionOptionSelect extends FormFieldDef<List<MultiselectOption>> {
+class ChampionOptionSelect extends FormFieldDef {
   // Define the type of field type
   //
 

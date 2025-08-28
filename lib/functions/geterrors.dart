@@ -11,8 +11,7 @@ import 'package:flutter/foundation.dart'; // For debugPrint
 
 List<FormBuilderError> getFormBuilderErrors({
   required List<BaseFieldResults> results, // Changed to List<BaseFieldResults>
-  required Map<String, FormFieldDef<dynamic>>
-      definitions, // Added definitions map
+  required Map<String, FormFieldDef> definitions, // Added definitions map
   required ChampionFormController
       controller, // Keep controller for error management
 }) {

@@ -1,6 +1,5 @@
 // We are going to build one giant controller to handle all aspects of our form.
 
-import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/field_types/championoptionselect.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
@@ -25,7 +24,7 @@ class ChampionFormController extends ChangeNotifier {
   // --- State Storage ---
   final Map<String, FieldState> _fieldStates = {};
   // Keep track of field definitions for checking 'disabled' status
-  final Map<String, FormFieldDef<Object>> _fieldDefinitions = {};
+  final Map<String, FormFieldDef> _fieldDefinitions = {};
 
   /// Stores the focus state for each field. true if focused, false or absent otherwise.
   final Map<String, bool> _fieldFocusStates = {};
@@ -62,7 +61,7 @@ class ChampionFormController extends ChangeNotifier {
   /// Active Fields
   /// This contains an updated list of fields currently
   /// rendered in a championform widget.
-  List<FormFieldDef<Object>> activeFields;
+  List<FormFieldDef> activeFields;
 
   /// Page Fields
   /// Subsets of fields added as pages are identified.
@@ -125,7 +124,7 @@ class ChampionFormController extends ChangeNotifier {
   /// This is called by formbuilder on widget build
   /// to create a running list of active fields.
   void updateActiveFields(
-    List<FormFieldDef<Object>> fields, {
+    List<FormFieldDef> fields, {
     // Disable notify listeners. This can prevent notification loops breaking widgets.
     bool noNotify = false,
   }) {
@@ -238,11 +237,11 @@ class ChampionFormController extends ChangeNotifier {
   ///
   /// For example: a multi-page form handling more than one group of fields.
   void addFields(
-    List<FormFieldDef<Object>> newFields, {
+    List<FormFieldDef> newFields, {
     bool noNotify = false,
   }) {
     bool changed = false;
-    for (final FormFieldDef<Object> field in newFields) {
+    for (final FormFieldDef field in newFields) {
       // Only add if it's not already present or if the definition differs
       // (Note: Deep equality check for FormFieldDef might be complex/costly)
       if (!_fieldDefinitions.containsKey(field.id)) {

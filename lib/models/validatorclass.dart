@@ -1,5 +1,5 @@
-class FormBuilderValidator<T> {
-  final bool Function(T value) validator;
+class FormBuilderValidator {
+  final bool Function(dynamic value) validator;
   final String reason;
 
   FormBuilderValidator({

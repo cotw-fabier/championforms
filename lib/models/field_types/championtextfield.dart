@@ -4,7 +4,7 @@ import 'package:championforms/models/file_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class ChampionTextField extends FormFieldDef<String> {
+class ChampionTextField extends FormFieldDef {
   // Define the type of field type
 
   // Add a TextField override so we could write our own widget if we prefer. This will override the default field.

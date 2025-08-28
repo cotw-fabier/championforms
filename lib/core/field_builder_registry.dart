@@ -4,12 +4,8 @@ import 'package:championforms/default_fields/championchipselect.dart';
 import 'package:championforms/default_fields/championfileupload.dart';
 import 'package:championforms/default_fields/championoptionselect.dart';
 import 'package:championforms/default_fields/championtextfield.dart';
-import 'package:championforms/models/field_types/championoptionselect.dart';
-import 'package:championforms/models/field_types/championtextfield.dart';
 import 'package:championforms/models/field_types/convienence_classes/championchipselect.dart';
 import 'package:flutter/material.dart';
-import 'package:championforms/controllers/form_controller.dart';
-import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/colorscheme.dart';
 

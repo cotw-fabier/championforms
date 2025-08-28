@@ -1,7 +1,7 @@
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/file_model.dart';
 
-class FormFieldNull extends FormFieldDef<dynamic> {
+class FormFieldNull extends FormFieldDef {
   // Define the type of field type
 
   @override

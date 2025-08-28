@@ -1,3 +1,11 @@
+## 0.2.0
+
+- Stripped out the generics implementation. Dart just isn't up to the task of strongly typing input from form files using the field<Type> syntax. We went back to dynamic dispatch and then rely on validator functions to make sure output is appropriate for the use case.
+
+- Updated example application to properly utilize the default validators.
+
+- Pushed dependency version numbers to latest releases.
+
 ## 0.0.4
 
 Killed Riverpod as a dependency for this library. I love Riverpod, but it wasn't being used correctly here.

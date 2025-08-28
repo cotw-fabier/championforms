@@ -36,7 +36,7 @@ class FormFieldChoiceOption {
   }) : name = name ?? value;
 }
 
-abstract class FormFieldDef<T> implements FormFieldBase {
+abstract class FormFieldDef implements FormFieldBase {
   // Add an ID
   @override
   final String id;
@@ -87,7 +87,7 @@ abstract class FormFieldDef<T> implements FormFieldBase {
   ) fieldBackground; // This is the background around the field itself.
 
   /// The default value for this field, matching the field's type.
-  T? get defaultValue;
+  dynamic get defaultValue;
 
   // --- Conversion Function Getters ---
 

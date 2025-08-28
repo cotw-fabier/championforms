@@ -195,12 +195,12 @@ class _MyHomePageState extends State<MyHomePage> {
                 validators: [
                   FormBuilderValidator(
                     validator: (results) =>
-                        DefaultValidators().stringIsEmpty(results),
+                        DefaultValidators().stringIsNotEmpty(results),
                     reason: "Email cannot be empty.",
                   ),
                   FormBuilderValidator(
                     validator: (results) =>
-                        DefaultValidators().stringIsEmail(results),
+                        DefaultValidators().isEmail(results),
                     reason: "Please enter a valid email address.",
                   ),
                 ],
@@ -223,7 +223,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 validators: [
                   FormBuilderValidator(
                       validator: (results) =>
-                          DefaultValidators().isEmpty(results),
+                          DefaultValidators().stringIsNotEmpty(results),
                       reason: "Password cannot be empty."),
                   // Add more password validators if needed (e.g., length)
                 ],

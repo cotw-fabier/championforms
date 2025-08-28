@@ -28,7 +28,7 @@ class FieldResults<T> extends BaseFieldResults {
 class FieldResultAccessor {
   final String _id;
   final dynamic _value; // The raw value directly stored
-  final FormFieldDef<dynamic>
+  final FormFieldDef
       _definition; // The corresponding field definition, stored as dynamic
 
   FieldResultAccessor._(this._id, this._value, this._definition);
@@ -330,7 +330,7 @@ class FormResults {
   // Store raw values directly, keyed by field ID.
   final Map<String, dynamic> results;
   // Store field definitions, keyed by field ID. Use dynamic type argument.
-  final Map<String, FormFieldDef<dynamic>> fieldDefinitions;
+  final Map<String, FormFieldDef> fieldDefinitions;
   const FormResults({
     this.errorState = false,
     this.formErrors = const [],
@@ -341,15 +341,14 @@ class FormResults {
   factory FormResults.getResults({
     required ChampionFormController controller,
     bool checkForErrors = true, // Whether to run validation.
-    List<FormFieldDef<dynamic>>?
-        fields, // Optional: Process only specific fields.
+    List<FormFieldDef>? fields, // Optional: Process only specific fields.
   }) {
     // Determine the list of fields to process.
-    List<FormFieldDef<dynamic>> finalFields = fields ?? controller.activeFields;
+    List<FormFieldDef> finalFields = fields ?? controller.activeFields;
 
     // Initialize containers for results, definitions, and errors.
     Map<String, dynamic> collectedResults = {};
-    Map<String, FormFieldDef<dynamic>> definitions = {};
+    Map<String, FormFieldDef> definitions = {};
     List<FormBuilderError> formErrors = [];
     bool errorState = false; // Track overall error status.
 
@@ -360,12 +359,11 @@ class FormResults {
 
       // Store the field definition, casting its type parameter to dynamic for the map.
       // The actual instance retains its specific type (e.g., FormFieldDef<String>).
-      definitions[field.id] = field as FormFieldDef<dynamic>;
+      definitions[field.id] = field as FormFieldDef;
 
       // Retrieve the raw value from the controller.
       // Use dynamic type hint. Fall back to the field's default value if controller returns null.
-      final rawValue =
-          controller.getFieldValue<dynamic>(field.id) ?? field.defaultValue;
+      final rawValue = controller.getFieldValue(field.id) ?? field.defaultValue;
 
       // Store the raw value (which could be null) in the results map.
       collectedResults[field.id] = rawValue;
@@ -495,7 +493,7 @@ class FormResults {
               "Available field definition keys: ${fieldDefinitions.keys.join(', ')}");
 
       // Create the "dummy" definition.
-      final FormFieldDef<dynamic> dummyDefinition = FormFieldNull(id: id);
+      final FormFieldDef dummyDefinition = FormFieldNull(id: id);
 
       // Create the accessor, passing null for the value (as it's an "empty" accessor
       // due to missing definition) and the dummy definition.
