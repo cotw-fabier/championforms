@@ -11,32 +11,16 @@ import 'package:championforms/models/formresults.dart';
 import 'package:championforms/widgets_internal/fieldwrapperdefault.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:super_clipboard/super_clipboard.dart';
-import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 
 class TextFieldWidget extends StatefulWidget {
   const TextFieldWidget({
     super.key,
     required this.controller,
     required this.field,
-    this.fieldId = "",
     this.colorScheme,
     required this.fieldState,
     this.fieldOverride,
-    this.requestFocus = false,
-    this.password = false,
-    this.onChanged,
-    this.onSubmitted,
-    this.keyboardType = TextInputType.text,
     this.validate,
-    this.initialValue = "",
-    this.labelText,
-    this.hintText,
-    this.maxLines,
-    this.onDrop,
-    this.formats,
-    this.draggable = true,
-    this.onPaste,
     Widget Function({required Widget child})? fieldBuilder,
   }) : fieldBuilder = fieldBuilder ?? defaultFieldBuilder;
   final ChampionFormController controller;
@@ -44,29 +28,9 @@ class TextFieldWidget extends StatefulWidget {
   final TextField? fieldOverride;
   final FieldState fieldState;
   final FieldColorScheme? colorScheme;
-  final String fieldId;
-  final bool requestFocus;
-  final bool password;
-  final Function(FormResults results)? onChanged;
-  final Function(FormResults results)? onSubmitted;
+
   final Function(String value)? validate;
-  final TextInputType keyboardType;
-  final String? initialValue;
-  final String? labelText;
-  final String? hintText;
-  final int? maxLines;
-  final Future<void> Function({
-    TextEditingController controller,
-    required String formId,
-    required String fieldId,
-  })? onDrop;
-  final List<DataFormat<Object>>? formats;
-  final bool draggable;
-  final Future<void> Function({
-    TextEditingController controller,
-    required String formId,
-    required String fieldId,
-  })? onPaste;
+
   final Widget Function({required Widget child})? fieldBuilder;
 
   // Default implementation for the fieldBuilder.
@@ -122,19 +86,19 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
     // 1. Get or create the appropriate TextEditingController from ChampionFormController:
     if (!textEditingControllerExists) {
       widget.controller.addFieldController<TextEditingController>(
-          widget.fieldId, TextEditingController());
+          widget.field.id, TextEditingController());
     }
     _controller = widget.controller
-        .getFieldController<TextEditingController>(widget.fieldId)!;
+        .getFieldController<TextEditingController>(widget.field.id)!;
 
     // If you have a default initialValue you want to set right away:
-    if ((widget.initialValue ?? "").isNotEmpty &&
+    if ((widget.field.defaultValue ?? "").isNotEmpty &&
         !textEditingControllerExists) {
-      _controller.text = widget.initialValue!;
+      _controller.text = widget.field.defaultValue!;
     }
 
     // set the last value to the default field value
-    _lastTextValue = widget.initialValue ?? "";
+    _lastTextValue = widget.field.defaultValue ?? "";
 
     _gotFocus = false;
     _autoCompleteOptions = [];
@@ -158,10 +122,10 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
         if (!HardwareKeyboard.instance.isShiftPressed &&
             evt.logicalKey == LogicalKeyboardKey.enter) {
           if (evt is KeyDownEvent) {
-            if (widget.onSubmitted != null) {
+            if (widget.field.onSubmit != null) {
               final formResults =
                   FormResults.getResults(controller: widget.controller);
-              widget.onSubmitted!(formResults);
+              widget.field.onSubmit!(formResults);
               return KeyEventResult.handled;
             }
           }
@@ -176,7 +140,7 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
     _focusNode.addListener(_onLoseFocus);
     widget.controller.addListener(_onControllerValueUpdated);
 
-    if (widget.requestFocus) _focusNode.requestFocus();
+    if (widget.field.requestFocus) _focusNode.requestFocus();
   }
 
   KeyEventResult _handleKeyboardFocusAutocompleteDropdown() {
@@ -206,7 +170,7 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
       //await Future.delayed(const Duration(milliseconds: 200), () {
       if (!_anyFocusActive) {
         widget.validate!(
-            _gotFocus ? _controller.text : widget.initialValue ?? "");
+            _gotFocus ? _controller.text : widget.field.defaultValue ?? "");
       }
       //});
     }
@@ -272,8 +236,8 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
       _lastTextValue = newText;
       widget.controller.updateFieldValue<String>(widget.field.id, newText);
 
-      if (widget.onChanged != null) {
-        widget.onChanged!(FormResults.getResults(
+      if (widget.field.onChange != null) {
+        widget.field.onChange!(FormResults.getResults(
             controller: widget.controller, fields: [widget.field]));
       }
 
@@ -486,11 +450,11 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
                   ? overrideTextField(
                       context: context,
                       onSubmitted: (value) {
-                        if (widget.onSubmitted == null) return;
+                        if (widget.field.onSubmit == null) return;
                         final formResults = FormResults.getResults(
                           controller: widget.controller,
                         );
-                        widget.onSubmitted!(formResults);
+                        widget.field.onSubmit!(formResults);
                       },
                       baseField: widget.fieldOverride!,
                     )
@@ -498,11 +462,11 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
               : TextField(
                   maxLines: widget.field.maxLines,
                   onSubmitted: (value) {
-                    if (widget.onSubmitted == null) return;
+                    if (widget.field.onSubmit == null) return;
                     final formResults = FormResults.getResults(
                       controller: widget.controller,
                     );
-                    widget.onSubmitted!(formResults);
+                    widget.field.onSubmit!(formResults);
                   },
                   style: theme.textTheme.bodyMedium,
                 ),
