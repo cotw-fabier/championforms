@@ -1,41 +1,32 @@
-import 'dart:math';
-
 import 'package:championforms/models/field_types/championcolumn.dart';
 import 'package:championforms/models/field_types/formfieldbase.dart';
 
 /// Build rows to store column blocks.
-/// This is mostly semantic to keep tabs on where your columns are
-/// in your form definitions.
 /// Rows can take a collapse bool which allows for responsive
 /// layouts.
-class ChampionRow extends FormFieldBase {
+class ChampionRow extends ChampionFormElement {
   /// A list of columns to display in your row content.
-  final List<ChampionColumn> columns;
+  final List<ChampionColumn> children;
 
-  /// Collapse the columns under the row into a vertical layout for
-  /// mobile devices
+  /// If true, collapses the columns into a single vertical layout.
+  /// Useful for responsive design on smaller screens.
   final bool collapse;
 
-  /// Roll up errors from child fields into the parent widget.
+  /// If true, validation errors from child fields within this row will be
+  /// displayed together at the bottom of the row.
   final bool rollUpErrors;
 
-  /// Hide field from processing and displaying. This will hide all fields below as well.
+  /// Hides the entire row from being displayed and processed.
   final bool hideField;
 
+  /// Spacing between columns in the row.
+  final double spacing;
+
   ChampionRow({
-    String? id, // Make id optional
-    super.title,
-    super.description,
-    required this.columns,
+    this.children = const [],
     this.collapse = false,
     this.rollUpErrors = false,
     this.hideField = false,
-  }) : super(id: id ?? _generateRandomId());
-
-  // Helper function to generate a random ID
-  static String _generateRandomId() {
-    final random = Random();
-    // For example, create a simple random id string.
-    return 'championRow_${random.nextInt(10000)}';
-  }
+    this.spacing = 10,
+  });
 }

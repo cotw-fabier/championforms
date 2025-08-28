@@ -1,52 +1,40 @@
-import 'dart:math';
-
 import 'package:championforms/models/field_types/formfieldbase.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:flutter/widgets.dart';
 
-/// Build columns inside rows to format your forms visually.
-/// Columns and Rows can collapse when a collapse bool is set
-/// This allows you to manage collapse logic external to this library
-class ChampionColumn extends FormFieldBase {
-  /// The form fields inside this column.
-  final List<FormFieldBase> fields;
+/// A layout element that arranges fields vertically within a [ChampionRow].
+/// Its width can be defined as a fraction of the available row space.
+class ChampionColumn extends ChampionFormElement {
+  /// The form elements (fields, or even nested rows/columns) inside this column.
+  final List<ChampionFormElement> children;
 
-  /// Roll up errors from child fields into the parent widget.
+  /// If true, validation errors from child fields within this column will be
+  /// displayed together at the bottom of the column.
   final bool rollUpErrors;
 
-  /// Hide field from processing and displaying. This will hide all fields below as well.
+  /// Hides the entire column from being displayed and processed.
   final bool hideField;
 
-  /// Columns use Flexible widgets to define their width.
-  /// Defaults to flex: 1, but you can adjust here.
-  final int columnFlex;
+  /// Defines the width of the column as a fraction of the total row width (e.g., 0.5 for 50%).
+  /// If not specified, remaining space in the row is divided equally among columns without a widthFactor.
+  final double? widthFactor;
 
-  /// Column Wrapper
-  /// This is a builder which wraps your column in some form.
-  /// If null then Champion Forms will just use a blank wrapper
-  /// with some simple padding.
+  /// Spacing between columns in the row.
+  final double spacing;
+
+  /// An optional builder to wrap the column's contents in a custom widget.
   final Widget Function(
     BuildContext context,
-    ChampionColumn column,
-    List<FormBuilderError>? errors,
     Widget child,
+    List<FormBuilderError>? errors,
   )? columnWrapper;
 
   ChampionColumn({
-    String? id, // Make id optional
-    super.title,
-    super.description,
-    required this.fields,
+    this.children = const [],
     this.rollUpErrors = false,
     this.hideField = false,
-    this.columnFlex = 1,
+    this.widthFactor,
     this.columnWrapper,
-  }) : super(id: id ?? _generateRandomId()); // Use a helper to generate an id
-
-  // Helper function to generate a random ID
-  static String _generateRandomId() {
-    final random = Random();
-    // For example, create a simple random id string.
-    return 'championColumn_${random.nextInt(10000)}';
-  }
+    this.spacing = 10,
+  });
 }

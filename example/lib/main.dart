@@ -152,16 +152,14 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     // --- Defining Form Fields ---
     // Uses new features: ChampionRow, ChampionColumn, ChampionFileUpload, AutoCompleteBuilder
-    final List<FormFieldBase> fields = [
+    final List<ChampionFormElement> fields = [
       // --- Row & Column Layout ---
       ChampionRow(
-        // collapse: true, // Set true to stack columns vertically (e.g., for mobile)
-        rollUpErrors: false, // Set true to show all child errors under the row
-        columns: [
+        children: [
           // --- Column 1 (Email) ---
           ChampionColumn(
-            columnFlex: 2, // Takes 2/3 of the available width
-            fields: [
+            widthFactor: 2,
+            children: [
               ChampionTextField(
                 id: "Email",
                 textFieldTitle: "Email Address",
@@ -210,8 +208,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           // --- Column 2 (Password) ---
           ChampionColumn(
-            columnFlex: 1, // Takes 1/3 of the available width
-            fields: [
+            children: [
               ChampionTextField(
                 id: "Password", // Changed ID
                 textFieldTitle: "Password",
@@ -232,6 +229,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ],
           )
         ],
+        // collapse: true, // Set true to stack columns vertically (e.g., for mobile)
       ),
 
       // --- Dropdown ---

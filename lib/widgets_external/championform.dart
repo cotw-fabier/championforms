@@ -34,7 +34,7 @@ class ChampionForm extends StatefulWidget {
   /// ChampionOptionSelect(),
   /// ChampionCheckboxSelect(),
   /// etc
-  final List<FormFieldBase> fields;
+  final List<ChampionFormElement> fields;
 
   /// pageName is a unique name for a page of fields.
   /// You can use the same name across widgets
