@@ -51,20 +51,20 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
       widget.onFocusChange(_focusNode!.hasFocus);
     });
 
-    // Initialize current files from controller
-    final existing = widget.controller
-            .getFieldValue<List<MultiselectOption>>(widget.field.id) ??
-        [];
+    // Initialize current files from controller (check if field exists first)
+    final existing = widget.controller.hasField(widget.field.id)
+        ? widget.controller.getFieldValue<List<MultiselectOption>>(widget.field.id) ?? []
+        : [];
     _files = List<MultiselectOption>.from(existing);
 
     widget.controller.addListener(_onControllerUpdate);
   }
 
   void _onControllerUpdate() {
-    // We'll read from the controller and see if the value changed
-    final existing = widget.controller
-            .getFieldValue<List<MultiselectOption>>(widget.field.id) ??
-        [];
+    // We'll read from the controller and see if the value changed (check if field exists first)
+    final existing = widget.controller.hasField(widget.field.id)
+        ? widget.controller.getFieldValue<List<MultiselectOption>>(widget.field.id) ?? []
+        : [];
     if (existing.length != _files.length) {
       setState(() {
         _files = List<MultiselectOption>.from(existing);

@@ -189,8 +189,10 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
       _autoCompleteItemFocusNodes.any((node) => node.hasFocus);
 
   void _onControllerValueUpdated() {
-    final newValue =
-        widget.controller.getFieldValue<String>(widget.field.id) ?? "";
+    // Check if field exists before getting value
+    final newValue = widget.controller.hasField(widget.field.id)
+        ? widget.controller.getFieldValue<String>(widget.field.id) ?? ""
+        : "";
     if (newValue != _controller.text) {
       final currentValue = _controller.value;
       _controller.value = currentValue.copyWith(

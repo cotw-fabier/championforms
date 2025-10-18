@@ -19,8 +19,11 @@ Widget checkboxFieldBuilder(
   // but here we rely on the parent FormBuilder rebuilding.
 
   // Get the current selected options directly from the controller's value storage
+  // (check if field exists first)
   final List<MultiselectOption> currentSelectedOptions =
-      controller.getFieldValue<List<MultiselectOption>>(field.id) ?? [];
+      controller.hasField(field.id)
+          ? controller.getFieldValue<List<MultiselectOption>>(field.id) ?? []
+          : [];
 
   return MultiselectWidget(
     id: field.id,

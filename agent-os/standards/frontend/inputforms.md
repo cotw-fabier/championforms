@@ -1,0 +1,27 @@
+## ChampionForms standards for Flutter
+
+- **Use ChampionForms**: Leverage ChampionForms package for declarative, type-safe form building with centralized state management
+- **Controller Lifecycle**: Create `ChampionFormController()` in `initState()` and always call `controller.dispose()` in `dispose()` method
+- **Declarative Fields**: Define form fields using `ChampionTextField`, `ChampionOptionSelect`, `ChampionCheckboxSelect`, `ChampionFileUpload`
+- **Layout Structure**: Use `ChampionRow` and `ChampionColumn` to structure forms; set `collapse: true` on rows for mobile responsiveness
+- **Field IDs**: Use unique, descriptive IDs for all fields; these IDs are used to retrieve results and must not conflict
+- **Validation**: Add validators using `FormBuilderValidator(validator: (results) => ..., reason: "Error message")`
+- **Default Validators**: Use `DefaultValidators()` for common checks: `stringIsNotEmpty()`, `isEmail()`, `listIsNotEmpty()`, `fileIsImage()`
+- **Live Validation**: Set `validateLive: true` to trigger validation when field loses focus for immediate user feedback
+- **Form Results**: Call `FormResults.getResults(controller: controller)` to validate and retrieve all form data
+- **Error Handling**: Check `results.errorState` before processing; access errors via `results.formErrors`
+- **Accessing Values**: Use `results.grab("fieldId")` then format with `.asString()`, `.asStringList()`, `.asMultiselectList()`, `.asFile()`
+- **Multiselect Options**: Define options using `MultiselectOption(label: "Display", value: "submitted_value", additionalData: optionalObject)`
+- **Default Values**: Set initial values using `defaultValue` property; use list of `MultiselectOption` objects for selects
+- **Programmatic Updates**: Use `controller.updateFieldValue("id", "value")` and `controller.toggleMultiSelectValue("id", toggleOn: [...], toggleOff: [...])`
+- **Autocomplete**: Add `AutoCompleteBuilder` to text fields with `initialOptions` and optional async `updateOptions` for API integration
+- **File Uploads**: Use `ChampionFileUpload` with `allowedExtensions` to restrict file types; requires platform permissions for file_picker
+- **Platform Permissions**: Configure iOS Info.plist, Android AndroidManifest.xml, and macOS entitlements for file_picker usage
+- **File Results**: Access uploaded files using `results.grab("id").asFileList()` which returns `List<FileResultData>` with name, path, bytes, MIME
+- **Global Theming**: Set default theme early using `ChampionFormTheme.instance.setTheme(softBlueColorTheme(context))`
+- **Theme Hierarchy**: Themes cascade from Default -> Global -> Form -> Field; more specific themes override general ones
+- **Form Spacing**: Use `spacing` property on `ChampionForm` to control vertical spacing between fields
+- **Field Callbacks**: Use `onSubmit` for Enter key handling (single-line fields), `onChange` for real-time value changes
+- **Row Columns**: Set `widthFactor` on `ChampionColumn` to control relative widths within a row (uses Flexible flex values)
+- **Error Display**: Use `rollUpErrors: true` on rows/columns to display all child field errors below the container
+- **Controller State Access**: Query controller state using `controller.findFieldValue("id")`, `controller.isFieldFocused("id")`, `controller.findErrors("id")`

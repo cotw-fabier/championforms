@@ -1,0 +1,22 @@
+## Flutter testing standards
+
+- **Test Types**: Write unit tests (`package:test`), widget tests (`flutter_test`), and integration tests (`integration_test`)
+- **Arrange-Act-Assert**: Follow AAA pattern (Given-When-Then) for clear, readable test structure
+- **Unit Tests First**: Write unit tests for domain logic, data layer, repositories, and state management
+- **Widget Tests for UI**: Write widget tests for UI components to verify rendering, user interactions, and state changes
+- **Integration Tests**: Use integration tests for end-to-end user flows and critical path validation
+- **Descriptive Names**: Use clear test names that describe what's being tested and expected outcome
+- **Test Independence**: Each test should be independent and not rely on other tests' state or execution order
+- **Minimal Tests During Development**: Focus on completing feature first; add strategic tests at logical completion points
+- **Test Core Flows**: Write tests exclusively for critical paths and primary user workflows; skip non-critical utilities
+- **Defer Edge Cases**: Don't test edge cases, error states, or validation unless business-critical
+- **Test Behavior**: Focus tests on what code does (behavior), not how it does it (implementation)
+- **Fast Unit Tests**: Keep unit tests fast (milliseconds) so developers run them frequently
+- **Mocks and Fakes**: Prefer fakes or stubs over mocks; use `mocktail` or `mockito` only when absolutely necessary
+- **Avoid Mock Generation**: Try to avoid code generation for mocks; design code to be testable without complex mocks
+- **TestWidgets**: Use `testWidgets` for widget tests; use `WidgetTester` to interact with and verify widget behavior
+- **Pump and Settle**: Use `tester.pump()` and `tester.pumpAndSettle()` to trigger widget rebuilds and animations
+- **Find Widgets**: Use `find.text()`, `find.byType()`, `find.byKey()` to locate widgets in tests
+- **Async Tests**: Use `async`/`await` in tests; `pumpAndSettle()` handles animations and async operations
+- **Golden Tests**: Use golden file tests for visual regression testing of complex UI components
+- **Coverage Goal**: Aim for high test coverage on business logic; UI coverage is secondary to critical flows

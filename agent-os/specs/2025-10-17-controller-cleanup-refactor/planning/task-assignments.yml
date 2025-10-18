@@ -1,0 +1,72 @@
+task_assignments:
+  - task_group: "Phase 1: Preparation & Analysis - Task Group 1.1: Current State Analysis"
+    assigned_subagent: "ui-designer"
+    rationale: "Controller manages UI state and form interactions, ui-designer has appropriate context"
+
+  - task_group: "Phase 2: Code Organization - Task Group 2.1: Method Reorganization"
+    assigned_subagent: "ui-designer"
+    rationale: "Pure code organization and structure work on Flutter controller"
+
+  - task_group: "Phase 3: Documentation - Task Group 3.1: Class-Level Documentation"
+    assigned_subagent: "ui-designer"
+    rationale: "Documentation of controller patterns and usage"
+
+  - task_group: "Phase 3: Documentation - Task Group 3.2: Property Documentation"
+    assigned_subagent: "ui-designer"
+    rationale: "Documentation of properties"
+
+  - task_group: "Phase 3: Documentation - Task Group 3.3: Method Documentation"
+    assigned_subagent: "ui-designer"
+    rationale: "Documentation of methods"
+
+  - task_group: "Phase 4: Code Cleanup - Task Group 4.1: Remove Commented Code"
+    assigned_subagent: "ui-designer"
+    rationale: "Code cleanup work"
+
+  - task_group: "Phase 4: Code Cleanup - Task Group 4.2: Remove Debug Statements"
+    assigned_subagent: "ui-designer"
+    rationale: "Code cleanup work"
+
+  - task_group: "Phase 5: Focus Management Consolidation - Task Group 5.1: Focus Method Consolidation"
+    assigned_subagent: "ui-designer"
+    rationale: "Focus management is UI-related functionality"
+
+  - task_group: "Phase 6: New Validation Methods - Task Group 6.1: Core Validation Methods"
+    assigned_subagent: "ui-designer"
+    rationale: "Form validation methods for UI"
+
+  - task_group: "Phase 7: New Field Management Methods - Task Group 7.1: Field CRUD Operations"
+    assigned_subagent: "ui-designer"
+    rationale: "Field management for form controller"
+
+  - task_group: "Phase 7: New Field Management Methods - Task Group 7.2: Field Reset Operations"
+    assigned_subagent: "ui-designer"
+    rationale: "Field reset operations for form controller"
+
+  - task_group: "Phase 7: New Field Management Methods - Task Group 7.3: Field Value Query Operations"
+    assigned_subagent: "ui-designer"
+    rationale: "Field value query operations for form controller"
+
+  - task_group: "Phase 8: Error Handling Improvements - Task Group 8.1: Field Access Error Handling"
+    assigned_subagent: "ui-designer"
+    rationale: "Error handling for controller methods"
+
+  - task_group: "Phase 8: Error Handling Improvements - Task Group 8.2: Multiselect Error Handling"
+    assigned_subagent: "ui-designer"
+    rationale: "Error handling for multiselect functionality"
+
+  - task_group: "Phase 8: Error Handling Improvements - Task Group 8.3: Focus and Page Error Handling"
+    assigned_subagent: "ui-designer"
+    rationale: "Error handling for focus and page methods"
+
+  - task_group: "Phase 9: Testing & Verification - Task Group 9.1: Unit Testing (Optional but Recommended)"
+    assigned_subagent: "testing-engineer"
+    rationale: "Test writing is the responsibility of testing-engineer"
+
+  - task_group: "Phase 9: Testing & Verification - Task Group 9.2: Integration Testing"
+    assigned_subagent: "ui-designer"
+    rationale: "Manual integration testing of controller with UI forms"
+
+  - task_group: "Phase 9: Testing & Verification - Task Group 9.3: Documentation Verification"
+    assigned_subagent: "ui-designer"
+    rationale: "Documentation verification and final review"
