@@ -282,6 +282,7 @@ class _MyHomePageState extends State<MyHomePage> {
         description: "Drag & drop or click to upload (JPG, PNG only).",
         multiselect: true, // Allow multiple files
         validateLive: true,
+        clearOnUpload: true,
         allowedExtensions: ['jpg', 'jpeg', 'png'], // Restrict file types
         // displayUploadedFiles: true, // Default is true
         // Custom display for the drop zone (optional)

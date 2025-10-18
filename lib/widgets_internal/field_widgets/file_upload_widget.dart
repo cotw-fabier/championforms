@@ -129,6 +129,18 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
     }
 
     if (result != null) {
+      // Clear existing files if clearOnUpload is true
+      if ((widget.field as ChampionFileUpload).clearOnUpload) {
+        _files.clear();
+        widget.controller.updateMultiselectValues(
+          widget.field.id,
+          [],
+          overwrite: true,
+          noOnChange: true,
+        );
+      }
+
+      // Add new files
       final List<XFile> pickedFiles = result.xFiles;
       for (final xfile in pickedFiles) {
         await _addFile(xfile);
@@ -136,7 +148,7 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
     }
   }
 
-  Future<void> _handleDroppedFile(DataReader reader) async {
+  Future<void> _handleDroppedFile(DataReader reader, {bool isFirstFile = false}) async {
     // Pick a default name. We'll replace this in a moment
     String name = "untitled";
 
@@ -165,6 +177,19 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
       if (!foundExtension) {
         return;
       }
+    }
+
+    // Clear existing files if clearOnUpload is true and this is the first dropped file
+    if ((widget.field as ChampionFileUpload).clearOnUpload && isFirstFile) {
+      setState(() {
+        _files.clear();
+      });
+      widget.controller.updateMultiselectValues(
+        widget.field.id,
+        [],
+        overwrite: true,
+        noOnChange: true,
+      );
     }
 
     fileReader.getFile(null, (file) async {
@@ -324,17 +349,19 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
         if (!widget.field.multiselect) {
           final reader = event.session.items.firstOrNull?.dataReader;
           if (reader != null) {
-            await _handleDroppedFile(reader);
+            await _handleDroppedFile(reader, isFirstFile: true);
             return;
           }
         } else {
           // If Multiselect is true then lets do all the files
+          bool isFirst = true;
           for (final item in event.session.items) {
             final reader = item.dataReader!;
             // We'll handle images or files
 
             // We'll attempt to get a "file" from the item
-            await _handleDroppedFile(reader);
+            await _handleDroppedFile(reader, isFirstFile: isFirst);
+            isFirst = false;
           }
         }
       },

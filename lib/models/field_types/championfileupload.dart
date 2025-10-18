@@ -10,6 +10,11 @@ class ChampionFileUpload extends ChampionOptionSelect {
   /// Display Uploaded Files
   final bool displayUploadedFiles;
 
+  /// Clear files on upload
+  /// When true, selecting new files will clear all previously uploaded files before adding the new ones.
+  /// When false (default), new files are added to the existing list (running tally behavior).
+  final bool clearOnUpload;
+
   /// Build the list of files
   final Widget Function(List<MultiselectOption>)? fileUploadBuilder;
 
@@ -47,6 +52,7 @@ class ChampionFileUpload extends ChampionOptionSelect {
     super.fieldBackground,
     this.allowedExtensions,
     this.displayUploadedFiles = true,
+    this.clearOnUpload = false,
     this.fileUploadBuilder,
     this.dropDisplayWidget,
   }) : super(
