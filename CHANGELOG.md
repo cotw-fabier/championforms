@@ -1,3 +1,46 @@
+## 0.3.1
+
+**File Upload and Autocomplete Enhancements**
+
+### New Features
+
+**ChampionFileUpload**:
+- **`clearOnUpload` flag** - New optional boolean property to control file upload behavior
+  - When `true`: Clears previously uploaded files before adding new selections
+  - When `false` (default): Maintains existing "running tally" behavior
+  - Works consistently across all file selection methods (file picker, drag-and-drop)
+  - Supports both single-file and multi-file upload modes
+  - Maintains backward compatibility (defaults to `false`)
+
+**Autocomplete Dropdown Visual Feedback**:
+- **Keyboard navigation visual feedback** - Options now highlight when navigating with Tab/Arrow keys
+  - Options display visual highlight when focused via keyboard
+  - Highlight color uses field's `textBackgroundColor` from `FieldColorScheme` (with theme fallback)
+  - Fully honors field color scheme: `surfaceBackground`, `surfaceText`, and `textBackgroundColor`
+  - Falls back to theme colors when field color scheme is not provided
+  - Works with both light and dark themes
+  - Improves accessibility by providing clear visual indication of focused option
+  - Complies with project's accessibility standards (WCAG 2.1)
+
+### Use Cases
+
+The `clearOnUpload` flag is useful when you want to:
+- Replace files instead of accumulating them
+- Implement "single selection" workflows in multi-file mode
+- Clear previous uploads when user makes a new selection
+- Simplify file management for forms where only the latest selection matters
+
+### Example
+
+```dart
+ChampionFileUpload(
+  id: 'documents',
+  label: 'Upload Documents',
+  multiselect: true,
+  clearOnUpload: true,  // New files replace previous ones
+)
+```
+
 ## 0.3.0
 
 **Major Controller Refactor - Enhanced Developer Experience**

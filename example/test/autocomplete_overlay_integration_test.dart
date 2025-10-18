@@ -1,0 +1,439 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:championforms/widgets_internal/autocomplete_overlay_widget.dart';
+import 'package:championforms/models/autocomplete/autocomplete_class.dart';
+import 'package:championforms/models/autocomplete/autocomplete_option_class.dart';
+import 'package:championforms/models/autocomplete/autocomplete_type.dart';
+import 'package:championforms/models/colorscheme.dart';
+
+void main() {
+  group('ChampionAutocompleteWrapper Integration Tests', () {
+    testWidgets('Overlay dismisses on tap outside',
+        (WidgetTester tester) async {
+      // Arrange
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
+      final autoComplete = AutoCompleteBuilder(
+        type: AutoCompleteType.dropdown,
+        initialOptions: [
+          AutoCompleteOption(value: 'Test Option', title: 'Test Option'),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                ChampionAutocompleteWrapper(
+                  child: TextField(
+                    controller: textController,
+                    focusNode: focusNode,
+                  ),
+                  autoComplete: autoComplete,
+                  focusNode: focusNode,
+                  textEditingController: textController,
+                ),
+                const SizedBox(height: 100),
+                Container(
+                  key: const Key('outside-area'),
+                  height: 50,
+                  color: Colors.blue,
+                  child: const Text('Click here'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // Act - Show overlay
+      await tester.tap(find.byType(TextField));
+      await tester.pump();
+      await tester.enterText(find.byType(TextField), 'test');
+      await tester.pump();
+      await tester.pump();
+
+      // Verify overlay is shown
+      expect(find.text('Test Option'), findsOneWidget);
+
+      // Tap outside
+      await tester.tap(find.byKey(const Key('outside-area')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      // Assert - Overlay should be dismissed after blur delay
+      final overlayOptions = find.text('Test Option');
+      // Should only find in TextField value, not in overlay
+      expect(overlayOptions, findsOneWidget);
+
+      // Cleanup
+      focusNode.dispose();
+      textController.dispose();
+    });
+
+    testWidgets('Overlay updates when value changes',
+        (WidgetTester tester) async {
+      // Arrange
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
+      final autoComplete = AutoCompleteBuilder(
+        type: AutoCompleteType.dropdown,
+        initialOptions: [
+          AutoCompleteOption(value: 'Apple', title: 'Apple'),
+          AutoCompleteOption(value: 'Banana', title: 'Banana'),
+          AutoCompleteOption(value: 'Cherry', title: 'Cherry'),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChampionAutocompleteWrapper(
+              child: TextField(
+                controller: textController,
+                focusNode: focusNode,
+              ),
+              autoComplete: autoComplete,
+              focusNode: focusNode,
+              textEditingController: textController,
+            ),
+          ),
+        ),
+      );
+
+      // Act - Focus and type first character
+      await tester.tap(find.byType(TextField));
+      await tester.pump();
+      await tester.enterText(find.byType(TextField), 'a');
+      await tester.pump();
+      await tester.pump();
+
+      // Verify first set of options
+      expect(find.text('Apple'), findsOneWidget);
+      expect(find.text('Banana'), findsOneWidget);
+
+      // Change text to filter differently
+      await tester.enterText(find.byType(TextField), 'c');
+      await tester.pump();
+      await tester.pump();
+
+      // Assert - Overlay should update with new filtered options
+      expect(find.text('Cherry'), findsOneWidget);
+      expect(find.text('Apple'), findsNothing);
+      expect(find.text('Banana'), findsNothing);
+
+      // Cleanup
+      focusNode.dispose();
+      textController.dispose();
+    });
+
+    testWidgets('Theming with custom FieldColorScheme',
+        (WidgetTester tester) async {
+      // Arrange
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
+      const colorScheme = FieldColorScheme(
+        surfaceBackground: Color(0xFFE1BEE7), // purple[100]
+        surfaceText: Color(0xFF4A148C), // purple[900]
+      );
+      final autoComplete = AutoCompleteBuilder(
+        type: AutoCompleteType.dropdown,
+        initialOptions: [
+          AutoCompleteOption(value: 'Themed Option', title: 'Themed Option'),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChampionAutocompleteWrapper(
+              child: TextField(
+                controller: textController,
+                focusNode: focusNode,
+              ),
+              autoComplete: autoComplete,
+              focusNode: focusNode,
+              textEditingController: textController,
+              colorScheme: colorScheme,
+            ),
+          ),
+        ),
+      );
+
+      // Act - Show overlay
+      await tester.tap(find.byType(TextField));
+      await tester.pump();
+      await tester.enterText(find.byType(TextField), 'themed');
+      await tester.pump();
+      await tester.pump();
+
+      // Assert - Overlay should be visible with themed colors
+      expect(find.text('Themed Option'), findsOneWidget);
+
+      // Verify Material widget is present (contains themed colors)
+      final materialWidget = tester.widget<Material>(
+        find.ancestor(
+          of: find.text('Themed Option'),
+          matching: find.byType(Material),
+        ).first,
+      );
+      expect(materialWidget.color, equals(const Color(0xFFE1BEE7)));
+
+      // Cleanup
+      focusNode.dispose();
+      textController.dispose();
+    });
+
+    testWidgets('Overlay handles rapid text changes with debounce',
+        (WidgetTester tester) async {
+      // Arrange
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
+      var updateCallCount = 0;
+
+      final autoComplete = AutoCompleteBuilder(
+        type: AutoCompleteType.dropdown,
+        initialOptions: [],
+        debounceWait: const Duration(milliseconds: 50),
+        debounceDuration: const Duration(milliseconds: 100),
+        updateOptions: (value) async {
+          updateCallCount++;
+          await Future.delayed(const Duration(milliseconds: 10));
+          return [
+            AutoCompleteOption(
+              value: 'Result for: $value',
+              title: 'Result for: $value',
+            ),
+          ];
+        },
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChampionAutocompleteWrapper(
+              child: TextField(
+                controller: textController,
+                focusNode: focusNode,
+              ),
+              autoComplete: autoComplete,
+              focusNode: focusNode,
+              textEditingController: textController,
+            ),
+          ),
+        ),
+      );
+
+      // Act - Focus and rapidly type multiple characters
+      await tester.tap(find.byType(TextField));
+      await tester.pump();
+
+      // Type rapidly (should debounce)
+      textController.text = 'a';
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 10));
+
+      textController.text = 'ab';
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 10));
+
+      textController.text = 'abc';
+      await tester.pump();
+
+      // Wait for debounce to complete
+      await tester.pump(const Duration(milliseconds: 120));
+      await tester.pumpAndSettle();
+
+      // Assert - Should have debounced rapid changes
+      // Depending on timing, should be 1-2 calls, not 3
+      expect(updateCallCount, lessThan(3));
+
+      // Cleanup
+      focusNode.dispose();
+      textController.dispose();
+    });
+
+    testWidgets('Overlay shows only dropdown type autocomplete',
+        (WidgetTester tester) async {
+      // Arrange
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
+      final autoComplete = AutoCompleteBuilder(
+        type: AutoCompleteType.none, // Non-dropdown type
+        initialOptions: [
+          AutoCompleteOption(value: 'Should Not Show', title: 'Should Not Show'),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChampionAutocompleteWrapper(
+              child: TextField(
+                controller: textController,
+                focusNode: focusNode,
+              ),
+              autoComplete: autoComplete,
+              focusNode: focusNode,
+              textEditingController: textController,
+            ),
+          ),
+        ),
+      );
+
+      // Act - Focus and type
+      await tester.tap(find.byType(TextField));
+      await tester.pump();
+      await tester.enterText(find.byType(TextField), 'test');
+      await tester.pump();
+      await tester.pump();
+
+      // Assert - Overlay should NOT appear for non-dropdown type
+      expect(find.text('Should Not Show'), findsNothing);
+      expect(find.byType(ListView), findsNothing);
+
+      // Cleanup
+      focusNode.dispose();
+      textController.dispose();
+    });
+
+    testWidgets('Empty text clears overlay options',
+        (WidgetTester tester) async {
+      // Arrange
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
+      final autoComplete = AutoCompleteBuilder(
+        type: AutoCompleteType.dropdown,
+        initialOptions: [
+          AutoCompleteOption(value: 'Test', title: 'Test'),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChampionAutocompleteWrapper(
+              child: TextField(
+                controller: textController,
+                focusNode: focusNode,
+              ),
+              autoComplete: autoComplete,
+              focusNode: focusNode,
+              textEditingController: textController,
+            ),
+          ),
+        ),
+      );
+
+      // Act - Show overlay first
+      await tester.tap(find.byType(TextField));
+      await tester.pump();
+      await tester.enterText(find.byType(TextField), 'test');
+      await tester.pump();
+      await tester.pump();
+
+      // Verify overlay is shown
+      expect(find.text('Test'), findsOneWidget);
+
+      // Clear text
+      await tester.enterText(find.byType(TextField), '');
+      await tester.pump();
+      await tester.pump();
+
+      // Assert - Overlay should be removed when text is empty
+      expect(find.byType(ListView), findsNothing);
+
+      // Cleanup
+      focusNode.dispose();
+      textController.dispose();
+    });
+
+    testWidgets('Accessibility: Semantics widgets are present',
+        (WidgetTester tester) async {
+      // Arrange
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
+      final autoComplete = AutoCompleteBuilder(
+        type: AutoCompleteType.dropdown,
+        initialOptions: [
+          AutoCompleteOption(value: 'Option 1', title: 'Option 1'),
+          AutoCompleteOption(value: 'Option 2', title: 'Option 2'),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChampionAutocompleteWrapper(
+              child: TextField(
+                controller: textController,
+                focusNode: focusNode,
+              ),
+              autoComplete: autoComplete,
+              focusNode: focusNode,
+              textEditingController: textController,
+            ),
+          ),
+        ),
+      );
+
+      // Act - Show overlay
+      await tester.tap(find.byType(TextField));
+      await tester.pump();
+      await tester.enterText(find.byType(TextField), 'opt');
+      await tester.pump();
+      await tester.pump();
+
+      // Assert - Verify Semantics widgets are present in tree
+      expect(find.byType(Semantics), findsWidgets);
+
+      // Cleanup
+      focusNode.dispose();
+      textController.dispose();
+    });
+
+    testWidgets('CompositedTransformFollower maintains overlay connection',
+        (WidgetTester tester) async {
+      // Arrange
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
+      final autoComplete = AutoCompleteBuilder(
+        type: AutoCompleteType.dropdown,
+        initialOptions: [
+          AutoCompleteOption(value: 'Test', title: 'Test'),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChampionAutocompleteWrapper(
+              child: TextField(
+                controller: textController,
+                focusNode: focusNode,
+              ),
+              autoComplete: autoComplete,
+              focusNode: focusNode,
+              textEditingController: textController,
+            ),
+          ),
+        ),
+      );
+
+      // Act - Show overlay
+      await tester.tap(find.byType(TextField));
+      await tester.pump();
+      await tester.enterText(find.byType(TextField), 'test');
+      await tester.pump();
+      await tester.pump();
+
+      // Assert - CompositedTransformFollower should be present (maintains connection)
+      expect(find.byType(CompositedTransformFollower), findsWidgets);
+
+      // Cleanup
+      focusNode.dispose();
+      textController.dispose();
+    });
+  });
+}

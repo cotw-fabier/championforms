@@ -38,7 +38,7 @@ class FieldColorScheme {
 
   final Color iconColor;
 
-  // Used for the chip field and selected dropdown field
+  // Used for the chip field, selected dropdown field, and autocomplete overlay focused options
   final Color? textBackgroundColor;
   final FieldGradientColors? textBackgroundGradient;
 

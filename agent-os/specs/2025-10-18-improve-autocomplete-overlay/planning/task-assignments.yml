@@ -1,0 +1,15 @@
+task_assignments:
+  - task_group: "Task Group 1: Create Standalone Widget Structure"
+    assigned_subagent: "ui-designer"
+
+  - task_group: "Task Group 2: Implement Smart Overlay Positioning"
+    assigned_subagent: "ui-designer"
+
+  - task_group: "Task Group 3: Implement Keyboard Navigation and Accessibility"
+    assigned_subagent: "ui-designer"
+
+  - task_group: "Task Group 4: Implement Selection Callbacks and Debounce Logic"
+    assigned_subagent: "ui-designer"
+
+  - task_group: "Task Group 5: Integration Testing and Validation"
+    assigned_subagent: "testing-engineer"
