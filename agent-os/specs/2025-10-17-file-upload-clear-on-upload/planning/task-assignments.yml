@@ -1,0 +1,9 @@
+task_assignments:
+  - task_group: "Task Group 1: ChampionFileUpload Model Enhancement"
+    assigned_subagent: "ui-designer"
+
+  - task_group: "Task Group 2: FileUploadWidget Clear Logic"
+    assigned_subagent: "ui-designer"
+
+  - task_group: "Task Group 3: Test Review & Gap Analysis"
+    assigned_subagent: "testing-engineer"
