@@ -258,6 +258,13 @@ class FieldResultAccessor {
     }
   }
 
+  /// Get the first file from the file list, or null if no files.
+  /// Convenience method for single file upload fields.
+  FileModel? asFile() {
+    final fileList = asFileList();
+    return fileList.isNotEmpty ? fileList.first : null;
+  }
+
   /// Helper for logging conversion errors consistently.
   void _logConversionError(
       String converterName, dynamic error, StackTrace stack) {
@@ -369,9 +376,11 @@ class FormResults {
       collectedResults[field.id] = rawValue;
 
       // --- Validation (if enabled) ---
-      // _validateField(field, rawValue, controller, formErrors);
-
-      if (rawValue is String) {
+      // Handle validation with proper type checking, including null values
+      if (rawValue == null) {
+        // For null values, call validation with dynamic type
+        _validateField<dynamic>(field, rawValue, controller, formErrors);
+      } else if (rawValue is String) {
         _validateField<String>(
             field as Field, rawValue, controller, formErrors);
       } else if (rawValue is int) {
@@ -384,8 +393,8 @@ class FormResults {
         _validateField<List<FieldOption>>(
             field as Field, rawValue, controller, formErrors);
       } else {
-        // Fallback to the safe validation method
-        _validateField(field, rawValue, controller, formErrors);
+        // Fallback for other types
+        _validateField<dynamic>(field, rawValue, controller, formErrors);
       }
 
       if (formErrors.isNotEmpty) {
@@ -494,7 +503,7 @@ void _validateField<T>(
   for (int i = 0; i < field.validators!.length; i++) {
     final validator = field.validators![i];
     try {
-      final bool isValid = validator.validator(rawValue as T);
+      final bool isValid = validator.validator(rawValue as T?);
 
       if (!isValid) {
         final error = FormBuilderError(

@@ -24,6 +24,15 @@ class FileUpload extends OptionSelect {
   /// If set to null then all files are allowed
   final List<String>? allowedExtensions;
 
+  /// Maximum file size in bytes
+  /// Files exceeding this size will be rejected with an error message.
+  /// Default: 52428800 bytes (50 MB) to prevent memory issues.
+  /// Set to null to allow files of any size (not recommended for production).
+  ///
+  /// Note: Large files are loaded entirely into memory, so setting this too high
+  /// may cause OutOfMemory errors on mobile devices.
+  final int? maxFileSize;
+
   /// Change the display of the drag and drop zone for file uploads.
   /// Takes parameters of the current color scheme and the
   /// field details so they're available for building your custom implementation.
@@ -51,6 +60,7 @@ class FileUpload extends OptionSelect {
     super.fieldLayout,
     super.fieldBackground,
     this.allowedExtensions,
+    this.maxFileSize = 52428800, // 50 MB default
     this.displayUploadedFiles = true,
     this.clearOnUpload = false,
     this.fileUploadBuilder,

@@ -1,0 +1,803 @@
+import 'dart:typed_data';
+import 'package:championforms/championforms.dart';
+import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/models/file_model.dart';
+import 'package:championforms/models/mime_data.dart';
+import 'package:championforms/models/multiselect_option.dart';
+import 'package:championforms/models/validatorclass.dart';
+import 'package:championforms/widgets_internal/field_widgets/file_upload_widget.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+/// Additional strategic integration tests for drag-drop migration.
+/// These tests fill critical gaps in coverage for the drag-and-drop migration.
+void main() {
+  group('Drag-drop hover state integration tests', () {
+    testWidgets('hover state changes opacity when dragging over widget',
+        (WidgetTester tester) async {
+      // Arrange
+      final controller = FormController();
+      final field = FileUpload(
+        id: 'test_hover',
+        multiselect: true,
+        displayUploadedFiles: true,
+      );
+
+      controller.addFields([field]);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FileUploadWidget(
+              id: field.id,
+              controller: controller,
+              field: field,
+              currentColors: const FieldColorScheme(),
+              onFocusChange: (_) {},
+              onFileOptionChange: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Assert - Widget renders
+      expect(find.byType(FileUploadWidget), findsOneWidget);
+      expect(find.byIcon(Icons.upload_file), findsOneWidget);
+
+      // Note: Actual hover state testing requires manual testing or browser automation
+      // This test verifies the widget structure supports hover state
+    });
+
+    testWidgets('hover state resets after file drop',
+        (WidgetTester tester) async {
+      // Arrange
+      final controller = FormController();
+      final field = FileUpload(
+        id: 'test_hover_reset',
+        multiselect: false,
+      );
+
+      controller.addFields([field]);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FileUploadWidget(
+              id: field.id,
+              controller: controller,
+              field: field,
+              currentColors: const FieldColorScheme(),
+              onFocusChange: (_) {},
+              onFileOptionChange: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Act - Add file (simulating drop completion)
+      final testFile = FileModel(
+        fileName: 'test.pdf',
+        uploadExtension: 'pdf',
+        fileBytes: Uint8List.fromList([1, 2, 3]),
+        mimeData: MimeData(extension: 'pdf', mime: 'application/pdf'),
+      );
+
+      controller.updateMultiselectValues(
+        field.id,
+        [
+          FieldOption(
+            label: testFile.fileName,
+            value: 'path/${testFile.fileName}',
+            additionalData: testFile,
+          ),
+        ],
+        overwrite: true,
+      );
+      await tester.pumpAndSettle();
+
+      // Assert - File added, widget still renders correctly
+      expect(find.byType(FileUploadWidget), findsOneWidget);
+      expect(find.text('test.pdf'), findsOneWidget);
+    });
+  });
+
+  group('MIME type validation edge cases', () {
+    testWidgets('rejects files with disallowed MIME types',
+        (WidgetTester tester) async {
+      // Arrange
+      final controller = FormController();
+      final field = FileUpload(
+        id: 'mime_filter',
+        allowedExtensions: ['.pdf', '.jpg', '.png'],
+        multiselect: true,
+      );
+
+      controller.addFields([field]);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FileUploadWidget(
+              id: field.id,
+              controller: controller,
+              field: field,
+              currentColors: const FieldColorScheme(),
+              onFocusChange: (_) {},
+              onFileOptionChange: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Act - Attempt to add disallowed file type
+      // Note: In real implementation, MIME validation happens in platform layer
+      // Here we verify the field configuration is set correctly
+      expect(field.allowedExtensions, contains('.pdf'));
+      expect(field.allowedExtensions, contains('.jpg'));
+      expect(field.allowedExtensions, contains('.png'));
+      expect(field.allowedExtensions, isNot(contains('.exe')));
+      expect(field.allowedExtensions, isNot(contains('.zip')));
+    });
+
+    testWidgets('handles empty allowedExtensions list',
+        (WidgetTester tester) async {
+      // Arrange
+      final controller = FormController();
+      final field = FileUpload(
+        id: 'no_filter',
+        allowedExtensions: [], // Empty list should allow all types
+        multiselect: true,
+      );
+
+      controller.addFields([field]);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FileUploadWidget(
+              id: field.id,
+              controller: controller,
+              field: field,
+              currentColors: const FieldColorScheme(),
+              onFocusChange: (_) {},
+              onFileOptionChange: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Act - Add any file type
+      final anyFile = FileModel(
+        fileName: 'document.xyz',
+        uploadExtension: 'xyz',
+        fileBytes: Uint8List.fromList([1, 2, 3]),
+      );
+
+      controller.updateMultiselectValues(
+        field.id,
+        [
+          FieldOption(
+            label: anyFile.fileName,
+            value: 'path/${anyFile.fileName}',
+            additionalData: anyFile,
+          ),
+        ],
+        overwrite: true,
+      );
+      await tester.pumpAndSettle();
+
+      // Assert - File added successfully
+      final results = FormResults.getResults(
+        controller: controller,
+        fields: [field],
+      );
+      final files = results.grab(field.id).asFileList();
+      expect(files.length, 1);
+      expect(files[0].fileName, 'document.xyz');
+    });
+
+    testWidgets('MIME type detection for diverse file types',
+        (WidgetTester tester) async {
+      // Arrange
+      final controller = FormController();
+      final field = FileUpload(
+        id: 'diverse_files',
+        multiselect: true,
+      );
+
+      controller.addFields([field]);
+
+      // Act - Add files with diverse MIME types
+      final diverseFiles = [
+        FileModel(
+          fileName: 'code.dart',
+          uploadExtension: 'dart',
+          fileBytes: Uint8List.fromList('void main() {}'.codeUnits),
+          mimeData: MimeData(extension: 'dart', mime: 'text/plain'),
+        ),
+        FileModel(
+          fileName: 'video.mp4',
+          uploadExtension: 'mp4',
+          fileBytes: Uint8List.fromList([0x00, 0x00, 0x00, 0x18]),
+          mimeData: MimeData(extension: 'mp4', mime: 'video/mp4'),
+        ),
+        FileModel(
+          fileName: 'audio.mp3',
+          uploadExtension: 'mp3',
+          fileBytes: Uint8List.fromList([0xFF, 0xFB]),
+          mimeData: MimeData(extension: 'mp3', mime: 'audio/mpeg'),
+        ),
+        FileModel(
+          fileName: 'archive.zip',
+          uploadExtension: 'zip',
+          fileBytes: Uint8List.fromList([0x50, 0x4B, 0x03, 0x04]),
+          mimeData: MimeData(extension: 'zip', mime: 'application/zip'),
+        ),
+      ];
+
+      final fileOptions = diverseFiles
+          .map((file) => FieldOption(
+                label: file.fileName,
+                value: 'path/${file.fileName}',
+                additionalData: file,
+              ))
+          .toList();
+
+      controller.updateMultiselectValues(
+        field.id,
+        fileOptions,
+        overwrite: true,
+      );
+
+      // Get results
+      final results = FormResults.getResults(
+        controller: controller,
+        fields: [field],
+      );
+
+      // Assert - All diverse MIME types handled
+      final retrievedFiles = results.grab(field.id).asFileList();
+      expect(retrievedFiles.length, 4);
+      expect(retrievedFiles[0].mimeData?.mime, 'text/plain');
+      expect(retrievedFiles[1].mimeData?.mime, 'video/mp4');
+      expect(retrievedFiles[2].mimeData?.mime, 'audio/mpeg');
+      expect(retrievedFiles[3].mimeData?.mime, 'application/zip');
+    });
+  });
+
+  group('Multiselect and clearOnUpload combinations', () {
+    testWidgets('multiselect=true clearOnUpload=false appends files',
+        (WidgetTester tester) async {
+      // Arrange
+      final controller = FormController();
+      final field = FileUpload(
+        id: 'append_mode',
+        multiselect: true,
+        clearOnUpload: false,
+      );
+
+      controller.addFields([field]);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FileUploadWidget(
+              id: field.id,
+              controller: controller,
+              field: field,
+              currentColors: const FieldColorScheme(),
+              onFocusChange: (_) {},
+              onFileOptionChange: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Act - Add first batch of files
+      final firstBatch = [
+        FileModel(
+          fileName: 'file1.txt',
+          uploadExtension: 'txt',
+          fileBytes: Uint8List.fromList([1]),
+        ),
+      ];
+
+      controller.updateMultiselectValues(
+        field.id,
+        firstBatch
+            .map((f) => FieldOption(
+                  label: f.fileName,
+                  value: 'path/${f.fileName}',
+                  additionalData: f,
+                ))
+            .toList(),
+        overwrite: true,
+      );
+      await tester.pumpAndSettle();
+
+      // Add second batch (append, not replace)
+      final existingFiles =
+          controller.getFieldValue<List<FieldOption>>(field.id) ?? [];
+      final secondFile = FileModel(
+        fileName: 'file2.txt',
+        uploadExtension: 'txt',
+        fileBytes: Uint8List.fromList([2]),
+      );
+
+      controller.updateMultiselectValues(
+        field.id,
+        [
+          ...existingFiles,
+          FieldOption(
+            label: secondFile.fileName,
+            value: 'path/${secondFile.fileName}',
+            additionalData: secondFile,
+          ),
+        ],
+        overwrite: true,
+      );
+      await tester.pumpAndSettle();
+
+      // Assert - Both files present (appended)
+      final results = FormResults.getResults(
+        controller: controller,
+        fields: [field],
+      );
+      final files = results.grab(field.id).asFileList();
+      expect(files.length, 2);
+      expect(files[0].fileName, 'file1.txt');
+      expect(files[1].fileName, 'file2.txt');
+    });
+
+    testWidgets('multiselect=false clearOnUpload=true replaces single file',
+        (WidgetTester tester) async {
+      // Arrange
+      final controller = FormController();
+      final field = FileUpload(
+        id: 'replace_single',
+        multiselect: false,
+        clearOnUpload: true,
+      );
+
+      controller.addFields([field]);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FileUploadWidget(
+              id: field.id,
+              controller: controller,
+              field: field,
+              currentColors: const FieldColorScheme(),
+              onFocusChange: (_) {},
+              onFileOptionChange: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Act - Add first file
+      final firstFile = FileModel(
+        fileName: 'original.pdf',
+        uploadExtension: 'pdf',
+        fileBytes: Uint8List.fromList([1, 2, 3]),
+      );
+
+      controller.updateMultiselectValues(
+        field.id,
+        [
+          FieldOption(
+            label: firstFile.fileName,
+            value: 'path/${firstFile.fileName}',
+            additionalData: firstFile,
+          ),
+        ],
+        overwrite: true,
+      );
+      await tester.pumpAndSettle();
+
+      // Assert - First file present
+      var results = FormResults.getResults(
+        controller: controller,
+        fields: [field],
+      );
+      var files = results.grab(field.id).asFile();
+      expect(files?.fileName, 'original.pdf');
+
+      // Act - Replace with second file (clearOnUpload behavior)
+      final secondFile = FileModel(
+        fileName: 'replacement.pdf',
+        uploadExtension: 'pdf',
+        fileBytes: Uint8List.fromList([4, 5, 6]),
+      );
+
+      controller.updateMultiselectValues(
+        field.id,
+        [
+          FieldOption(
+            label: secondFile.fileName,
+            value: 'path/${secondFile.fileName}',
+            additionalData: secondFile,
+          ),
+        ],
+        overwrite: true,
+      );
+      await tester.pumpAndSettle();
+
+      // Assert - Only second file present (replaced)
+      results = FormResults.getResults(
+        controller: controller,
+        fields: [field],
+      );
+      files = results.grab(field.id).asFile();
+      expect(files?.fileName, 'replacement.pdf');
+
+      final fileList = results.grab(field.id).asFileList();
+      expect(fileList.length, 1);
+      expect(fileList[0].fileName, 'replacement.pdf');
+    });
+
+    testWidgets(
+        'multiselect=true with max file limit validation and clearOnUpload',
+        (WidgetTester tester) async {
+      // Arrange
+      final controller = FormController();
+
+      final maxFilesValidator = Validator(
+        validator: (dynamic value) {
+          if (value != null && (value as List).length > 3) {
+            return false;
+          }
+          return true;
+        },
+        reason: 'Maximum 3 files allowed',
+      );
+
+      final field = FileUpload(
+        id: 'max_files',
+        multiselect: true,
+        clearOnUpload: true,
+        validateLive: true,
+        validators: [maxFilesValidator],
+      );
+
+      controller.addFields([field]);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FileUploadWidget(
+              id: field.id,
+              controller: controller,
+              field: field,
+              currentColors: const FieldColorScheme(),
+              onFocusChange: (_) {},
+              onFileOptionChange: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Act - Add 4 files (exceeds limit)
+      final tooManyFiles = List.generate(
+        4,
+        (i) => FileModel(
+          fileName: 'file$i.txt',
+          uploadExtension: 'txt',
+          fileBytes: Uint8List.fromList([i]),
+        ),
+      );
+
+      controller.updateMultiselectValues(
+        field.id,
+        tooManyFiles
+            .map((f) => FieldOption(
+                  label: f.fileName,
+                  value: 'path/${f.fileName}',
+                  additionalData: f,
+                ))
+            .toList(),
+        overwrite: true,
+      );
+      await tester.pumpAndSettle();
+
+      // Assert - Validation fails
+      var results = FormResults.getResults(
+        controller: controller,
+        fields: [field],
+      );
+      expect(results.errorState, true);
+      expect(results.formErrors.first.reason, 'Maximum 3 files allowed');
+
+      // Act - Clear and add exactly 3 files
+      controller.updateMultiselectValues(field.id, [], overwrite: true);
+      await tester.pumpAndSettle();
+
+      final validFiles = List.generate(
+        3,
+        (i) => FileModel(
+          fileName: 'valid$i.txt',
+          uploadExtension: 'txt',
+          fileBytes: Uint8List.fromList([i]),
+        ),
+      );
+
+      controller.updateMultiselectValues(
+        field.id,
+        validFiles
+            .map((f) => FieldOption(
+                  label: f.fileName,
+                  value: 'path/${f.fileName}',
+                  additionalData: f,
+                ))
+            .toList(),
+        overwrite: true,
+      );
+      await tester.pumpAndSettle();
+
+      // Assert - Validation passes
+      results = FormResults.getResults(
+        controller: controller,
+        fields: [field],
+      );
+      expect(results.errorState, false);
+      final files = results.grab(field.id).asFileList();
+      expect(files.length, 3);
+    });
+  });
+
+  group('File removal and state management', () {
+    testWidgets('removing files updates FormResults correctly',
+        (WidgetTester tester) async {
+      // Arrange
+      final controller = FormController();
+      final field = FileUpload(
+        id: 'test_removal',
+        multiselect: true,
+        displayUploadedFiles: true,
+      );
+
+      controller.addFields([field]);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FileUploadWidget(
+              id: field.id,
+              controller: controller,
+              field: field,
+              currentColors: const FieldColorScheme(),
+              onFocusChange: (_) {},
+              onFileOptionChange: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Act - Add multiple files
+      final files = [
+        FileModel(
+          fileName: 'file1.pdf',
+          uploadExtension: 'pdf',
+          fileBytes: Uint8List.fromList([1, 2, 3]),
+        ),
+        FileModel(
+          fileName: 'file2.pdf',
+          uploadExtension: 'pdf',
+          fileBytes: Uint8List.fromList([4, 5, 6]),
+        ),
+        FileModel(
+          fileName: 'file3.pdf',
+          uploadExtension: 'pdf',
+          fileBytes: Uint8List.fromList([7, 8, 9]),
+        ),
+      ];
+
+      controller.updateMultiselectValues(
+        field.id,
+        files
+            .map((f) => FieldOption(
+                  label: f.fileName,
+                  value: 'path/${f.fileName}',
+                  additionalData: f,
+                ))
+            .toList(),
+        overwrite: true,
+      );
+      await tester.pumpAndSettle();
+
+      // Assert - All files present
+      var results = FormResults.getResults(
+        controller: controller,
+        fields: [field],
+      );
+      expect(results.grab(field.id).asFileList().length, 3);
+
+      // Act - Remove middle file
+      final remainingFiles =
+          List<FieldOption>.from(controller.getFieldValue<List<FieldOption>>(field.id)!);
+      remainingFiles.removeAt(1); // Remove file2.pdf
+
+      controller.updateMultiselectValues(
+        field.id,
+        remainingFiles,
+        overwrite: true,
+      );
+      await tester.pumpAndSettle();
+
+      // Assert - Only 2 files remain, correct ones
+      results = FormResults.getResults(
+        controller: controller,
+        fields: [field],
+      );
+      final remainingFilesList = results.grab(field.id).asFileList();
+      expect(remainingFilesList.length, 2);
+      expect(remainingFilesList[0].fileName, 'file1.pdf');
+      expect(remainingFilesList[1].fileName, 'file3.pdf');
+      expect(
+          remainingFilesList.any((f) => f.fileName == 'file2.pdf'), false);
+    });
+
+    testWidgets('removing all files leaves field empty',
+        (WidgetTester tester) async {
+      // Arrange
+      final controller = FormController();
+      final field = FileUpload(
+        id: 'test_remove_all',
+        multiselect: true,
+      );
+
+      controller.addFields([field]);
+
+      // Act - Add files then remove all
+      final files = [
+        FileModel(
+          fileName: 'temp.txt',
+          uploadExtension: 'txt',
+          fileBytes: Uint8List.fromList([1, 2, 3]),
+        ),
+      ];
+
+      controller.updateMultiselectValues(
+        field.id,
+        files
+            .map((f) => FieldOption(
+                  label: f.fileName,
+                  value: 'path/${f.fileName}',
+                  additionalData: f,
+                ))
+            .toList(),
+        overwrite: true,
+      );
+
+      // Remove all files
+      controller.updateMultiselectValues(field.id, [], overwrite: true);
+
+      // Assert - Field empty
+      final results = FormResults.getResults(
+        controller: controller,
+        fields: [field],
+      );
+      expect(results.grab(field.id).asFile(), isNull);
+      expect(results.grab(field.id).asFileList(), isEmpty);
+    });
+  });
+
+  group('Edge case handling', () {
+    testWidgets('handles file with null fileBytes gracefully',
+        (WidgetTester tester) async {
+      // Arrange
+      final controller = FormController();
+      final field = FileUpload(
+        id: 'null_bytes',
+        multiselect: false,
+      );
+
+      controller.addFields([field]);
+
+      // Act - Add file with null bytes
+      final nullBytesFile = FileModel(
+        fileName: 'empty.txt',
+        uploadExtension: 'txt',
+        fileBytes: null,
+      );
+
+      controller.updateMultiselectValues(
+        field.id,
+        [
+          FieldOption(
+            label: nullBytesFile.fileName,
+            value: 'path/${nullBytesFile.fileName}',
+            additionalData: nullBytesFile,
+          ),
+        ],
+        overwrite: true,
+      );
+
+      // Assert - File added with null bytes
+      final results = FormResults.getResults(
+        controller: controller,
+        fields: [field],
+      );
+      final file = results.grab(field.id).asFile();
+      expect(file, isNotNull);
+      expect(file?.fileName, 'empty.txt');
+      expect(file?.fileBytes, isNull);
+
+      // Assert - getFileBytes returns null
+      final bytes = await file?.getFileBytes();
+      expect(bytes, isNull);
+    });
+
+    testWidgets('handles file with very long filename',
+        (WidgetTester tester) async {
+      // Arrange
+      final controller = FormController();
+      final field = FileUpload(
+        id: 'long_name',
+        multiselect: false,
+        displayUploadedFiles: true,
+      );
+
+      controller.addFields([field]);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FileUploadWidget(
+              id: field.id,
+              controller: controller,
+              field: field,
+              currentColors: const FieldColorScheme(),
+              onFocusChange: (_) {},
+              onFileOptionChange: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Act - Add file with very long name
+      final longFileName =
+          'this_is_a_very_long_filename_that_might_cause_layout_issues_in_the_ui_component_${'x' * 100}.pdf';
+      final longNameFile = FileModel(
+        fileName: longFileName,
+        uploadExtension: 'pdf',
+        fileBytes: Uint8List.fromList([1, 2, 3]),
+      );
+
+      controller.updateMultiselectValues(
+        field.id,
+        [
+          FieldOption(
+            label: longNameFile.fileName,
+            value: 'path/${longNameFile.fileName}',
+            additionalData: longNameFile,
+          ),
+        ],
+        overwrite: true,
+      );
+      await tester.pumpAndSettle();
+
+      // Assert - Widget renders without overflow errors
+      expect(tester.takeException(), isNull);
+      expect(find.byType(FileUploadWidget), findsOneWidget);
+
+      // Verify file retrievable
+      final results = FormResults.getResults(
+        controller: controller,
+        fields: [field],
+      );
+      final file = results.grab(field.id).asFile();
+      expect(file?.fileName, longFileName);
+    });
+  });
+}

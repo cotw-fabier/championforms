@@ -8,13 +8,30 @@ import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/mime_filetypes.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_external/helper_widgets/fading_opacity.dart';
+import 'package:championforms/widgets_internal/platform/file_drag_target.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:super_clipboard/super_clipboard.dart';
-import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 import 'dart:typed_data';
 
+/// Widget for file upload functionality with drag-and-drop and file picker support.
+///
+/// Provides a complete file upload interface with:
+/// - Drag-and-drop from native file explorers (web and desktop)
+/// - File picker dialog for manual selection
+/// - File preview with type-based icons
+/// - File removal functionality
+/// - Visual feedback during drag operations
+///
+/// ## Memory Considerations
+///
+/// **IMPORTANT:** Files are loaded entirely into memory. For large file handling:
+/// - Recommended maximum file size: 50MB
+/// - Consider implementing `maxFileSize` validation in production
+/// - Monitor memory usage when allowing large files
+/// - Files > 50MB may cause OutOfMemory errors
+///
+/// See [FileModel] documentation for detailed memory recommendations.
 class FileUploadWidget extends StatefulWidget {
   final String id;
   final FormController controller;
@@ -39,7 +56,7 @@ class FileUploadWidget extends StatefulWidget {
 
 class _FileUploadWidgetState extends State<FileUploadWidget> {
   FocusNode? _focusNode;
-  bool _hovering = false;
+  bool _isDragHovering = false;
 
   List<FieldOption> _files = [];
 
@@ -100,6 +117,28 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
     }
   }
 
+  void _showFileSizeError(String fileName, int fileSize, int maxFileSize) {
+    // Format file sizes in a human-readable way
+    String formatBytes(int bytes) {
+      if (bytes < 1024) return '$bytes B';
+      if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'File "$fileName" is too large (${formatBytes(fileSize)}). '
+          'Maximum allowed size is ${formatBytes(maxFileSize)}.',
+        ),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
   Future<void> _pickFiles() async {
     // If multiselect is true, allow multiple. Otherwise single
     FilePickerResult? result;
@@ -148,103 +187,93 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
     }
   }
 
-  Future<void> _handleDroppedFile(DataReader reader, {bool isFirstFile = false}) async {
-    // Pick a default name. We'll replace this in a moment
-    String name = "untitled";
+  Future<void> _handleDroppedFile(XFile droppedFile, {bool isFirstFile = false}) async {
+    try {
+      final name = droppedFile.name;
 
-    // We are going to skip streams for now
-    // This seems like a good idea for speed and reliability
-    // but for the time being we will only load the entire file into memory.
-    // This might cause lag, so we should try to get a stream working in the future.
-    // Stream<Uint8List>? stream;
-    // // This might be from Desktop or other app
-    // reader.getFile(null, (file) {
-    //   stream = file.getStream();
-    // });
-    final fileReader = reader;
-
-    name = await fileReader.getSuggestedName() ?? "untitled";
-
-    if ((widget.field as FileUpload).allowedExtensions != null) {
-      bool foundExtension = false;
-      for (final ext
-          in (widget.field as FileUpload).allowedExtensions!) {
-        if (name.toLowerCase().endsWith('.' + ext.toLowerCase())) {
-          foundExtension = true;
-          break;
+      // Validate file size if maxFileSize is specified
+      final maxFileSize = (widget.field as FileUpload).maxFileSize;
+      if (maxFileSize != null) {
+        final fileSize = await droppedFile.length();
+        if (fileSize > maxFileSize) {
+          _showFileSizeError(name, fileSize, maxFileSize);
+          return;
         }
       }
-      if (!foundExtension) {
-        return;
-      }
-    }
 
-    // Clear existing files if clearOnUpload is true and this is the first dropped file
-    if ((widget.field as FileUpload).clearOnUpload && isFirstFile) {
-      setState(() {
-        _files.clear();
-      });
-      widget.controller.updateMultiselectValues(
-        widget.field.id,
-        [],
-        overwrite: true,
-        noOnChange: true,
-      );
-    }
-
-    fileReader.getFile(null, (file) async {
-      try {
-        final Uint8List fileBytes = await file.readAll();
-
-        final path = "$name-drag"; // We can store something as path
-
-        // Create filemodel for storage
-        FileModel fileData = FileModel(
-          fileName: name,
-          //fileStream: stream,
-          fileBytes: fileBytes,
-          fileReader: reader,
-          uploadExtension: name.split('.').lastOrNull ?? '',
-        );
-
-        fileData = fileData.copyWith(mimeData: await fileData.readMimeData());
-
-        final option = FieldOption(
-          label: name,
-          value: path,
-          additionalData: fileData,
-        );
-
+      // Clear existing files if clearOnUpload is true and this is the first dropped file
+      if ((widget.field as FileUpload).clearOnUpload && isFirstFile) {
         setState(() {
-          // Only the last option is kept if multiselect is turned off.
-          if (!widget.field.multiselect) {
-            _files.clear();
-          }
-          _files.add(option);
-
-          widget.controller.updateMultiselectValues(
-            widget.field.id,
-            _files,
-            multiselect: widget.field.multiselect,
-            overwrite: true,
-            noOnChange: true,
-          );
-          // Report back that a file has been uploaded
-          widget.onFileOptionChange(option);
-
-          // if validate live then run validation
-          _validateLive();
+          _files.clear();
         });
-      } catch (e) {
-        // Couldn't read the file for some reason
-        debugPrint("Error Reading File Data: $e");
+        widget.controller.updateMultiselectValues(
+          widget.field.id,
+          [],
+          overwrite: true,
+          noOnChange: true,
+        );
       }
-    });
+
+      // Read file bytes
+      final Uint8List fileBytes = await droppedFile.readAsBytes();
+
+      final path = droppedFile.path;
+
+      // Create filemodel for storage
+      FileModel fileData = FileModel(
+        fileName: name,
+        fileBytes: fileBytes,
+        uploadExtension: name.split('.').lastOrNull ?? '',
+      );
+
+      fileData = fileData.copyWith(mimeData: await fileData.readMimeData());
+
+      final option = FieldOption(
+        label: name,
+        value: path,
+        additionalData: fileData,
+      );
+
+      setState(() {
+        // Only the last option is kept if multiselect is turned off.
+        if (!widget.field.multiselect) {
+          _files.clear();
+        }
+        _files.add(option);
+
+        widget.controller.updateMultiselectValues(
+          widget.field.id,
+          _files,
+          multiselect: widget.field.multiselect,
+          overwrite: true,
+          noOnChange: true,
+        );
+        // Report back that a file has been uploaded
+        widget.onFileOptionChange(option);
+
+        // if validate live then run validation
+        _validateLive();
+      });
+    } catch (e) {
+      // Couldn't read the file for some reason - fail silently
+      // In production, consider logging to error reporting service
+    }
   }
 
   Future<void> _addFile(XFile xfile) async {
     final name = xfile.name;
     final path = xfile.path;
+
+    // Validate file size if maxFileSize is specified
+    final maxFileSize = (widget.field as FileUpload).maxFileSize;
+    if (maxFileSize != null) {
+      final fileSize = await xfile.length();
+      if (fileSize > maxFileSize) {
+        _showFileSizeError(name, fileSize, maxFileSize);
+        return;
+      }
+    }
+
     final bytes = await xfile.readAsBytes();
 
     // Create filemodel for storage
@@ -329,41 +358,30 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
     // We'll show a container with drag-n-drop overlay, plus
     // a button to pick files. Then the list of files displayed as icons.
 
-    return DropRegion(
-      formats: Formats.standardFormats,
-      onDropOver: (event) {
-        // we just say copy for everything
-        return DropOperation.copy;
-      },
-      onDropEnter: (event) {
-        setState(() {
-          _hovering = true;
-        });
-      },
-      onDropLeave: (event) {
-        setState(() {
-          _hovering = false;
-        });
-      },
-      onPerformDrop: (event) async {
-        if (!widget.field.multiselect) {
-          final reader = event.session.items.firstOrNull?.dataReader;
-          if (reader != null) {
-            await _handleDroppedFile(reader, isFirstFile: true);
-            return;
-          }
-        } else {
-          // If Multiselect is true then lets do all the files
-          bool isFirst = true;
-          for (final item in event.session.items) {
-            final reader = item.dataReader!;
-            // We'll handle images or files
-
-            // We'll attempt to get a "file" from the item
-            await _handleDroppedFile(reader, isFirstFile: isFirst);
-            isFirst = false;
-          }
+    return FileDragTarget(
+      allowedExtensions: (widget.field as FileUpload).allowedExtensions,
+      multiselect: widget.field.multiselect,
+      onDrop: (files) async {
+        // Handle dropped files
+        bool isFirst = true;
+        for (final file in files) {
+          await _handleDroppedFile(file, isFirstFile: isFirst);
+          isFirst = false;
         }
+        // Reset hover state after drop
+        setState(() {
+          _isDragHovering = false;
+        });
+      },
+      onHover: () {
+        setState(() {
+          _isDragHovering = true;
+        });
+      },
+      onLeave: () {
+        setState(() {
+          _isDragHovering = false;
+        });
       },
       child: Focus(
         focusNode: _focusNode,
@@ -373,7 +391,7 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
           decoration: BoxDecoration(
             color: (widget.currentColors.textBackgroundColor ??
                     widget.currentColors.backgroundColor)
-                .withValues(alpha: _hovering ? 0.8 : 1.0),
+                .withValues(alpha: _isDragHovering ? 0.8 : 1.0),
             border: Border.all(
               color: widget.currentColors.borderColor,
               width: widget.currentColors.borderSize.toDouble(),
@@ -497,7 +515,7 @@ class DropZoneWidget extends StatelessWidget {
           ),
           borderRadius: currentColors.borderRadius,
         ),
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

@@ -1,10 +1,9 @@
-import 'package:super_drag_and_drop/super_drag_and_drop.dart';
+// File formats for plain text support
+// Note: This file previously used super_drag_and_drop formats
+// These will be replaced with native Flutter drag-drop formats in subsequent phases
 
-List<DataFormat<Object>> plainTextSupportedFormats = [
-  //
-  // File formats
-  //
-  Formats.plainTextFile,
-  Formats.csv,
-  Formats.json,
+List<String> plainTextSupportedFormats = [
+  'text/plain',
+  'text/csv',
+  'application/json',
 ];

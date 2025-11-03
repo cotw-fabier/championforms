@@ -1,0 +1,27 @@
+task_assignments:
+  - task_group: "Task Group 1: Remove Unmaintained Dependencies"
+    assigned_subagent: "ui-designer"
+
+  - task_group: "Task Group 2: Simplify FileModel"
+    assigned_subagent: "ui-designer"
+
+  - task_group: "Task Group 3: Create Platform Abstraction Layer"
+    assigned_subagent: "ui-designer"
+
+  - task_group: "Task Group 4: Implement Web Drag-and-Drop"
+    assigned_subagent: "ui-designer"
+
+  - task_group: "Task Group 5: Implement Desktop Drag-and-Drop"
+    assigned_subagent: "ui-designer"
+
+  - task_group: "Task Group 6: Refactor FileUploadWidget"
+    assigned_subagent: "ui-designer"
+
+  - task_group: "Task Group 7: Verify Developer-Facing APIs"
+    assigned_subagent: "ui-designer"
+
+  - task_group: "Task Group 8: Comprehensive Testing Review"
+    assigned_subagent: "testing-engineer"
+
+  - task_group: "Task Group 9: Final Review and Documentation"
+    assigned_subagent: "ui-designer"
