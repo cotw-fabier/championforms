@@ -56,14 +56,14 @@ export 'package:championforms/models/field_types/fileupload.dart';
 export 'package:championforms/models/field_types/convienence_classes/checkboxselect.dart';
 export 'package:championforms/models/field_types/convienence_classes/chipselect.dart';
 
-// Export Multiselect Option
+// Export FieldOption (formerly MultiselectOption)
 export 'package:championforms/models/multiselect_option.dart';
 
 // Export Layout Classes
 export 'package:championforms/models/field_types/row.dart';
 export 'package:championforms/models/field_types/column.dart';
 
-// Export Validators
+// Export Validator (formerly FormBuilderValidator) and Validators (formerly DefaultValidators)
 export 'package:championforms/models/validatorclass.dart';
 export 'package:championforms/functions/defaultvalidators/defaultvalidators.dart';
 
@@ -73,7 +73,7 @@ export 'package:championforms/models/formresults.dart';
 // Export Functions to Get Errors
 export 'package:championforms/functions/geterrors.dart';
 
-// Export Autocomplete Classes
+// Export Autocomplete Classes (includes CompleteOption, formerly AutoCompleteOption)
 export 'package:championforms/models/autocomplete/autocomplete_class.dart';
 export 'package:championforms/models/autocomplete/autocomplete_option_class.dart';
 export 'package:championforms/models/autocomplete/autocomplete_type.dart';

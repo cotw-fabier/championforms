@@ -13,7 +13,7 @@ Widget fileUploadFieldBuilder(
   OptionSelect field,
   FieldColorScheme currentColors,
   Function(bool focused) updateFocus,
-  Function(MultiselectOption? selectedOption) updateSelectedOption,
+  Function(FieldOption? selectedOption) updateSelectedOption,
 ) {
   return FileUploadWidget(
     id: field.id,
@@ -21,7 +21,7 @@ Widget fileUploadFieldBuilder(
     field: field,
     currentColors: currentColors,
     onFocusChange: (bool focus) => updateFocus(focus),
-    onFileOptionChange: (MultiselectOption? option) {
+    onFileOptionChange: (FieldOption? option) {
       // Commented out because we don't know what file options we have previously to uploading files.
       // So this has to be handled down at the widget level.
       // updateSelectedOption(option);

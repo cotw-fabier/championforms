@@ -134,7 +134,7 @@ class FormController extends ChangeNotifier {
   /// Internal storage for field values indexed by field ID.
   ///
   /// Stores the current value for each field using the field's unique ID as
-  /// the key. Values can be of any type (`String`, `List&lt;MultiselectOption&gt;`,
+  /// the key. Values can be of any type (`String`, `List&lt;FieldOption&gt;`,
   /// etc.) depending on the field type.
   ///
   /// Example: `{'name': 'John Doe', 'email': 'john@example.com'}`
@@ -405,7 +405,7 @@ class FormController extends ChangeNotifier {
   /// final name = controller.getFieldValue<String>('name');
   ///
   /// // Get multiselect value
-  /// final options = controller.getFieldValue<List<MultiselectOption>>('skills');
+  /// final options = controller.getFieldValue<List<FieldOption>>('skills');
   ///
   /// // Check if value exists
   /// final email = controller.getFieldValue<String>('email');
@@ -876,7 +876,7 @@ class FormController extends ChangeNotifier {
 
   /// Retrieves the currently selected options for a multiselect field.
   ///
-  /// Returns the list of [MultiselectOption] objects currently selected for
+  /// Returns the list of [FieldOption] objects currently selected for
   /// the specified field. Returns null if the field hasn't been interacted
   /// with or has no value set. Returns an empty list if the field is set but
   /// has no options selected.
@@ -900,8 +900,8 @@ class FormController extends ChangeNotifier {
   /// See also:
   /// - [updateMultiselectValues] to modify selections
   /// - [toggleMultiSelectValue] for convenient toggle operations
-  List<MultiselectOption>? getMultiselectValue(String fieldId) {
-    return getFieldValue<List<MultiselectOption>>(fieldId);
+  List<FieldOption>? getMultiselectValue(String fieldId) {
+    return getFieldValue<List<FieldOption>>(fieldId);
   }
 
   /// Updates the selected value(s) for a multiselect or option field.
@@ -952,7 +952,7 @@ class FormController extends ChangeNotifier {
   /// - [removeMultiSelectOptions] to clear all selections
   void updateMultiselectValues(
     String id,
-    List<MultiselectOption> newValue, {
+    List<FieldOption> newValue, {
     bool? multiselect,
     bool overwrite = false,
     bool noNotify = false,
@@ -975,13 +975,13 @@ class FormController extends ChangeNotifier {
 
     final isMultiselect = multiselect ?? field.multiselect;
 
-    List<MultiselectOption> currentValues = List<MultiselectOption>.from(
-        getFieldValue<List<MultiselectOption>>(id) ?? []);
-    List<MultiselectOption> finalValue;
+    List<FieldOption> currentValues = List<FieldOption>.from(
+        getFieldValue<List<FieldOption>>(id) ?? []);
+    List<FieldOption> finalValue;
 
     if (overwrite) {
       if (isMultiselect) {
-        finalValue = List<MultiselectOption>.from(newValue);
+        finalValue = List<FieldOption>.from(newValue);
       } else {
         finalValue = newValue.isNotEmpty ? [newValue.first] : [];
       }
@@ -989,7 +989,7 @@ class FormController extends ChangeNotifier {
       final Set<String> newValueValues = newValue.map((o) => o.value).toSet();
       final Set<String> currentValuesSet =
           currentValues.map((o) => o.value).toSet();
-      List<MultiselectOption> mergedValues = [];
+      List<FieldOption> mergedValues = [];
 
       if (isMultiselect) {
         mergedValues.addAll(currentValues
@@ -1011,7 +1011,7 @@ class FormController extends ChangeNotifier {
       finalValue = mergedValues;
     }
 
-    updateFieldValue<List<MultiselectOption>>(id, finalValue,
+    updateFieldValue<List<FieldOption>>(id, finalValue,
         noNotify: noNotify);
   }
 
@@ -1053,7 +1053,7 @@ class FormController extends ChangeNotifier {
   /// );
   /// ```
   ///
-  /// **Note:** Uses the `value` property of [MultiselectOption], not the label.
+  /// **Note:** Uses the `value` property of [FieldOption], not the label.
   ///
   /// See also:
   /// - [updateMultiselectValues] for more control over selections
@@ -1079,8 +1079,8 @@ class FormController extends ChangeNotifier {
       throw TypeError();
     }
 
-    final List<MultiselectOption> currentSelectedOptions =
-        getFieldValue<List<MultiselectOption>>(fieldId) ?? [];
+    final List<FieldOption> currentSelectedOptions =
+        getFieldValue<List<FieldOption>>(fieldId) ?? [];
 
     final Set<String> newSelectedValues =
         currentSelectedOptions.map((o) => o.value).toSet();
@@ -1092,12 +1092,12 @@ class FormController extends ChangeNotifier {
       newSelectedValues.remove(valueToDeselect);
     }
 
-    final List<MultiselectOption> finalSelectedOptions =
+    final List<FieldOption> finalSelectedOptions =
         (fieldDef.options ?? [])
             .where((option) => newSelectedValues.contains(option.value))
             .toList();
 
-    updateFieldValue<List<MultiselectOption>>(
+    updateFieldValue<List<FieldOption>>(
       fieldId,
       finalSelectedOptions,
       noNotify: noNotify,

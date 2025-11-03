@@ -14,10 +14,10 @@ void main() {
         'clearOnUpload with validateLive triggers validation on new files',
         (WidgetTester tester) async {
       // Arrange
-      final controller = ChampionFormController();
+      final controller = FormController();
 
       // Validator that requires at least one file
-      final fileValidator = FormBuilderValidator(
+      final fileValidator = Validator(
         validator: (dynamic value) {
           if (value == null || (value as List).isEmpty) {
             return false;
@@ -27,7 +27,7 @@ void main() {
         reason: 'At least one file is required',
       );
 
-      final field = ChampionFileUpload(
+      final field = FileUpload(
         id: 'test_upload',
         clearOnUpload: true,
         multiselect: true,
@@ -38,7 +38,7 @@ void main() {
       controller.addFields([field]);
 
       // Add initial file
-      final initialFile = MultiselectOption(
+      final initialFile = FieldOption(
         label: 'initial.pdf',
         value: 'path/initial.pdf',
         additionalData: FileModel(
@@ -95,7 +95,7 @@ void main() {
       expect(results.formErrors.first.reason, 'At least one file is required');
 
       // Act - Add new file
-      final newFile = MultiselectOption(
+      final newFile = FieldOption(
         label: 'new.pdf',
         value: 'path/new.pdf',
         additionalData: FileModel(
@@ -123,16 +123,16 @@ void main() {
         'clearOnUpload with custom file type validator clears errors correctly',
         (WidgetTester tester) async {
       // Arrange
-      final controller = ChampionFormController();
+      final controller = FormController();
 
       // Validator that checks file type
-      final pdfOnlyValidator = FormBuilderValidator(
+      final pdfOnlyValidator = Validator(
         validator: (dynamic value) {
           if (value == null || (value as List).isEmpty) {
             return true; // Allow empty
           }
 
-          final files = value as List<MultiselectOption>;
+          final files = value as List<FieldOption>;
           for (final file in files) {
             final fileModel = file.additionalData as FileModel;
             if (fileModel.uploadExtension?.toLowerCase() != 'pdf') {
@@ -144,7 +144,7 @@ void main() {
         reason: 'Only PDF files are allowed',
       );
 
-      final field = ChampionFileUpload(
+      final field = FileUpload(
         id: 'test_upload',
         clearOnUpload: true,
         multiselect: true,
@@ -155,7 +155,7 @@ void main() {
       controller.addFields([field]);
 
       // Add initial invalid file (non-PDF)
-      final invalidFile = MultiselectOption(
+      final invalidFile = FieldOption(
         label: 'document.txt',
         value: 'path/document.txt',
         additionalData: FileModel(
@@ -203,7 +203,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final validFile = MultiselectOption(
+      final validFile = FieldOption(
         label: 'document.pdf',
         value: 'path/document.pdf',
         additionalData: FileModel(
@@ -232,8 +232,8 @@ void main() {
         'Sequential uploads with clearOnUpload = true replace files each time',
         (WidgetTester tester) async {
       // Arrange
-      final controller = ChampionFormController();
-      final field = ChampionFileUpload(
+      final controller = FormController();
+      final field = FileUpload(
         id: 'test_upload',
         clearOnUpload: true,
         multiselect: true,
@@ -260,7 +260,7 @@ void main() {
 
       // Act - First upload
       final upload1Files = [
-        MultiselectOption(
+        FieldOption(
           label: 'upload1_file1.txt',
           value: 'path/upload1_file1.txt',
           additionalData: FileModel(
@@ -269,7 +269,7 @@ void main() {
             fileBytes: Uint8List.fromList([1]),
           ),
         ),
-        MultiselectOption(
+        FieldOption(
           label: 'upload1_file2.txt',
           value: 'path/upload1_file2.txt',
           additionalData: FileModel(
@@ -288,7 +288,7 @@ void main() {
 
       // Assert - First upload
       var currentFiles =
-          controller.getFieldValue<List<MultiselectOption>>(field.id);
+          controller.getFieldValue<List<FieldOption>>(field.id);
       expect(currentFiles?.length, 2);
       expect(currentFiles?.map((f) => f.label).toList(),
           ['upload1_file1.txt', 'upload1_file2.txt']);
@@ -298,7 +298,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final upload2Files = [
-        MultiselectOption(
+        FieldOption(
           label: 'upload2_file1.txt',
           value: 'path/upload2_file1.txt',
           additionalData: FileModel(
@@ -316,7 +316,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert - Second upload replaced first
-      currentFiles = controller.getFieldValue<List<MultiselectOption>>(field.id);
+      currentFiles = controller.getFieldValue<List<FieldOption>>(field.id);
       expect(currentFiles?.length, 1);
       expect(currentFiles?.first.label, 'upload2_file1.txt');
 
@@ -325,7 +325,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final upload3Files = [
-        MultiselectOption(
+        FieldOption(
           label: 'upload3_file1.txt',
           value: 'path/upload3_file1.txt',
           additionalData: FileModel(
@@ -334,7 +334,7 @@ void main() {
             fileBytes: Uint8List.fromList([4]),
           ),
         ),
-        MultiselectOption(
+        FieldOption(
           label: 'upload3_file2.txt',
           value: 'path/upload3_file2.txt',
           additionalData: FileModel(
@@ -343,7 +343,7 @@ void main() {
             fileBytes: Uint8List.fromList([5]),
           ),
         ),
-        MultiselectOption(
+        FieldOption(
           label: 'upload3_file3.txt',
           value: 'path/upload3_file3.txt',
           additionalData: FileModel(
@@ -361,7 +361,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert - Third upload replaced second
-      currentFiles = controller.getFieldValue<List<MultiselectOption>>(field.id);
+      currentFiles = controller.getFieldValue<List<FieldOption>>(field.id);
       expect(currentFiles?.length, 3);
       expect(
           currentFiles?.map((f) => f.label).toList(),
@@ -376,10 +376,10 @@ void main() {
         'clearOnUpload with multiple validators clears all errors',
         (WidgetTester tester) async {
       // Arrange
-      final controller = ChampionFormController();
+      final controller = FormController();
 
       // Multiple validators
-      final minFilesValidator = FormBuilderValidator(
+      final minFilesValidator = Validator(
         validator: (dynamic value) {
           if (value == null || (value as List).length < 2) {
             return false;
@@ -389,7 +389,7 @@ void main() {
         reason: 'At least 2 files required',
       );
 
-      final maxFilesValidator = FormBuilderValidator(
+      final maxFilesValidator = Validator(
         validator: (dynamic value) {
           if (value != null && (value as List).length > 5) {
             return false;
@@ -399,7 +399,7 @@ void main() {
         reason: 'Maximum 5 files allowed',
       );
 
-      final field = ChampionFileUpload(
+      final field = FileUpload(
         id: 'test_upload',
         clearOnUpload: true,
         multiselect: true,
@@ -428,7 +428,7 @@ void main() {
 
       // Act - Add only 1 file (violates minFilesValidator)
       final singleFile = [
-        MultiselectOption(
+        FieldOption(
           label: 'single.txt',
           value: 'path/single.txt',
           additionalData: FileModel(
@@ -458,7 +458,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final validFiles = [
-        MultiselectOption(
+        FieldOption(
           label: 'file1.txt',
           value: 'path/file1.txt',
           additionalData: FileModel(
@@ -467,7 +467,7 @@ void main() {
             fileBytes: Uint8List.fromList([1]),
           ),
         ),
-        MultiselectOption(
+        FieldOption(
           label: 'file2.txt',
           value: 'path/file2.txt',
           additionalData: FileModel(
@@ -476,7 +476,7 @@ void main() {
             fileBytes: Uint8List.fromList([2]),
           ),
         ),
-        MultiselectOption(
+        FieldOption(
           label: 'file3.txt',
           value: 'path/file3.txt',
           additionalData: FileModel(
@@ -506,12 +506,12 @@ void main() {
         'clearOnUpload clears previous validation errors with new upload',
         (WidgetTester tester) async {
       // Arrange
-      final controller = ChampionFormController();
+      final controller = FormController();
 
-      final sizeValidator = FormBuilderValidator(
+      final sizeValidator = Validator(
         validator: (dynamic value) {
           if (value != null) {
-            final files = value as List<MultiselectOption>;
+            final files = value as List<FieldOption>;
             for (final file in files) {
               final fileModel = file.additionalData as FileModel;
               // Simulating size check - files with > 100 bytes fail
@@ -525,7 +525,7 @@ void main() {
         reason: 'File size too large',
       );
 
-      final field = ChampionFileUpload(
+      final field = FileUpload(
         id: 'test_upload',
         clearOnUpload: true,
         multiselect: true,
@@ -553,7 +553,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Act - Add large file (fails validation)
-      final largeFile = MultiselectOption(
+      final largeFile = FieldOption(
         label: 'large.txt',
         value: 'path/large.txt',
         additionalData: FileModel(
@@ -581,7 +581,7 @@ void main() {
       controller.updateMultiselectValues(field.id, [], overwrite: true);
       await tester.pumpAndSettle();
 
-      final smallFile = MultiselectOption(
+      final smallFile = FieldOption(
         label: 'small.txt',
         value: 'path/small.txt',
         additionalData: FileModel(
@@ -607,7 +607,7 @@ void main() {
 
       // Verify only small file present
       final currentFiles =
-          controller.getFieldValue<List<MultiselectOption>>(field.id);
+          controller.getFieldValue<List<FieldOption>>(field.id);
       expect(currentFiles?.length, 1);
       expect(currentFiles?.first.label, 'small.txt');
     });
@@ -616,9 +616,9 @@ void main() {
         'clearOnUpload = true with validateLive and displayUploadedFiles updates UI correctly',
         (WidgetTester tester) async {
       // Arrange
-      final controller = ChampionFormController();
+      final controller = FormController();
 
-      final fileRequiredValidator = FormBuilderValidator(
+      final fileRequiredValidator = Validator(
         validator: (dynamic value) {
           if (value == null || (value as List).isEmpty) {
             return false;
@@ -628,7 +628,7 @@ void main() {
         reason: 'File is required',
       );
 
-      final field = ChampionFileUpload(
+      final field = FileUpload(
         id: 'test_upload',
         clearOnUpload: true,
         multiselect: true,
@@ -657,7 +657,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Act - Add first file
-      final file1 = MultiselectOption(
+      final file1 = FieldOption(
         label: 'document1.pdf',
         value: 'path/document1.pdf',
         additionalData: FileModel(
@@ -680,7 +680,7 @@ void main() {
       controller.updateMultiselectValues(field.id, [], overwrite: true);
       await tester.pumpAndSettle();
 
-      final file2 = MultiselectOption(
+      final file2 = FieldOption(
         label: 'document2.pdf',
         value: 'path/document2.pdf',
         additionalData: FileModel(

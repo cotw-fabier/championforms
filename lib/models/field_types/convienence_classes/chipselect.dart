@@ -14,7 +14,7 @@ class ChipSelect extends OptionSelect {
     OptionSelect field,
     FieldColorScheme currentColors,
     Function(bool focused) updateFocus,
-    Function(MultiselectOption? selectedOption) updateSelectedOption,
+    Function(FieldOption? selectedOption) updateSelectedOption,
   ) fieldBuilder;
   ChipSelect({
     required super.id,

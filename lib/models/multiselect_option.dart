@@ -1,4 +1,4 @@
-class MultiselectOption {
+class FieldOption {
   // Displayed text in dropdown, etc
   final String label;
   // Anything you'd like to pass through with selected objects. You will be able to access this in the Form Results if you request "additionalData".
@@ -8,7 +8,7 @@ class MultiselectOption {
   // The value of the selection. Must be able to evaluate to a string.
   final String value;
 
-  MultiselectOption({
+  FieldOption({
     required this.value,
     String? label,
     this.additionalData,

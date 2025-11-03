@@ -20,7 +20,7 @@ import 'package:flutter/services.dart';
 ///   child: TextField(controller: myController),
 ///   autoComplete: AutoCompleteBuilder(
 ///     type: AutoCompleteType.dropdown,
-///     initialOptions: [AutoCompleteOption(value: 'Option 1')],
+///     initialOptions: [CompleteOption(value: 'Option 1')],
 ///   ),
 ///   focusNode: myFocusNode,
 ///   textEditingController: myController,
@@ -56,7 +56,7 @@ class AutocompleteWrapper extends StatefulWidget {
   ///
   /// If provided, this callback overrides the default behavior of updating
   /// the field value. Use this for custom selection handling.
-  final Function(AutoCompleteOption)? onOptionSelected;
+  final Function(CompleteOption)? onOptionSelected;
 
   /// Text editing controller for TextField integration.
   ///
@@ -91,7 +91,7 @@ class _AutocompleteWrapperState
   OverlayEntry? _overlayEntry;
 
   /// List of autocomplete options to display in the overlay.
-  List<AutoCompleteOption> _autoCompleteOptions = [];
+  List<CompleteOption> _autoCompleteOptions = [];
 
   /// Focus nodes for each autocomplete option (for keyboard navigation).
   List<FocusNode> _autoCompleteItemFocusNodes = [];
@@ -562,7 +562,7 @@ class _AutocompleteWrapperState
   /// If [onOptionSelected] is provided, it delegates to that callback.
   /// Otherwise, updates the controller or notifier with the selected value,
   /// calls the option's callback if present, and removes the overlay.
-  void _optionSelectedCallback(AutoCompleteOption option) {
+  void _optionSelectedCallback(CompleteOption option) {
     // If custom callback provided, use it and return
     if (widget.onOptionSelected != null) {
       widget.onOptionSelected!(option);

@@ -163,10 +163,10 @@ class FieldResultAccessor {
     }
   }
 
-  /// Get the value as a List<MultiselectOption>.
+  /// Get the value as a List<FieldOption>.
   /// This method specifically handles OptionSelect fields.
   /// It doesn't use a generic converter but checks the value type directly.
-  List<MultiselectOption> asMultiselectList() {
+  List<FieldOption> asMultiselectList() {
     // Check definition type for early exit and clarity.
     if (_definition is! OptionSelect) {
       // Log if called on an incompatible field type.
@@ -178,16 +178,16 @@ class FieldResultAccessor {
     final valueToConsider = _getValueForConversion(); // Get value or default
 
     if (valueToConsider is List) {
-      // If it's a list, filter its elements to ensure they are MultiselectOption.
+      // If it's a list, filter its elements to ensure they are FieldOption.
       // This handles cases where the list might contain other types (though unlikely if well-managed).
-      final List<MultiselectOption> options = valueToConsider
-          .whereType<MultiselectOption>() // Safely filters and casts
+      final List<FieldOption> options = valueToConsider
+          .whereType<FieldOption>() // Safely filters and casts
           .toList();
 
-      // Optional: Log a warning if the original list contained non-MultiselectOption items.
+      // Optional: Log a warning if the original list contained non-FieldOption items.
       if (options.length != valueToConsider.length) {
         debugPrint(
-            "Warning for field '$_id': asMultiselectList found items that were not MultiselectOption.");
+            "Warning for field '$_id': asMultiselectList found items that were not FieldOption.");
       }
       return options;
     } else if (valueToConsider == null) {
@@ -201,10 +201,10 @@ class FieldResultAccessor {
     }
   }
 
-  /// Get a single MultiselectOption from the list by its value (ID).
-  MultiselectOption? asMultiselect(String optionValue) {
+  /// Get a single FieldOption from the list by its value (ID).
+  FieldOption? asMultiselect(String optionValue) {
     // Reuse the corrected asMultiselectList logic.
-    final List<MultiselectOption> options = asMultiselectList();
+    final List<FieldOption> options = asMultiselectList();
     if (options.isEmpty) {
       return null; // No options to search within.
     }
@@ -314,9 +314,9 @@ class FieldResultAccessor {
 
 class FileResultData {
   final String name; // e.g. file name
-  final String path; // e.g. full path (value from MultiselectOption)
+  final String path; // e.g. full path (value from FieldOption)
   final FileModel?
-      fileDetails; // raw file data from MultiselectOption.additionalData
+      fileDetails; // raw file data from FieldOption.additionalData
   const FileResultData({
     required this.name,
     required this.path,
@@ -380,8 +380,8 @@ class FormResults {
       } else if (rawValue is bool) {
         _validateField<bool>(
             field as Field, rawValue, controller, formErrors);
-      } else if (rawValue is List<MultiselectOption>) {
-        _validateField<List<MultiselectOption>>(
+      } else if (rawValue is List<FieldOption>) {
+        _validateField<List<FieldOption>>(
             field as Field, rawValue, controller, formErrors);
       } else {
         // Fallback to the safe validation method

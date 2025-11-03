@@ -21,7 +21,7 @@ class FileUploadWidget extends StatefulWidget {
   final OptionSelect field;
   final FieldColorScheme currentColors;
   final ValueChanged<bool> onFocusChange;
-  final Function(MultiselectOption? file) onFileOptionChange;
+  final Function(FieldOption? file) onFileOptionChange;
 
   const FileUploadWidget({
     super.key,
@@ -41,7 +41,7 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
   FocusNode? _focusNode;
   bool _hovering = false;
 
-  List<MultiselectOption> _files = [];
+  List<FieldOption> _files = [];
 
   @override
   void initState() {
@@ -53,9 +53,9 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
 
     // Initialize current files from controller (check if field exists first)
     final existing = widget.controller.hasField(widget.field.id)
-        ? widget.controller.getFieldValue<List<MultiselectOption>>(widget.field.id) ?? []
+        ? widget.controller.getFieldValue<List<FieldOption>>(widget.field.id) ?? []
         : [];
-    _files = List<MultiselectOption>.from(existing);
+    _files = List<FieldOption>.from(existing);
 
     widget.controller.addListener(_onControllerUpdate);
   }
@@ -63,11 +63,11 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
   void _onControllerUpdate() {
     // We'll read from the controller and see if the value changed (check if field exists first)
     final existing = widget.controller.hasField(widget.field.id)
-        ? widget.controller.getFieldValue<List<MultiselectOption>>(widget.field.id) ?? []
+        ? widget.controller.getFieldValue<List<FieldOption>>(widget.field.id) ?? []
         : [];
     if (existing.length != _files.length) {
       setState(() {
-        _files = List<MultiselectOption>.from(existing);
+        _files = List<FieldOption>.from(existing);
       });
     } else {
       // Check if any mismatch
@@ -80,7 +80,7 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
       }
       if (different) {
         setState(() {
-          _files = List<MultiselectOption>.from(existing);
+          _files = List<FieldOption>.from(existing);
         });
       }
     }
@@ -209,7 +209,7 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
 
         fileData = fileData.copyWith(mimeData: await fileData.readMimeData());
 
-        final option = MultiselectOption(
+        final option = FieldOption(
           label: name,
           value: path,
           additionalData: fileData,
@@ -256,7 +256,7 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
 
     fileData = fileData.copyWith(mimeData: await fileData.readMimeData());
 
-    final option = MultiselectOption(
+    final option = FieldOption(
       label: name,
       value: path,
       additionalData: fileData,
@@ -283,7 +283,7 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
     });
   }
 
-  IconData _getFileIcon(MultiselectOption opt) {
+  IconData _getFileIcon(FieldOption opt) {
     final mimeType =
         getFileType((opt.additionalData as FileModel).mimeData?.mime ?? "");
     switch (mimeType) {
@@ -308,7 +308,7 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
     }
   }
 
-  void _removeFile(MultiselectOption opt) {
+  void _removeFile(FieldOption opt) {
     setState(() {
       _files.remove(opt);
     });

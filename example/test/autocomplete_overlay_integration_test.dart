@@ -7,7 +7,7 @@ import 'package:championforms/models/autocomplete/autocomplete_type.dart';
 import 'package:championforms/models/colorscheme.dart';
 
 void main() {
-  group('ChampionAutocompleteWrapper Integration Tests', () {
+  group('AutocompleteWrapper Integration Tests', () {
     testWidgets('Overlay dismisses on tap outside',
         (WidgetTester tester) async {
       // Arrange
@@ -16,7 +16,7 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Test Option', title: 'Test Option'),
+          CompleteOption(value: 'Test Option', title: 'Test Option'),
         ],
       );
 
@@ -25,7 +25,7 @@ void main() {
           home: Scaffold(
             body: Column(
               children: [
-                ChampionAutocompleteWrapper(
+                AutocompleteWrapper(
                   child: TextField(
                     controller: textController,
                     focusNode: focusNode,
@@ -80,16 +80,16 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Apple', title: 'Apple'),
-          AutoCompleteOption(value: 'Banana', title: 'Banana'),
-          AutoCompleteOption(value: 'Cherry', title: 'Cherry'),
+          CompleteOption(value: 'Apple', title: 'Apple'),
+          CompleteOption(value: 'Banana', title: 'Banana'),
+          CompleteOption(value: 'Cherry', title: 'Cherry'),
         ],
       );
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: TextField(
                 controller: textController,
                 focusNode: focusNode,
@@ -140,14 +140,14 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Themed Option', title: 'Themed Option'),
+          CompleteOption(value: 'Themed Option', title: 'Themed Option'),
         ],
       );
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: TextField(
                 controller: textController,
                 focusNode: focusNode,
@@ -201,7 +201,7 @@ void main() {
           updateCallCount++;
           await Future.delayed(const Duration(milliseconds: 10));
           return [
-            AutoCompleteOption(
+            CompleteOption(
               value: 'Result for: $value',
               title: 'Result for: $value',
             ),
@@ -212,7 +212,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: TextField(
                 controller: textController,
                 focusNode: focusNode,
@@ -262,14 +262,14 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.none, // Non-dropdown type
         initialOptions: [
-          AutoCompleteOption(value: 'Should Not Show', title: 'Should Not Show'),
+          CompleteOption(value: 'Should Not Show', title: 'Should Not Show'),
         ],
       );
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: TextField(
                 controller: textController,
                 focusNode: focusNode,
@@ -306,14 +306,14 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Test', title: 'Test'),
+          CompleteOption(value: 'Test', title: 'Test'),
         ],
       );
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: TextField(
                 controller: textController,
                 focusNode: focusNode,
@@ -357,15 +357,15 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Option 1', title: 'Option 1'),
-          AutoCompleteOption(value: 'Option 2', title: 'Option 2'),
+          CompleteOption(value: 'Option 1', title: 'Option 1'),
+          CompleteOption(value: 'Option 2', title: 'Option 2'),
         ],
       );
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: TextField(
                 controller: textController,
                 focusNode: focusNode,
@@ -401,14 +401,14 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Test', title: 'Test'),
+          CompleteOption(value: 'Test', title: 'Test'),
         ],
       );
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: TextField(
                 controller: textController,
                 focusNode: focusNode,

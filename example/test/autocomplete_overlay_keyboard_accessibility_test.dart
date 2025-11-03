@@ -7,16 +7,16 @@ import 'package:championforms/models/autocomplete/autocomplete_option_class.dart
 import 'package:championforms/models/autocomplete/autocomplete_type.dart';
 
 void main() {
-  group('ChampionAutocompleteWrapper Keyboard and Accessibility Tests', () {
+  group('AutocompleteWrapper Keyboard and Accessibility Tests', () {
     testWidgets('Tab key moves focus to first option',
         (WidgetTester tester) async {
       // Arrange
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Option 1', title: 'Option 1'),
-          AutoCompleteOption(value: 'Option 2', title: 'Option 2'),
-          AutoCompleteOption(value: 'Option 3', title: 'Option 3'),
+          CompleteOption(value: 'Option 1', title: 'Option 1'),
+          CompleteOption(value: 'Option 2', title: 'Option 2'),
+          CompleteOption(value: 'Option 3', title: 'Option 3'),
         ],
       );
       final focusNode = FocusNode();
@@ -25,7 +25,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: TextField(
                 controller: textController,
                 focusNode: focusNode,
@@ -58,9 +58,9 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Option 1', title: 'Option 1'),
-          AutoCompleteOption(value: 'Option 2', title: 'Option 2'),
-          AutoCompleteOption(value: 'Option 3', title: 'Option 3'),
+          CompleteOption(value: 'Option 1', title: 'Option 1'),
+          CompleteOption(value: 'Option 2', title: 'Option 2'),
+          CompleteOption(value: 'Option 3', title: 'Option 3'),
         ],
       );
       final focusNode = FocusNode();
@@ -69,7 +69,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: TextField(
                 controller: textController,
                 focusNode: focusNode,
@@ -103,9 +103,9 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Option 1', title: 'Option 1'),
-          AutoCompleteOption(value: 'Option 2', title: 'Option 2'),
-          AutoCompleteOption(value: 'Option 3', title: 'Option 3'),
+          CompleteOption(value: 'Option 1', title: 'Option 1'),
+          CompleteOption(value: 'Option 2', title: 'Option 2'),
+          CompleteOption(value: 'Option 3', title: 'Option 3'),
         ],
       );
       final focusNode = FocusNode();
@@ -114,7 +114,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: TextField(
                 controller: textController,
                 focusNode: focusNode,
@@ -147,8 +147,8 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Option 1', title: 'Option 1'),
-          AutoCompleteOption(value: 'Option 2', title: 'Option 2'),
+          CompleteOption(value: 'Option 1', title: 'Option 1'),
+          CompleteOption(value: 'Option 2', title: 'Option 2'),
         ],
       );
       final focusNode = FocusNode();
@@ -157,7 +157,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: TextField(
                 controller: textController,
                 focusNode: focusNode,
@@ -193,7 +193,7 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Option 1', title: 'Option 1'),
+          CompleteOption(value: 'Option 1', title: 'Option 1'),
         ],
       );
       final focusNode = FocusNode();
@@ -202,7 +202,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: TextField(
                 controller: textController,
                 focusNode: focusNode,
@@ -235,9 +235,9 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Option 1', title: 'Option 1'),
-          AutoCompleteOption(value: 'Option 2', title: 'Option 2'),
-          AutoCompleteOption(value: 'Option 3', title: 'Option 3'),
+          CompleteOption(value: 'Option 1', title: 'Option 1'),
+          CompleteOption(value: 'Option 2', title: 'Option 2'),
+          CompleteOption(value: 'Option 3', title: 'Option 3'),
         ],
       );
       final focusNode = FocusNode();
@@ -246,7 +246,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: TextField(
                 controller: textController,
                 focusNode: focusNode,
@@ -282,9 +282,9 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Option 1', title: 'Option 1'),
-          AutoCompleteOption(value: 'Option 2', title: 'Option 2'),
-          AutoCompleteOption(value: 'Option 3', title: 'Option 3'),
+          CompleteOption(value: 'Option 1', title: 'Option 1'),
+          CompleteOption(value: 'Option 2', title: 'Option 2'),
+          CompleteOption(value: 'Option 3', title: 'Option 3'),
         ],
       );
       final focusNode = FocusNode();
@@ -293,7 +293,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: TextField(
                 controller: textController,
                 focusNode: focusNode,

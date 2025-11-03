@@ -60,7 +60,7 @@ abstract class Field implements FieldBase {
   // This field will ask for focus. Best to only have one per form.
   final bool requestFocus;
 
-  final List<FormBuilderValidator>? validators;
+  final List<Validator>? validators;
   final bool validateLive;
 
   // Functions

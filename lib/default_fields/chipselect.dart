@@ -21,7 +21,7 @@ Widget buildChipSelect(
     field, // Pass the specific field instance
     currentColors,
     updateFocus,
-    (MultiselectOption? selectedOption) {
+    (FieldOption? selectedOption) {
       // Update selected logic - same logic as checkbox applies
       if (selectedOption != null) {
         controller.updateMultiselectValues(field.id, [selectedOption],

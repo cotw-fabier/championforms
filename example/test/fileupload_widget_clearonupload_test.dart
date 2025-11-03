@@ -13,8 +13,8 @@ void main() {
         'clearOnUpload = false maintains running tally with file picker',
         (WidgetTester tester) async {
       // Arrange
-      final controller = ChampionFormController();
-      final field = ChampionFileUpload(
+      final controller = FormController();
+      final field = FileUpload(
         id: 'test_upload',
         clearOnUpload: false,
         multiselect: true,
@@ -24,7 +24,7 @@ void main() {
       controller.addFields([field]);
 
       // Add initial file to controller
-      final initialFile = MultiselectOption(
+      final initialFile = FieldOption(
         label: 'initial.txt',
         value: 'path/initial.txt',
         additionalData: FileModel(
@@ -58,7 +58,7 @@ void main() {
 
       // Assert initial state - file is present
       final currentFiles = controller
-          .getFieldValue<List<MultiselectOption>>(field.id);
+          .getFieldValue<List<FieldOption>>(field.id);
       expect(currentFiles?.length, 1);
       expect(currentFiles?.first.label, 'initial.txt');
 
@@ -73,8 +73,8 @@ void main() {
         'clearOnUpload = true clears existing files before adding new ones',
         (WidgetTester tester) async {
       // Arrange
-      final controller = ChampionFormController();
-      final field = ChampionFileUpload(
+      final controller = FormController();
+      final field = FileUpload(
         id: 'test_upload',
         clearOnUpload: true,
         multiselect: true,
@@ -83,7 +83,7 @@ void main() {
       controller.addFields([field]);
 
       // Add initial files to controller
-      final initialFile1 = MultiselectOption(
+      final initialFile1 = FieldOption(
         label: 'initial1.txt',
         value: 'path/initial1.txt',
         additionalData: FileModel(
@@ -92,7 +92,7 @@ void main() {
           fileBytes: Uint8List.fromList([1, 2, 3]),
         ),
       );
-      final initialFile2 = MultiselectOption(
+      final initialFile2 = FieldOption(
         label: 'initial2.txt',
         value: 'path/initial2.txt',
         additionalData: FileModel(
@@ -126,7 +126,7 @@ void main() {
 
       // Assert initial state - 2 files present
       var currentFiles = controller
-          .getFieldValue<List<MultiselectOption>>(field.id);
+          .getFieldValue<List<FieldOption>>(field.id);
       expect(currentFiles?.length, 2);
 
       // Act - Simulate clearing and adding new file
@@ -140,11 +140,11 @@ void main() {
 
       // Verify files cleared
       currentFiles = controller
-          .getFieldValue<List<MultiselectOption>>(field.id);
+          .getFieldValue<List<FieldOption>>(field.id);
       expect(currentFiles?.length, 0);
 
       // Add new file
-      final newFile = MultiselectOption(
+      final newFile = FieldOption(
         label: 'new.txt',
         value: 'path/new.txt',
         additionalData: FileModel(
@@ -163,7 +163,7 @@ void main() {
 
       // Assert - Only new file present
       currentFiles = controller
-          .getFieldValue<List<MultiselectOption>>(field.id);
+          .getFieldValue<List<FieldOption>>(field.id);
       expect(currentFiles?.length, 1);
       expect(currentFiles?.first.label, 'new.txt');
     });
@@ -172,8 +172,8 @@ void main() {
         'clearOnUpload = true with multi-file upload processes all new files',
         (WidgetTester tester) async {
       // Arrange
-      final controller = ChampionFormController();
-      final field = ChampionFileUpload(
+      final controller = FormController();
+      final field = FileUpload(
         id: 'test_upload',
         clearOnUpload: true,
         multiselect: true,
@@ -182,7 +182,7 @@ void main() {
       controller.addFields([field]);
 
       // Add initial file
-      final initialFile = MultiselectOption(
+      final initialFile = FieldOption(
         label: 'old.txt',
         value: 'path/old.txt',
         additionalData: FileModel(
@@ -216,7 +216,7 @@ void main() {
 
       // Assert initial state
       var currentFiles = controller
-          .getFieldValue<List<MultiselectOption>>(field.id);
+          .getFieldValue<List<FieldOption>>(field.id);
       expect(currentFiles?.length, 1);
 
       // Act - Simulate clearing and adding multiple new files
@@ -227,7 +227,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final newFile1 = MultiselectOption(
+      final newFile1 = FieldOption(
         label: 'new1.txt',
         value: 'path/new1.txt',
         additionalData: FileModel(
@@ -236,7 +236,7 @@ void main() {
           fileBytes: Uint8List.fromList([4, 5, 6]),
         ),
       );
-      final newFile2 = MultiselectOption(
+      final newFile2 = FieldOption(
         label: 'new2.txt',
         value: 'path/new2.txt',
         additionalData: FileModel(
@@ -245,7 +245,7 @@ void main() {
           fileBytes: Uint8List.fromList([7, 8, 9]),
         ),
       );
-      final newFile3 = MultiselectOption(
+      final newFile3 = FieldOption(
         label: 'new3.txt',
         value: 'path/new3.txt',
         additionalData: FileModel(
@@ -265,7 +265,7 @@ void main() {
 
       // Assert - All 3 new files present, old file gone
       currentFiles = controller
-          .getFieldValue<List<MultiselectOption>>(field.id);
+          .getFieldValue<List<FieldOption>>(field.id);
       expect(currentFiles?.length, 3);
       expect(currentFiles?.map((f) => f.label).toList(),
           ['new1.txt', 'new2.txt', 'new3.txt']);
@@ -275,8 +275,8 @@ void main() {
         'clearOnUpload = true in single-file mode replaces file',
         (WidgetTester tester) async {
       // Arrange
-      final controller = ChampionFormController();
-      final field = ChampionFileUpload(
+      final controller = FormController();
+      final field = FileUpload(
         id: 'test_upload',
         clearOnUpload: true,
         multiselect: false, // Single file mode
@@ -285,7 +285,7 @@ void main() {
       controller.addFields([field]);
 
       // Add initial file
-      final initialFile = MultiselectOption(
+      final initialFile = FieldOption(
         label: 'old.txt',
         value: 'path/old.txt',
         additionalData: FileModel(
@@ -320,7 +320,7 @@ void main() {
 
       // Assert initial state
       var currentFiles = controller
-          .getFieldValue<List<MultiselectOption>>(field.id);
+          .getFieldValue<List<FieldOption>>(field.id);
       expect(currentFiles?.length, 1);
       expect(currentFiles?.first.label, 'old.txt');
 
@@ -332,7 +332,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final newFile = MultiselectOption(
+      final newFile = FieldOption(
         label: 'new.txt',
         value: 'path/new.txt',
         additionalData: FileModel(
@@ -351,7 +351,7 @@ void main() {
 
       // Assert - Only new file present
       currentFiles = controller
-          .getFieldValue<List<MultiselectOption>>(field.id);
+          .getFieldValue<List<FieldOption>>(field.id);
       expect(currentFiles?.length, 1);
       expect(currentFiles?.first.label, 'new.txt');
     });
@@ -359,8 +359,8 @@ void main() {
     testWidgets('Widget state syncs with controller during clearing',
         (WidgetTester tester) async {
       // Arrange
-      final controller = ChampionFormController();
-      final field = ChampionFileUpload(
+      final controller = FormController();
+      final field = FileUpload(
         id: 'test_upload',
         clearOnUpload: true,
         multiselect: true,
@@ -370,7 +370,7 @@ void main() {
       controller.addFields([field]);
 
       // Add initial files
-      final file1 = MultiselectOption(
+      final file1 = FieldOption(
         label: 'file1.txt',
         value: 'path/file1.txt',
         additionalData: FileModel(
@@ -379,7 +379,7 @@ void main() {
           fileBytes: Uint8List.fromList([1, 2, 3]),
         ),
       );
-      final file2 = MultiselectOption(
+      final file2 = FieldOption(
         label: 'file2.txt',
         value: 'path/file2.txt',
         additionalData: FileModel(
@@ -428,7 +428,7 @@ void main() {
       expect(find.text('file2.txt'), findsNothing);
 
       // Act - Add new file
-      final newFile = MultiselectOption(
+      final newFile = FieldOption(
         label: 'new.txt',
         value: 'path/new.txt',
         additionalData: FileModel(
@@ -453,8 +453,8 @@ void main() {
     testWidgets('Empty file selection does not trigger clearing',
         (WidgetTester tester) async {
       // Arrange
-      final controller = ChampionFormController();
-      final field = ChampionFileUpload(
+      final controller = FormController();
+      final field = FileUpload(
         id: 'test_upload',
         clearOnUpload: true,
         multiselect: true,
@@ -463,7 +463,7 @@ void main() {
       controller.addFields([field]);
 
       // Add initial file
-      final initialFile = MultiselectOption(
+      final initialFile = FieldOption(
         label: 'existing.txt',
         value: 'path/existing.txt',
         additionalData: FileModel(
@@ -497,7 +497,7 @@ void main() {
 
       // Assert initial state
       var currentFiles = controller
-          .getFieldValue<List<MultiselectOption>>(field.id);
+          .getFieldValue<List<FieldOption>>(field.id);
       expect(currentFiles?.length, 1);
       expect(currentFiles?.first.label, 'existing.txt');
 
@@ -511,8 +511,8 @@ void main() {
         'clearOnUpload = false does not clear files when adding new ones',
         (WidgetTester tester) async {
       // Arrange
-      final controller = ChampionFormController();
-      final field = ChampionFileUpload(
+      final controller = FormController();
+      final field = FileUpload(
         id: 'test_upload',
         clearOnUpload: false, // Explicitly false
         multiselect: true,
@@ -521,7 +521,7 @@ void main() {
       controller.addFields([field]);
 
       // Add initial file
-      final initialFile = MultiselectOption(
+      final initialFile = FieldOption(
         label: 'first.txt',
         value: 'path/first.txt',
         additionalData: FileModel(
@@ -555,11 +555,11 @@ void main() {
 
       // Assert initial state
       var currentFiles = controller
-          .getFieldValue<List<MultiselectOption>>(field.id);
+          .getFieldValue<List<FieldOption>>(field.id);
       expect(currentFiles?.length, 1);
 
       // Act - Add second file WITHOUT clearing (running tally behavior)
-      final secondFile = MultiselectOption(
+      final secondFile = FieldOption(
         label: 'second.txt',
         value: 'path/second.txt',
         additionalData: FileModel(
@@ -571,7 +571,7 @@ void main() {
 
       // Get current files and add new one
       final existingFiles = controller
-          .getFieldValue<List<MultiselectOption>>(field.id) ?? [];
+          .getFieldValue<List<FieldOption>>(field.id) ?? [];
       controller.updateMultiselectValues(
         field.id,
         [...existingFiles, secondFile],
@@ -581,7 +581,7 @@ void main() {
 
       // Assert - Both files present (running tally)
       currentFiles = controller
-          .getFieldValue<List<MultiselectOption>>(field.id);
+          .getFieldValue<List<FieldOption>>(field.id);
       expect(currentFiles?.length, 2);
       expect(
           currentFiles?.map((f) => f.label).toList(),

@@ -8,6 +8,10 @@ Version 0.4.0 is a **breaking change release** that modernizes the ChampionForms
 
 **Key Highlights:**
 - ✨ Cleaner class names: `ChampionTextField` → `TextField`
+- ✨ Cleaner validator names: `FormBuilderValidator` → `Validator`
+- ✨ Clearer option names: `MultiselectOption` → `FieldOption`
+- ✨ Simplified autocomplete: `AutoCompleteOption` → `CompleteOption`
+- ✨ Concise helper class: `DefaultValidators` → `Validators`
 - 📦 Namespace import approach to avoid collisions with Flutter widgets
 - 🎨 Two-tier export system for better organization
 - 🔧 Automated migration script to ease transition
@@ -123,8 +127,8 @@ form.Form(
       id: 'name',
       textFieldTitle: 'Full Name',
       validators: [
-        form.FormBuilderValidator(
-          validator: (r) => form.DefaultValidators().isEmpty(r),
+        form.Validator(
+          validator: (r) => form.Validators.isEmpty(r),
           reason: 'Name is required'
         )
       ],
@@ -133,8 +137,8 @@ form.Form(
       id: 'email',
       textFieldTitle: 'Email Address',
       validators: [
-        form.FormBuilderValidator(
-          validator: (r) => form.DefaultValidators().isEmail(r),
+        form.Validator(
+          validator: (r) => form.Validators.isEmail(r),
           reason: 'Invalid email'
         )
       ],
@@ -219,8 +223,8 @@ form.OptionSelect(
   id: 'country',
   title: 'Select Country',
   options: [
-    form.MultiselectOption(label: 'USA', value: 'us'),
-    form.MultiselectOption(label: 'Canada', value: 'ca'),
+    form.FieldOption(label: 'USA', value: 'us'),
+    form.FieldOption(label: 'Canada', value: 'ca'),
   ],
 ),
 form.CheckboxSelect(
@@ -228,8 +232,8 @@ form.CheckboxSelect(
   title: 'Interests',
   multiselect: true,
   options: [
-    form.MultiselectOption(label: 'Sports', value: 'sports'),
-    form.MultiselectOption(label: 'Music', value: 'music'),
+    form.FieldOption(label: 'Sports', value: 'sports'),
+    form.FieldOption(label: 'Music', value: 'music'),
   ],
 ),
 form.FileUpload(
@@ -237,6 +241,38 @@ form.FileUpload(
   title: 'Upload Photo',
   allowedExtensions: ['jpg', 'png'],
 ),
+```
+
+---
+
+### Autocomplete Fields
+
+#### Before (v0.3.x)
+```dart
+ChampionTextField(
+  id: 'email',
+  textFieldTitle: 'Email',
+  autoComplete: AutoCompleteBuilder(
+    initialOptions: [
+      AutoCompleteOption(value: "test@example.com"),
+      AutoCompleteOption(value: "user@domain.com"),
+    ],
+  ),
+)
+```
+
+#### After (v0.4.0)
+```dart
+form.TextField(
+  id: 'email',
+  textFieldTitle: 'Email',
+  autoComplete: form.AutoCompleteBuilder(
+    initialOptions: [
+      form.CompleteOption(value: "test@example.com"),
+      form.CompleteOption(value: "user@domain.com"),
+    ],
+  ),
+)
 ```
 
 ---
@@ -397,8 +433,8 @@ class _MyFormPageState extends State<MyFormPage> {
             id: 'email',
             textFieldTitle: 'Email',
             validators: [
-              form.FormBuilderValidator(
-                validator: (r) => form.DefaultValidators().isEmail(r),
+              form.Validator(
+                validator: (r) => form.Validators.isEmail(r),
                 reason: 'Invalid email'
               )
             ],
@@ -452,13 +488,13 @@ Use this table to update your code. All classes with `form.` prefix require the 
 | `ChampionAutocompleteWrapper` | `form.AutocompleteWrapper` | Internal | Namespace required |
 | `ChampionFormTheme` | `FormTheme` | Theme | **NO namespace** - from themes import |
 | `ChampionFormFieldRegistry` | `FormFieldRegistry` | Registry | **NO namespace** - from themes import |
-| `FormBuilderValidator` | `form.FormBuilderValidator` | Validation | Namespace required |
-| `DefaultValidators` | `form.DefaultValidators` | Validation | Namespace required |
+| `FormBuilderValidator` | `form.Validator` | Validation | Namespace required |
+| `MultiselectOption` | `form.FieldOption` | Model | Namespace required |
+| `AutoCompleteOption` | `form.CompleteOption` | Feature | Namespace required |
+| `DefaultValidators` | `form.Validators` | Validation | Namespace required |
 | `FormResults` | `form.FormResults` | Results | Namespace required |
 | `FieldResults` | `form.FieldResults` | Results | Namespace required |
-| `MultiselectOption` | `form.MultiselectOption` | Model | Namespace required |
 | `AutoCompleteBuilder` | `form.AutoCompleteBuilder` | Feature | Namespace required |
-| `AutoCompleteOption` | `form.AutoCompleteOption` | Feature | Namespace required |
 
 ### Important Notes on the Table
 
@@ -518,6 +554,10 @@ Use your IDE's find-and-replace feature with **word boundary matching**.
 | `\bChampionRow\b` | `form.Row` |
 | `\bChampionColumn\b` | `form.Column` |
 | `\bChampionFormElement\b` | `form.FormElement` |
+| `\bFormBuilderValidator\b` | `form.Validator` |
+| `\bMultiselectOption\b` | `form.FieldOption` |
+| `\bAutoCompleteOption\b` | `form.CompleteOption` |
+| `\bDefaultValidators\b` | `form.Validators` |
 
 **Important:** Use **word boundary** matching (`\b`) to avoid replacing "Champion" in strings, comments, or variable names.
 
@@ -682,9 +722,31 @@ dart run tools/project-migration.dart /path/to/project --dry-run
 # Skip backup creation (not recommended)
 dart run tools/project-migration.dart /path/to/project --no-backup
 
+# Use custom namespace (default is 'form')
+dart run tools/project-migration.dart /path/to/project --namespace cf
+
+# Combine options
+dart run tools/project-migration.dart /path/to/project --namespace myforms --dry-run
+
 # Show help
 dart run tools/project-migration.dart --help
 ```
+
+**Custom Namespace Option:**
+
+By default, the migration script uses `form` as the namespace alias (e.g., `form.TextField`). If you prefer a different namespace, use the `--namespace` option:
+
+```dart
+// Default: uses 'form' namespace
+import 'package:championforms/championforms.dart' as form;
+form.TextField(...)
+
+// Custom: uses your chosen namespace
+import 'package:championforms/championforms.dart' as cf;
+cf.TextField(...)
+```
+
+The namespace must be a valid Dart identifier (start with letter or underscore, contain only letters, numbers, and underscores).
 
 ### Rollback from Backups
 
@@ -795,6 +857,14 @@ import 'package:championforms/championforms.dart';
 import 'package:championforms/championforms.dart' as form;
 ```
 
+### Q: Why use `FieldOption` instead of just `Option`?
+
+**A:** `Option` is too generic and commonly conflicts with other packages. `FieldOption` maintains context (form field options) while being concise and descriptive.
+
+### Q: Why abbreviate `AutoCompleteOption` to `CompleteOption`?
+
+**A:** We shortened it while maintaining clarity. "Complete" still conveys the autocomplete context, and the namespace `form.CompleteOption` makes the purpose clear.
+
 ### Q: The migration script isn't available in my version
 
 **A:** The migration script is part of the ChampionForms v0.4.0 package. Make sure you've:
@@ -814,6 +884,14 @@ import 'package:championforms/championforms.dart' as cf;
 import 'package:championforms/championforms.dart' as forms;
 // Then use: forms.TextField, forms.Form, etc.
 ```
+
+**With the automated migration script**, you can specify your preferred namespace:
+
+```bash
+dart run tools/project-migration.dart /path/to/project --namespace cf
+```
+
+This will automatically use your custom namespace throughout the migration instead of the default 'form'.
 
 However, we recommend `form` as it's short, clear, and used in all our documentation.
 
@@ -872,7 +950,8 @@ Use this checklist to verify your migration:
 - [ ] Type annotations updated in variables and functions
 - [ ] Generic type parameters updated: `List<form.FormElement>`
 - [ ] Result handling updated: `form.FormResults`, `form.FieldResults`
-- [ ] Validator classes updated: `form.FormBuilderValidator`, `form.DefaultValidators`
+- [ ] Validator classes updated: `form.Validator`, `form.Validators`
+- [ ] Option classes updated: `form.FieldOption`, `form.CompleteOption`
 - [ ] Theme references use `FormTheme` (no namespace prefix)
 - [ ] Project runs `flutter analyze` with zero errors
 - [ ] Project runs `flutter run` successfully
@@ -901,6 +980,8 @@ Use this checklist to verify your migration:
 - Imports now require namespace alias (`as form`)
 - Two-tier export system (lifecycle vs. themes)
 - Base classes renamed for clarity (`FormFieldDef` → `Field`, etc.)
+- Validator classes renamed (`FormBuilderValidator` → `Validator`, `DefaultValidators` → `Validators`)
+- Option classes renamed (`MultiselectOption` → `FieldOption`, `AutoCompleteOption` → `CompleteOption`)
 
 ### What Stayed the Same
 - All functionality and behavior

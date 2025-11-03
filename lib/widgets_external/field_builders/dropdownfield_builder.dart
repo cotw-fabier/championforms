@@ -14,7 +14,7 @@ Widget dropdownFieldBuilder(
   OptionSelect field,
   FieldColorScheme currentColors,
   Function(bool focused) updateFocus,
-  Function(MultiselectOption? selectedOption) updateSelectedOption,
+  Function(FieldOption? selectedOption) updateSelectedOption,
 ) {
   return MultiselectWidget(
     id: field.id,
@@ -52,7 +52,7 @@ Widget dropdownFieldBuilder(
                   ?.firstWhereOrNull((val) => value == val.value.toString()) ??
               field.defaultValue
                   .firstWhereOrNull((val) => value == val.value.toString()) ??
-              MultiselectOption(label: value, value: value);
+              FieldOption(label: value, value: value);
 
           updateSelectedOption(selectedOption);
         } else {

@@ -12,7 +12,7 @@ Widget checkboxFieldBuilder(
   FieldColorScheme currentColors,
   Function(bool focused) updateFocus,
   // updateSelectedOption is no longer directly needed here as we use toggleMultiSelectValue
-  Function(MultiselectOption? selectedOption) updateSelectedOption,
+  Function(FieldOption? selectedOption) updateSelectedOption,
 ) {
   // Listen to the controller to rebuild when the value changes
   // Use ListenableBuilder or Selector for more targeted rebuilds if needed,
@@ -20,9 +20,9 @@ Widget checkboxFieldBuilder(
 
   // Get the current selected options directly from the controller's value storage
   // (check if field exists first)
-  final List<MultiselectOption> currentSelectedOptions =
+  final List<FieldOption> currentSelectedOptions =
       controller.hasField(field.id)
-          ? controller.getFieldValue<List<MultiselectOption>>(field.id) ?? []
+          ? controller.getFieldValue<List<FieldOption>>(field.id) ?? []
           : [];
 
   return MultiselectWidget(

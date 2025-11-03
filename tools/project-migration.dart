@@ -22,11 +22,13 @@ class MigrationConfig {
   final String projectPath;
   final bool dryRun;
   final bool noBackup;
+  final String namespace;
 
   MigrationConfig({
     required this.projectPath,
     this.dryRun = false,
     this.noBackup = false,
+    this.namespace = 'form',
   });
 }
 
@@ -159,7 +161,7 @@ class ChampionFormsMigrator {
       }
 
       // Perform migrations
-      final newContent = _migrateContent(content);
+      final newContent = _migrateContent(content, config.namespace);
 
       // Check if content changed
       if (newContent == content) {
@@ -196,79 +198,87 @@ class ChampionFormsMigrator {
   }
 
   /// Migrate file content
-  String _migrateContent(String content) {
+  String _migrateContent(String content, String namespace) {
     String result = content;
 
     // Step 1: Update import statements
-    result = _updateImports(result);
+    result = _updateImports(result, namespace);
 
     // Step 2: Replace class names with namespace prefix
-    result = _replaceClassNames(result);
+    result = _replaceClassNames(result, namespace);
 
     return result;
   }
 
   /// Update import statements to use namespace
-  String _updateImports(String content) {
+  String _updateImports(String content, String namespace) {
     // Check if already has namespace
     if (content.contains(
-            "import 'package:championforms/championforms.dart' as form;") ||
+            "import 'package:championforms/championforms.dart' as $namespace;") ||
         content.contains(
-            'import "package:championforms/championforms.dart" as form;')) {
+            'import "package:championforms/championforms.dart" as $namespace;')) {
       return content;
     }
 
     // Replace single-quoted import
     content = content.replaceAll(
       "import 'package:championforms/championforms.dart';",
-      "import 'package:championforms/championforms.dart' as form;",
+      "import 'package:championforms/championforms.dart' as $namespace;",
     );
 
     // Replace double-quoted import
     content = content.replaceAll(
       'import "package:championforms/championforms.dart";',
-      'import "package:championforms/championforms.dart" as form;',
+      'import "package:championforms/championforms.dart" as $namespace;',
     );
 
     return content;
   }
 
   /// Replace class names with namespace prefix
-  String _replaceClassNames(String content) {
+  String _replaceClassNames(String content, String namespace) {
     String result = content;
 
-    // Map of old class names to new names (with form. prefix)
+    // Map of old class names to new names (without namespace prefix)
     final classReplacements = {
       // Field types
-      'ChampionTextField': 'form.TextField',
-      'ChampionOptionSelect': 'form.OptionSelect',
-      'ChampionFileUpload': 'form.FileUpload',
-      'ChampionCheckboxSelect': 'form.CheckboxSelect',
-      'ChampionChipSelect': 'form.ChipSelect',
+      'ChampionTextField': 'TextField',
+      'ChampionOptionSelect': 'OptionSelect',
+      'ChampionFileUpload': 'FileUpload',
+      'ChampionCheckboxSelect': 'CheckboxSelect',
+      'ChampionChipSelect': 'ChipSelect',
 
       // Layout classes
-      'ChampionRow': 'form.Row',
-      'ChampionColumn': 'form.Column',
+      'ChampionRow': 'Row',
+      'ChampionColumn': 'Column',
 
       // Form classes
-      'ChampionForm': 'form.Form',
-      'ChampionFormController': 'form.FormController',
+      'ChampionForm': 'Form',
+      'ChampionFormController': 'FormController',
 
       // Base classes
-      'ChampionFormElement': 'form.FormElement',
-      'FormFieldBase': 'form.FieldBase',
-      'FormFieldDef': 'form.Field',
-      'FormFieldNull': 'form.NullField',
+      'ChampionFormElement': 'FormElement',
+      'FormFieldBase': 'FieldBase',
+      'FormFieldDef': 'Field',
+      'FormFieldNull': 'NullField',
 
       // Internal classes
-      'ChampionAutocompleteWrapper': 'form.AutocompleteWrapper',
-      'ChampionFormFieldRegistry': 'form.FormFieldRegistry',
+      'ChampionAutocompleteWrapper': 'AutocompleteWrapper',
+      'ChampionFormFieldRegistry': 'FormFieldRegistry',
+
+      // Validators
+      'FormBuilderValidator': 'Validator',
+      'DefaultValidators': 'Validators',
+
+      // Options
+      'MultiselectOption': 'FieldOption',
+      'AutoCompleteOption': 'CompleteOption',
     };
 
     // Process each replacement
     for (final entry in classReplacements.entries) {
       final oldName = entry.key;
-      final newName = entry.value;
+      final newName = '$namespace.${entry.value}';
 
       // Use word boundary to avoid partial matches
       final pattern = RegExp('\\b$oldName\\b');
@@ -280,6 +290,9 @@ class ChampionFormsMigrator {
     // Special handling for theme classes (no namespace prefix)
     result = _replaceThemeClasses(result);
 
+    // Remove Validators instantiation (change to static usage)
+    result = _removeValidatorsInstantiation(result, namespace);
+
     return result;
   }
 
@@ -288,6 +301,17 @@ class ChampionFormsMigrator {
     // ChampionFormTheme → FormTheme (without namespace)
     final pattern = RegExp(r'\bChampionFormTheme\b');
     return _replaceOutsideStringsAndComments(content, pattern, 'FormTheme');
+  }
+
+  /// Remove Validators() instantiation for static method usage
+  /// Changes namespace.Validators() to namespace.Validators (static class reference)
+  String _removeValidatorsInstantiation(String content, String namespace) {
+    // Pattern: namespace.Validators() → namespace.Validators
+    // This handles both standalone and chained usage:
+    // - namespace.Validators().isEmail(r) → namespace.Validators.isEmail(r)
+    // - namespace.Validators() → namespace.Validators
+    final pattern = RegExp('$namespace\\.Validators\\(\\)');
+    return _replaceOutsideStringsAndComments(content, pattern, '$namespace.Validators');
   }
 
   /// Replace pattern outside of strings and comments
@@ -448,6 +472,13 @@ class ChampionFormsMigrator {
   }
 }
 
+/// Validate that a namespace is a valid Dart identifier
+bool _isValidDartIdentifier(String namespace) {
+  // Must start with letter or underscore, followed by alphanumeric or underscore
+  final pattern = RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*$');
+  return pattern.hasMatch(namespace);
+}
+
 /// Parse command line arguments
 MigrationConfig? parseArguments(List<String> args) {
   if (args.isEmpty || args.contains('--help') || args.contains('-h')) {
@@ -458,12 +489,35 @@ MigrationConfig? parseArguments(List<String> args) {
   String? projectPath;
   bool dryRun = false;
   bool noBackup = false;
+  String namespace = 'form';
 
-  for (final arg in args) {
+  for (var i = 0; i < args.length; i++) {
+    final arg = args[i];
+
     if (arg == '--dry-run') {
       dryRun = true;
     } else if (arg == '--no-backup') {
       noBackup = true;
+    } else if (arg == '--namespace') {
+      // Look ahead for namespace value
+      if (i + 1 >= args.length) {
+        print('ERROR: --namespace requires a value\n');
+        _printUsage();
+        return null;
+      }
+      namespace = args[i + 1];
+
+      // Validate namespace is a valid Dart identifier
+      if (!_isValidDartIdentifier(namespace)) {
+        print('ERROR: Invalid namespace "$namespace"');
+        print('Namespace must be a valid Dart identifier:');
+        print('  - Start with a letter or underscore');
+        print('  - Contain only letters, numbers, and underscores\n');
+        _printUsage();
+        return null;
+      }
+
+      i++; // Skip next arg since we consumed it as namespace value
     } else if (!arg.startsWith('--')) {
       projectPath = arg;
     }
@@ -479,6 +533,7 @@ MigrationConfig? parseArguments(List<String> args) {
     projectPath: projectPath,
     dryRun: dryRun,
     noBackup: noBackup,
+    namespace: namespace,
   );
 }
 
@@ -498,19 +553,30 @@ Arguments:
 Options:
   --dry-run         Preview changes without modifying files
   --no-backup       Skip creating backup files (not recommended)
+  --namespace <ns>  Use custom namespace alias (default: 'form')
+                    Must be a valid Dart identifier
   --help, -h        Show this help message
 
 Examples:
   dart run tools/project-migration.dart /path/to/my/project
   dart run tools/project-migration.dart /path/to/my/project --dry-run
   dart run tools/project-migration.dart . --dry-run
+  dart run tools/project-migration.dart /path/to/my/project --namespace cf
 
 What this script does:
   1. Scans your project for .dart files using ChampionForms
-  2. Updates import statements to use namespace (as form)
+  2. Updates import statements to use namespace (default: 'as form')
   3. Replaces Champion-prefixed classes with new names
-  4. Creates backup files before modifications (unless --no-backup)
-  5. Generates a summary report of changes
+  4. Replaces model class names (with namespace prefix):
+     - FormBuilderValidator → <namespace>.Validator
+     - DefaultValidators → <namespace>.Validators
+     - MultiselectOption → <namespace>.FieldOption
+     - AutoCompleteOption → <namespace>.CompleteOption
+  5. Converts Validators to static usage:
+     - <namespace>.Validators() → <namespace>.Validators
+     - <namespace>.Validators().isEmail() → <namespace>.Validators.isEmail()
+  6. Creates backup files before modifications (unless --no-backup)
+  7. Generates a summary report of changes
 
 After migration:
   1. Review the changes

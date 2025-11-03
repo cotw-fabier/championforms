@@ -35,13 +35,13 @@ class AutoCompleteBuilder {
 
   /// Provide an initial list of autocomplete options.
   /// This can be left blank if you plan to populate with the updateOptions callback.
-  final List<AutoCompleteOption> initialOptions;
+  final List<CompleteOption> initialOptions;
 
-  /// Runs a function and returns a list of AutoCompleteOption objects. Runs async
+  /// Runs a function and returns a list of CompleteOption objects. Runs async
   /// to support network requests and other options. This will run as the field is changed.
   /// if debounceDuration is set then this function will be limited until the duration
   /// timer expires.
-  final Future<List<AutoCompleteOption>> Function(String val)? updateOptions;
+  final Future<List<CompleteOption>> Function(String val)? updateOptions;
 
   /// Sets a timer which blocks reruns of the autocomplete updateOptions callback.
   /// If the timer expires and this hasn't recieved a result yet from the
@@ -56,12 +56,12 @@ class AutoCompleteBuilder {
   final Duration debounceWait;
 
   /// A custom builder for options. Will fallback to a default if none is given.
-  /// Takes in the AutoCompleteOption and allows you to define your own custom
+  /// Takes in the CompleteOption and allows you to define your own custom
   /// behavior when the option is selected.
   /// If defining a custom builder, make sure to fire the championCallback function
   /// when the option is selected so ChampionForms knows when an option has been selected.
-  final Widget Function(AutoCompleteOption option,
-          String Function(AutoCompleteOption option) championCallback)?
+  final Widget Function(CompleteOption option,
+          String Function(CompleteOption option) championCallback)?
       optionBuilder;
 
   /// Autocomplete Dropdown Box Margin. Spacing from the field of the

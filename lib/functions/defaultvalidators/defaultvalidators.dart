@@ -8,11 +8,22 @@ import 'package:flutter/foundation.dart'; // For debugPrint
 /// These validators operate on a `dynamic` value. They are designed to be safe by
 /// attempting to first convert the dynamic input into an expected type. If this
 /// conversion fails, the validation returns `false` instead of throwing an error.
-class DefaultValidators {
+///
+/// Most validators are static methods and can be called directly without instantiation:
+/// ```dart
+/// form.Validators.isEmail(value)
+/// form.Validators.stringIsNotEmpty(value)
+/// ```
+///
+/// The `stringLengthInRange` validator requires instantiation with min/max parameters:
+/// ```dart
+/// Validators(minLength: 5, maxLength: 10).stringLengthInRange(value)
+/// ```
+class Validators {
   final int? minLength;
   final int? maxLength;
 
-  DefaultValidators({
+  Validators({
     this.minLength,
     this.maxLength,
   });
@@ -24,7 +35,7 @@ class DefaultValidators {
   /// This validator attempts to convert any non-null value to a `String`.
   /// Returns `true` if the resulting string has content after trimming.
   /// Returns `false` for `null` or if the value results in an empty string.
-  bool stringIsNotEmpty(dynamic value) {
+  static bool stringIsNotEmpty(dynamic value) {
     if (value == null) {
       return false;
     }
@@ -37,7 +48,7 @@ class DefaultValidators {
   ///
   /// This validator attempts to convert any non-null value to a `String`.
   /// Returns `true` if the value is `null` or the resulting string is empty.
-  bool stringIsEmpty(dynamic value) {
+  static bool stringIsEmpty(dynamic value) {
     if (value == null) {
       return true;
     }
@@ -78,7 +89,7 @@ class DefaultValidators {
   ///
   /// Returns `true` if the value is already a number (`int` or `double`) or if it's a `String`
   /// that can be parsed into a `double`. Returns `false` for all other cases.
-  bool isDouble(dynamic value) {
+  static bool isDouble(dynamic value) {
     if (value == null) return false;
     if (value is double || value is int) return true;
 
@@ -94,7 +105,7 @@ class DefaultValidators {
   }
 
   /// **Checks if a value is `null` or can be interpreted as a `double`.**
-  bool isDoubleOrNull(dynamic value) {
+  static bool isDoubleOrNull(dynamic value) {
     if (value == null) return true;
     if (value is String && value.trim().isEmpty) return true;
     // Leverage the isDouble logic for the actual check.
@@ -105,7 +116,7 @@ class DefaultValidators {
   ///
   /// Returns `true` if the value is already an `int` or if it's a `String`
   /// that can be parsed into an `int`. Returns `false` for all other cases.
-  bool isInteger(dynamic value) {
+  static bool isInteger(dynamic value) {
     if (value == null) return false;
     if (value is int) return true;
 
@@ -121,7 +132,7 @@ class DefaultValidators {
   }
 
   /// **Checks if a value is `null` or can be interpreted as an `int`.**
-  bool isIntegerOrNull(dynamic value) {
+  static bool isIntegerOrNull(dynamic value) {
     if (value == null) return true;
     if (value is String && value.trim().isEmpty) return true;
     // Leverage the isInteger logic for the actual check.
@@ -134,7 +145,7 @@ class DefaultValidators {
   ///
   /// The value must be a `String` to be evaluated.
   /// Returns `false` for non-string types or invalid email formats.
-  bool isEmail(dynamic value) {
+  static bool isEmail(dynamic value) {
     if (value is! String || value.trim().isEmpty) {
       if (value != null && value is! String) {
         debugPrint(
@@ -146,7 +157,7 @@ class DefaultValidators {
   }
 
   /// **Checks if a string value is `null`, empty, or a valid email format.**
-  bool isEmailOrNull(dynamic value) {
+  static bool isEmailOrNull(dynamic value) {
     if (value == null) return true;
     if (value is! String) {
       debugPrint(
@@ -163,7 +174,7 @@ class DefaultValidators {
   ///
   /// Note: Unlike primitives, non-list types cannot be safely converted.
   /// This validator returns `true` only if the value is a `List` and is not empty.
-  bool listIsNotEmpty(dynamic value) {
+  static bool listIsNotEmpty(dynamic value) {
     if (value is List) {
       return value.isNotEmpty;
     }
@@ -175,7 +186,7 @@ class DefaultValidators {
   }
 
   /// **Checks if a value is `null` or an empty list.**
-  bool listIsEmpty(dynamic value) {
+  static bool listIsEmpty(dynamic value) {
     if (value == null) return true;
     if (value is List) {
       return value.isEmpty;
@@ -185,32 +196,32 @@ class DefaultValidators {
     return false;
   }
 
-  // --- File Validators (Operating on List<MultiselectOption>) ---
+  // --- File Validators (Operating on List<FieldOption>) ---
 
-  /// Helper to safely extract FileModel from a MultiselectOption.
-  FileModel? _getFileModelFromOption(MultiselectOption option) {
+  /// Helper to safely extract FileModel from a FieldOption.
+  static FileModel? _getFileModelFromOption(FieldOption option) {
     if (option.additionalData is FileModel) {
       return option.additionalData as FileModel;
     }
     debugPrint(
-        "Warning: MultiselectOption.additionalData was not a FileModel, which is required for file validation.");
+        "Warning: FieldOption.additionalData was not a FileModel, which is required for file validation.");
     return null;
   }
 
-  /// Helper to ensure the value is a `List<MultiselectOption>`. Returns null on failure.
-  List<MultiselectOption>? _ensureListOfMultiselectOption(dynamic value) {
+  /// Helper to ensure the value is a `List<FieldOption>`. Returns null on failure.
+  static List<FieldOption>? _ensureListOfFieldOption(dynamic value) {
     if (value == null) return []; // Treat null as an empty list.
-    if (value is List && value.every((e) => e is MultiselectOption)) {
-      return value.cast<MultiselectOption>();
+    if (value is List && value.every((e) => e is FieldOption)) {
+      return value.cast<FieldOption>();
     }
     debugPrint(
-        'File validation failed: Expected List<MultiselectOption>, got ${value.runtimeType}');
+        'File validation failed: Expected List<FieldOption>, got ${value.runtimeType}');
     return null;
   }
 
   /// **Checks if all uploaded files match a given set of MIME types.**
-  bool fileIsMimeType(dynamic value, List<String> matchStrings) {
-    final options = _ensureListOfMultiselectOption(value);
+  static bool fileIsMimeType(dynamic value, List<String> matchStrings) {
+    final options = _ensureListOfFieldOption(value);
     if (options == null) return false; // Invalid input type.
     if (options.isEmpty) return true; // No files to validate.
 
@@ -227,12 +238,12 @@ class DefaultValidators {
   }
 
   /// **Checks if all uploaded files are images.** (MIME starts with "image/")
-  bool fileIsImage(dynamic value) {
+  static bool fileIsImage(dynamic value) {
     return fileIsMimeType(value, ["image/"]);
   }
 
   /// **Checks if all uploaded files are common image types.**
-  bool fileIsCommonImage(dynamic value) {
+  static bool fileIsCommonImage(dynamic value) {
     return fileIsMimeType(value, const [
       "image/jpeg",
       "image/png",
@@ -243,7 +254,7 @@ class DefaultValidators {
   }
 
   /// **Checks if all uploaded files are common document types.**
-  bool fileIsDocument(dynamic value) {
+  static bool fileIsDocument(dynamic value) {
     return fileIsMimeType(value, const [
       "application/msword",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",

@@ -6,8 +6,8 @@ import 'package:collection/collection.dart';
 
 import 'package:flutter/foundation.dart'; // For debugPrint
 
-// Assuming Field, BaseFieldResults, FieldResults, ChampionFormController,
-// FormBuilderValidator, and FormBuilderError classes are accessible.
+// Assuming Field, BaseFieldResults, FieldResults, FormController,
+// Validator, and FormBuilderError classes are accessible.
 
 List<FormBuilderError> getFormBuilderErrors({
   required List<BaseFieldResults> results, // Changed to List<BaseFieldResults>
@@ -57,7 +57,7 @@ List<FormBuilderError> getFormBuilderErrors({
 
     int validatorPosition = 0;
     if (fieldDef.validators != null) {
-      // Iterate through the validators (List<FormBuilderValidator<dynamic>>)
+      // Iterate through the validators (List<Validator<dynamic>>)
       for (final validatorDef in fieldDef.validators!) {
         bool validationPassed = true; // Assume pass unless validator fails
         try {

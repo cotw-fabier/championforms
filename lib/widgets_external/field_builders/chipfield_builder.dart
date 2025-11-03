@@ -10,13 +10,13 @@ import 'package:flutter/material.dart';
 Widget checkboxFieldBuilder(
   BuildContext context,
   FormController controller,
-  List<MultiselectOption> choices,
+  List<FieldOption> choices,
   OptionSelect field,
   FieldState currentState,
   FieldColorScheme currentColors,
   List<String>? defaultValue,
   Function(bool focused) updateFocus,
-  Function(MultiselectOption? selectedOption) updateSelectedOption,
+  Function(FieldOption? selectedOption) updateSelectedOption,
 ) {
   return MultiselectWidget(
     id: field.id,

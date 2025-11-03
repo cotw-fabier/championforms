@@ -23,6 +23,10 @@ This release modernizes the ChampionForms API by removing the "Champion" prefix 
 - `FormFieldNull` → `form.NullField`
 - `ChampionAutocompleteWrapper` → `form.AutocompleteWrapper`
 - `ChampionFormFieldRegistry` → `FormFieldRegistry` (from separate themes import)
+- `FormBuilderValidator` → `form.Validator`
+- `MultiselectOption` → `form.FieldOption`
+- `AutoCompleteOption` → `form.CompleteOption`
+- `DefaultValidators` → `form.Validators`
 
 **Builder functions renamed**:
 - `buildChampionTextField` → `buildTextField`
@@ -47,7 +51,21 @@ form.FormController controller = form.FormController();
 form.Form(
   controller: controller,
   fields: [
-    form.TextField(id: 'email', textFieldTitle: 'Email'),
+    form.TextField(
+      id: 'email',
+      textFieldTitle: 'Email',
+      validators: [
+        form.Validator(
+          validator: (r) => form.Validators.isEmail(r),
+          reason: 'Invalid email'
+        )
+      ],
+    ),
+    form.OptionSelect(
+      options: [
+        form.FieldOption(label: 'Option 1', value: 'val1'),
+      ],
+    ),
     form.Row(
       columns: [
         form.Column(fields: [...]),

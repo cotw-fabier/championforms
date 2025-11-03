@@ -10,7 +10,7 @@ A declarative Flutter form builder focusing on clean structure, easy validation,
 *   **Declarative Field Definition:** Define form fields using clear widget classes (`form.TextField`, `form.OptionSelect`, `form.CheckboxSelect`, `form.FileUpload`, etc.).
 *   **Layout Control:** Structure forms visually using `form.Row` and `form.Column` widgets for flexible layouts (responsive collapsing included).
 *   **Centralized State Management:** Uses `form.FormController` to manage field values, focus, and validation state. Access and update form state from anywhere.
-*   **Built-in Validation:** Add validators easily using `form.FormBuilderValidator` and leverage provided `form.DefaultValidators` (email, empty, length, numeric, files) or create custom ones. Live validation option available.
+*   **Built-in Validation:** Add validators easily using `form.Validator` and leverage provided `form.Validators` (email, empty, length, numeric, files) or create custom ones. Live validation option available.
 *   **Result Handling:** Simple API (`form.FormResults.getResults`, `results.grab(...)`) to retrieve formatted form data (`asString`, `asStringList`, `asMultiselectList`, `asFile`).
 *   **Theming:** Customize the look and feel using `FormTheme`. Apply themes globally (`FormTheme` singleton), per-form, or per-field. Includes pre-built themes.
 *   **Autocomplete:** Add autocomplete suggestions to `form.TextField` using `form.AutoCompleteBuilder`, supporting initial lists and asynchronous fetching.
@@ -34,12 +34,12 @@ Version 0.4.0 modernizes the ChampionForms API by removing the "Champion" prefix
 ### v0.3.x Features
 
 *   **Layout Widgets:** Introduced `form.Row` and `form.Column` for structuring form layouts. Columns can collapse vertically using the `collapse` flag.
-*   **File Upload Field:** Added `form.FileUpload` with drag-and-drop, `file_picker` integration, `allowedExtensions` for filtering, and new `form.DefaultValidators` (`fileIsImage`, `fileIsDocument`, `isMimeType`).
+*   **File Upload Field:** Added `form.FileUpload` with drag-and-drop, `file_picker` integration, `allowedExtensions` for filtering, and new `form.Validators` methods (`fileIsImage`, `fileIsDocument`, `isMimeType`).
     *   **Important:** Using `file_picker` (and thus `form.FileUpload`) requires adding platform-specific permissions (iOS `Info.plist`, Android `AndroidManifest.xml`, macOS `*.entitlements`). Please refer to the [`file_picker` documentation](https://pub.dev/packages/file_picker#setup) for details.
 *   **Autocomplete:** Implemented `form.AutoCompleteBuilder` for `form.TextField` to provide input suggestions. Supports initial options, asynchronous fetching (e.g., from APIs), debouncing, and basic customization.
 *   **Global Theming:** Added `FormTheme` singleton to set a default `FormTheme` for all `form.Form` instances in your app.
 *   **Enhanced Controller:** `form.FormController` now manages `TextEditingController` lifecycles internally, tracks actively rendered fields (`activeFields`), supports field grouping by page (`pageName`, `getPageFields`), and includes new helper methods like `updateTextFieldValue`, `toggleMultiSelectValue`, and `removeMultiSelectOptions`.
-*   **New Validators:** Added file-specific validators to `form.DefaultValidators`.
+*   **New Validators:** Added file-specific validators to `form.Validators`.
 *   **Various Fixes:** Addressed issues with `asStringList`, multiselect default values, controller updates, and more.
 
 ## Installation
@@ -96,8 +96,8 @@ final List<form.FieldBase> myFields = [
             id: "name",
             textFieldTitle: "Name",
             validators: [
-              form.FormBuilderValidator(
-                validator: (r) => form.DefaultValidators().isEmpty(r),
+              form.Validator(
+                validator: (r) => form.Validators.isEmpty(r),
                 reason: "Name is required"
               )
             ],
@@ -108,11 +108,11 @@ final List<form.FieldBase> myFields = [
             id: "email",
             textFieldTitle: "Email",
             autoComplete: form.AutoCompleteBuilder(
-              initialOptions: [form.AutoCompleteOption(value:"suggestion@example.com")]
+              initialOptions: [form.CompleteOption(value:"suggestion@example.com")]
             ),
             validators: [
-              form.FormBuilderValidator(
-                validator: (r) => form.DefaultValidators().isEmail(r),
+              form.Validator(
+                validator: (r) => form.Validators.isEmail(r),
                 reason: "Invalid Email"
               )
             ]
@@ -124,8 +124,8 @@ final List<form.FieldBase> myFields = [
     title: "Upload Avatar (PNG only)",
     allowedExtensions: ['png'],
     validators: [
-      form.FormBuilderValidator(
-        validator: (r) => form.DefaultValidators().fileIsImage(r),
+      form.Validator(
+        validator: (r) => form.Validators.fileIsImage(r),
         reason:"Must be an image"
       )
     ]
@@ -170,12 +170,12 @@ The controller is the heart of state management.
 *   **Getting Results:** Use `form.FormResults.getResults(controller: controller)` to trigger validation and get current values.
 *   **Updating Values Programmatically:**
     *   `controller.updateTextFieldValue("fieldId", "new text");`
-    *   `controller.toggleMultiSelectValue("checkboxFieldId", toggleOn: ["value1", "value2"], toggleOff: ["value3"]);` (Uses the `value` of `form.MultiselectOption`)
+    *   `controller.toggleMultiSelectValue("checkboxFieldId", toggleOn: ["value1", "value2"], toggleOff: ["value3"]);` (Uses the `value` of `form.FieldOption`)
 *   **Clearing Selections:**
     *   `controller.removeMultiSelectOptions("fileUploadId");` (Clears all selected files/options)
 *   **Accessing State:**
     *   `controller.findTextFieldValue("fieldId")?.value;`
-    *   `controller.findMultiselectValue("fieldId")?.values;` (Returns `List<form.MultiselectOption>`)
+    *   `controller.findMultiselectValue("fieldId")?.values;` (Returns `List<form.FieldOption>`)
     *   `controller.isFieldFocused("fieldId");`
     *   `controller.findErrors("fieldId");`
 *   **Page Management:**
@@ -197,7 +197,7 @@ Standard text input.
 *   `password`: Obscures text if true.
 *   `leading`/`trailing`/`icon`: Widgets for icons/buttons around the field.
 *   `validateLive`: Validate field on focus loss.
-*   `validators`: List of `form.FormBuilderValidator`.
+*   `validators`: List of `form.Validator`.
 *   `defaultValue`: Initial text value.
 *   `onSubmit`: Callback triggered on Enter key press (if `maxLines` is 1 or `null`).
 *   `onChange`: Callback triggered on every character change.
@@ -209,8 +209,8 @@ Base class for fields with multiple options.
 
 *   `id`: Unique identifier.
 *   `title`/`description`: Field labels.
-*   `options`: `List<form.MultiselectOption>` defining the choices.
-    *   `form.MultiselectOption(label: "Display Text", value: "submitted_value", additionalData: optionalObject)`
+*   `options`: `List<form.FieldOption>` defining the choices.
+    *   `form.FieldOption(label: "Display Text", value: "submitted_value", additionalData: optionalObject)`
 *   `multiselect`: Allow multiple selections if true.
 *   `defaultValue`: `List<String>` of *values* to select by default.
 *   `validators`, `validateLive`, `onSubmit`, `onChange`: Standard properties.
@@ -232,7 +232,7 @@ Specialized field for file uploads.
 *   `allowedExtensions`: `List<String>` (e.g., `['pdf', 'docx']`) to filter files in the picker and during drag-and-drop.
 *   `displayUploadedFiles`: Show previews/icons of uploaded files (default: true).
 *   `dropDisplayWidget`: Customize the appearance of the drag-and-drop zone.
-*   `validators`: Use `form.DefaultValidators().isEmpty`, `form.DefaultValidators().fileIsImage(results)`, `form.DefaultValidators().fileIsDocument(results)`, etc.
+*   `validators`: Use `form.Validators.isEmpty`, `form.Validators.fileIsImage(results)`, `form.Validators.fileIsDocument(results)`, etc.
 *   **Permissions:** Requires platform setup for `file_picker`.
 
 ### `form.Row` & `form.Column`
@@ -250,10 +250,10 @@ Layout widgets.
 
 ## Validation
 
-*   Assign a `List<form.FormBuilderValidator>` to the `validators` property of a field.
-*   `form.FormBuilderValidator(validator: (results) => /* boolean logic */, reason: "Error message")`
+*   Assign a `List<form.Validator>` to the `validators` property of a field.
+*   `form.Validator(validator: (results) => /* boolean logic */, reason: "Error message")`
 *   `results` is a `form.FieldResults` object containing the current field value(s). Access data using `results.asString()`, `results.asMultiselectList()`, `results.asFile()`, etc.
-*   Use `form.DefaultValidators()` for common checks:
+*   Use `form.Validators` for common checks:
     *   `isEmpty(results)`
     *   `isEmail(results)`
     *   `isInteger(results)`, `isDouble(results)` (and `OrNull` variants)
@@ -303,8 +303,8 @@ ChampionForms uses a `FormTheme` object to control appearance.
     *   `.asString()`: Returns the value(s) as a single string.
     *   `.asStringList()`: Returns values as `List<String>`.
     *   `.asBool()` / `.asBoolMap()`: Interprets values as booleans.
-    *   `.asMultiselectList()`: Returns selected options as `List<form.MultiselectOption>`.
-    *   `.asMultiselectSingle()`: Returns the first selected option as `form.MultiselectOption?`.
+    *   `.asMultiselectList()`: Returns selected options as `List<form.FieldOption>`.
+    *   `.asMultiselectSingle()`: Returns the first selected option as `form.FieldOption?`.
     *   `.asFile()`: Returns uploaded files as `List<form.FileResultData>`, containing name, path, and `FileModel` (with bytes/stream/MIME details).
 
 ## Migration from v0.3.x

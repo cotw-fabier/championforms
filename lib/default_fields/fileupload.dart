@@ -23,9 +23,9 @@ Widget buildFileUpload(
     field, // Pass the specific field instance
     currentColors,
     updateFocus,
-    (MultiselectOption? selectedOption) {
+    (FieldOption? selectedOption) {
       // Update selected logic: A new file is uploaded/selected, or potentially removed.
-      // The MultiselectOption's additionalData should contain the FileModel.
+      // The FieldOption's additionalData should contain the FileModel.
       if (selectedOption != null) {
         // updateMultiselectValues handles adding/removing based on multiselect flag
         controller.updateMultiselectValues(field.id, [selectedOption],

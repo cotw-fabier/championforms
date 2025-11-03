@@ -6,16 +6,16 @@ import 'package:championforms/models/autocomplete/autocomplete_option_class.dart
 import 'package:championforms/models/autocomplete/autocomplete_type.dart';
 
 void main() {
-  group('ChampionAutocompleteWrapper Positioning Tests', () {
+  group('AutocompleteWrapper Positioning Tests', () {
     testWidgets('Overlay positions below field when sufficient space available',
         (WidgetTester tester) async {
       // Arrange - Position field at top of screen where there's plenty of space below
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Option 1'),
-          AutoCompleteOption(value: 'Option 2'),
-          AutoCompleteOption(value: 'Option 3'),
+          CompleteOption(value: 'Option 1'),
+          CompleteOption(value: 'Option 2'),
+          CompleteOption(value: 'Option 3'),
         ],
         minHeight: 100,
         maxHeight: 300,
@@ -31,7 +31,7 @@ void main() {
               alignment: Alignment.topCenter,
               child: SizedBox(
                 width: 200,
-                child: ChampionAutocompleteWrapper(
+                child: AutocompleteWrapper(
                   child: TextField(
                     controller: textController,
                     focusNode: focusNode,
@@ -65,8 +65,8 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Option 1'),
-          AutoCompleteOption(value: 'Option 2'),
+          CompleteOption(value: 'Option 1'),
+          CompleteOption(value: 'Option 2'),
         ],
         minHeight: 100,
         maxHeight: 300,
@@ -82,7 +82,7 @@ void main() {
               alignment: Alignment.bottomCenter,
               child: SizedBox(
                 width: 200,
-                child: ChampionAutocompleteWrapper(
+                child: AutocompleteWrapper(
                   child: TextField(
                     controller: textController,
                     focusNode: focusNode,
@@ -116,7 +116,7 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Option 1'),
+          CompleteOption(value: 'Option 1'),
         ],
         minHeight: testMinHeight,
         maxHeight: 300,
@@ -127,7 +127,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: TextField(
                 controller: textController,
                 focusNode: focusNode,
@@ -160,7 +160,7 @@ void main() {
         type: AutoCompleteType.dropdown,
         initialOptions: List.generate(
           20,
-          (index) => AutoCompleteOption(value: 'Option $index'),
+          (index) => CompleteOption(value: 'Option $index'),
         ),
         minHeight: 100,
         maxHeight: testMaxHeight,
@@ -171,7 +171,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: TextField(
                 controller: textController,
                 focusNode: focusNode,
@@ -202,7 +202,7 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Test'),
+          CompleteOption(value: 'Test'),
         ],
       );
       final focusNode = FocusNode();
@@ -211,7 +211,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: TextField(
                 controller: textController,
                 focusNode: focusNode,
@@ -246,7 +246,7 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Option 1'),
+          CompleteOption(value: 'Option 1'),
         ],
         minHeight: 100,
         maxHeight: 300,
@@ -261,7 +261,7 @@ void main() {
               padding: EdgeInsets.only(top: 50, bottom: 30),
             ),
             child: Scaffold(
-              body: ChampionAutocompleteWrapper(
+              body: AutocompleteWrapper(
                 child: TextField(
                   controller: textController,
                   focusNode: focusNode,
@@ -294,7 +294,7 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Test'),
+          CompleteOption(value: 'Test'),
         ],
         dropdownBoxMargin: customMargin,
       );
@@ -304,7 +304,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: TextField(
                 controller: textController,
                 focusNode: focusNode,
@@ -334,7 +334,7 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Test'),
+          CompleteOption(value: 'Test'),
         ],
       );
       final focusNode = FocusNode();
@@ -345,7 +345,7 @@ void main() {
           home: Scaffold(
             body: SizedBox(
               width: 250, // Specific width
-              child: ChampionAutocompleteWrapper(
+              child: AutocompleteWrapper(
                 child: TextField(
                   controller: textController,
                   focusNode: focusNode,

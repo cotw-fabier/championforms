@@ -14,13 +14,13 @@ class OptionSelect extends Field {
   final Widget? trailing;
 
   // Options
-  final List<MultiselectOption>? options;
+  final List<FieldOption>? options;
 
   // Multiselect?
   final bool multiselect;
 
   // These are the default values for the field. Use the specific one you need depending on the input required.
-  final List<MultiselectOption> defaultValue;
+  final List<FieldOption> defaultValue;
 
   // match default value case sensitive?
   final bool caseSensitiveDefaultValue;
@@ -32,7 +32,7 @@ class OptionSelect extends Field {
     OptionSelect field,
     FieldColorScheme currentColors,
     Function(bool focused) updateFocus,
-    Function(MultiselectOption? selectedOption) updateSelectedOption,
+    Function(FieldOption? selectedOption) updateSelectedOption,
   ) fieldBuilder;
 
   OptionSelect({
@@ -59,16 +59,16 @@ class OptionSelect extends Field {
     this.fieldBuilder = dropdownFieldBuilder,
   });
 
-  // --- Implementation of Field<List<MultiselectOption>> ---
+  // --- Implementation of Field<List<FieldOption>> ---
 
   // @override
-  // List<MultiselectOption> get defaultValue => _defaultValue; // Implement getter
+  // List<FieldOption> get defaultValue => _defaultValue; // Implement getter
 
   /// Converts the list of selected options to a comma-separated string of their values.
   @override
   String Function(dynamic value) get asStringConverter => (dynamic value) {
-        List<MultiselectOption> effectiveValue;
-        if (value is List<MultiselectOption>) {
+        List<FieldOption> effectiveValue;
+        if (value is List<FieldOption>) {
           effectiveValue = value;
         } else if (value == null) {
           effectiveValue = defaultValue;
@@ -82,8 +82,8 @@ class OptionSelect extends Field {
   @override
   List<String> Function(dynamic value) get asStringListConverter =>
       (dynamic value) {
-        List<MultiselectOption> effectiveValue;
-        if (value is List<MultiselectOption>) {
+        List<FieldOption> effectiveValue;
+        if (value is List<FieldOption>) {
           effectiveValue = value;
         } else if (value == null) {
           effectiveValue = defaultValue;
@@ -96,8 +96,8 @@ class OptionSelect extends Field {
   /// Returns true if at least one option is selected.
   @override
   bool Function(dynamic value) get asBoolConverter => (dynamic value) {
-        List<MultiselectOption> effectiveValue;
-        if (value is List<MultiselectOption>) {
+        List<FieldOption> effectiveValue;
+        if (value is List<FieldOption>) {
           effectiveValue = value;
         } else if (value == null) {
           effectiveValue = defaultValue;
@@ -114,13 +114,13 @@ class OptionSelect extends Field {
       (dynamic value) {
         // This specific field type doesn't produce files directly from its primary value T.
         // Subclasses must override if they store FileModel in T or handle it differently.
-        // If `value` were `List<MultiselectOption>` and additionalData held files,
+        // If `value` were `List<FieldOption>` and additionalData held files,
         // the logic would go here, but FileUpload overrides this.
-        if (value is List<MultiselectOption> || value == null) {
+        if (value is List<FieldOption> || value == null) {
           // It's the correct primary type (or null), but this base class doesn't convert it to files.
           return null;
         }
-        // If value is not List<MultiselectOption> and not null, it's an unexpected type.
+        // If value is not List<FieldOption> and not null, it's an unexpected type.
         throw TypeError();
       };
 }

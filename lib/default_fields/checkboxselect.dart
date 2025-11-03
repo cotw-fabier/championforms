@@ -23,7 +23,7 @@ Widget buildCheckboxSelect(
     field, // Pass the specific field instance
     currentColors,
     updateFocus,
-    (MultiselectOption? selectedOption) {
+    (FieldOption? selectedOption) {
       // Update selected logic (handles both single and multi-select via controller)
       // The specific interaction (add/remove/replace) is managed within updateMultiselectValues
       if (selectedOption != null) {

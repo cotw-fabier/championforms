@@ -1,8 +1,8 @@
-class FormBuilderValidator {
+class Validator {
   final bool Function(dynamic value) validator;
   final String reason;
 
-  FormBuilderValidator({
+  Validator({
     required this.validator,
     required this.reason,
   });

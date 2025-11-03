@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:championforms/models/field_types/championfileupload.dart';
+import 'package:championforms/models/field_types/fileupload.dart';
 
 void main() {
-  group('ChampionFileUpload clearOnUpload property', () {
+  group('FileUpload clearOnUpload property', () {
     test('clearOnUpload defaults to false when not specified', () {
       // Arrange & Act
-      final field = ChampionFileUpload(
+      final field = FileUpload(
         id: 'test_upload',
       );
 
@@ -15,7 +15,7 @@ void main() {
 
     test('clearOnUpload accepts true value', () {
       // Arrange & Act
-      final field = ChampionFileUpload(
+      final field = FileUpload(
         id: 'test_upload',
         clearOnUpload: true,
       );
@@ -26,7 +26,7 @@ void main() {
 
     test('clearOnUpload accepts false value explicitly', () {
       // Arrange & Act
-      final field = ChampionFileUpload(
+      final field = FileUpload(
         id: 'test_upload',
         clearOnUpload: false,
       );
@@ -37,13 +37,13 @@ void main() {
 
     test('clearOnUpload property is accessible on existing field instances', () {
       // Arrange
-      final fieldWithClear = ChampionFileUpload(
+      final fieldWithClear = FileUpload(
         id: 'upload_with_clear',
         clearOnUpload: true,
         displayUploadedFiles: false,
       );
 
-      final fieldWithoutClear = ChampionFileUpload(
+      final fieldWithoutClear = FileUpload(
         id: 'upload_without_clear',
         displayUploadedFiles: true,
       );

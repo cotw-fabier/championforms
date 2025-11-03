@@ -16,7 +16,7 @@ class FileUpload extends OptionSelect {
   final bool clearOnUpload;
 
   /// Build the list of files
-  final Widget Function(List<MultiselectOption>)? fileUploadBuilder;
+  final Widget Function(List<FieldOption>)? fileUploadBuilder;
 
   /// Allowed Extensions
   /// Add a list of allowed extensions to upload. This will limit visible choices when using the file picker
@@ -63,19 +63,19 @@ class FileUpload extends OptionSelect {
   // --- Override asFileListConverter ---
 
   /// Extracts FileModel objects from the additionalData of selected options.
-  /// The input `value` is dynamic, expected to be List<MultiselectOption>.
+  /// The input `value` is dynamic, expected to be List<FieldOption>.
   @override
   List<FileModel> Function(dynamic value)? get asFileListConverter =>
       (dynamic value) {
-        List<MultiselectOption> effectiveOptions;
-        if (value is List<MultiselectOption>) {
+        List<FieldOption> effectiveOptions;
+        if (value is List<FieldOption>) {
           effectiveOptions = value;
         } else if (value == null) {
           // Use the defaultValue from the superclass (OptionSelect)
           // which should be an empty list for FileUpload if not specified otherwise.
           effectiveOptions = defaultValue;
         } else {
-          // If value is not List<MultiselectOption> and not null, it's an unexpected type.
+          // If value is not List<FieldOption> and not null, it's an unexpected type.
           throw TypeError();
         }
 

@@ -6,14 +6,14 @@ import 'package:championforms/models/autocomplete/autocomplete_option_class.dart
 import 'package:championforms/models/autocomplete/autocomplete_type.dart';
 
 void main() {
-  group('ChampionAutocompleteWrapper Structure Tests', () {
+  group('AutocompleteWrapper Structure Tests', () {
     test('Widget instantiates with required parameters', () {
       // Arrange
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Option 1'),
-          AutoCompleteOption(value: 'Option 2'),
+          CompleteOption(value: 'Option 1'),
+          CompleteOption(value: 'Option 2'),
         ],
       );
       final focusNode = FocusNode();
@@ -21,7 +21,7 @@ void main() {
 
       // Act & Assert - should not throw
       expect(
-        () => ChampionAutocompleteWrapper(
+        () => AutocompleteWrapper(
           child: child,
           autoComplete: autoComplete,
           focusNode: focusNode,
@@ -39,8 +39,8 @@ void main() {
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
-          AutoCompleteOption(value: 'Test 1'),
-          AutoCompleteOption(value: 'Test 2'),
+          CompleteOption(value: 'Test 1'),
+          CompleteOption(value: 'Test 2'),
         ],
       );
       final focusNode = FocusNode();
@@ -50,7 +50,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: TextField(
                 controller: textController,
                 focusNode: focusNode,
@@ -65,7 +65,7 @@ void main() {
 
       // Assert
       expect(find.byType(TextField), findsOneWidget);
-      expect(find.byType(ChampionAutocompleteWrapper), findsOneWidget);
+      expect(find.byType(AutocompleteWrapper), findsOneWidget);
 
       // Cleanup
       focusNode.dispose();
@@ -77,7 +77,7 @@ void main() {
       // Arrange
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
-        initialOptions: [AutoCompleteOption(value: 'Test')],
+        initialOptions: [CompleteOption(value: 'Test')],
       );
       final focusNode = FocusNode();
       final child = Container(key: const Key('test-child'));
@@ -86,7 +86,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: child,
               autoComplete: autoComplete,
               focusNode: focusNode,
@@ -108,7 +108,7 @@ void main() {
       // Arrange
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
-        initialOptions: [AutoCompleteOption(value: 'Test')],
+        initialOptions: [CompleteOption(value: 'Test')],
       );
       final focusNode = FocusNode();
       final textController = TextEditingController();
@@ -120,7 +120,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ChampionAutocompleteWrapper(
+            body: AutocompleteWrapper(
               child: child,
               autoComplete: autoComplete,
               focusNode: focusNode,
@@ -135,7 +135,7 @@ void main() {
       );
 
       // Assert - Widget should build successfully with all optional params
-      expect(find.byType(ChampionAutocompleteWrapper), findsOneWidget);
+      expect(find.byType(AutocompleteWrapper), findsOneWidget);
 
       // Cleanup
       focusNode.dispose();
@@ -147,13 +147,13 @@ void main() {
       // Arrange
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
-        initialOptions: [AutoCompleteOption(value: 'Test')],
+        initialOptions: [CompleteOption(value: 'Test')],
       );
       final focusNode = FocusNode();
       final child = Container();
 
       // Act - Testing named parameter syntax
-      final widget = ChampionAutocompleteWrapper(
+      final widget = AutocompleteWrapper(
         child: child,
         autoComplete: autoComplete,
         focusNode: focusNode,
@@ -173,13 +173,13 @@ void main() {
       const key = Key('autocomplete-wrapper-key');
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
-        initialOptions: [AutoCompleteOption(value: 'Test')],
+        initialOptions: [CompleteOption(value: 'Test')],
       );
       final focusNode = FocusNode();
       final child = Container();
 
       // Act
-      final widget = ChampionAutocompleteWrapper(
+      final widget = AutocompleteWrapper(
         key: key,
         child: child,
         autoComplete: autoComplete,

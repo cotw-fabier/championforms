@@ -16,7 +16,7 @@ Widget buildOptionSelect(
   // Use the field's own builder logic
   return field
       .fieldBuilder(context, controller, field, currentColors, updateFocus,
-          (MultiselectOption? selectedOption) {
+          (FieldOption? selectedOption) {
     // Update selected logic
     if (selectedOption != null) {
       controller.updateMultiselectValues(field.id, [selectedOption],

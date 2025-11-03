@@ -15,7 +15,7 @@ class CheckboxSelect extends OptionSelect {
     OptionSelect field,
     FieldColorScheme currentColors,
     Function(bool focused) updateFocus,
-    Function(MultiselectOption? selectedOption) updateSelectedOption,
+    Function(FieldOption? selectedOption) updateSelectedOption,
   ) fieldBuilder;
   CheckboxSelect({
     required super.id,

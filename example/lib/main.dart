@@ -126,7 +126,7 @@ class _MyHomePageState extends State<MyHomePage> {
     controller.updateFieldValue("Password", "newPassword123");
 
     // Toggle options in multiselect fields (like dropdowns, checkboxes)
-    // Uses the 'value' property of the MultiselectOption
+    // Uses the 'value' property of the FieldOption
     controller.toggleMultiSelectValue("DropdownField", toggleOn: [
       "Value 3",
       "Value 2"
@@ -168,10 +168,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 autoComplete: form.AutoCompleteBuilder(
                   // type: AutoCompleteType.dropdown, // Default
                   initialOptions: [
-                    form.AutoCompleteOption(value: "test1@example.com"),
-                    form.AutoCompleteOption(value: "test2@example.com"),
-                    form.AutoCompleteOption(value: "another@domain.net"),
-                    form.AutoCompleteOption(value: "fabier@rogueskies.net"),
+                    form.CompleteOption(value: "test1@example.com"),
+                    form.CompleteOption(value: "test2@example.com"),
+                    form.CompleteOption(value: "another@domain.net"),
+                    form.CompleteOption(value: "fabier@rogueskies.net"),
                   ],
                   // Example async update (can fetch from API)
                   updateOptions: (searchValue) async {
@@ -179,23 +179,23 @@ class _MyHomePageState extends State<MyHomePage> {
                     await Future.delayed(const Duration(milliseconds: 300));
                     // Filter initial options (replace with actual API call)
                     return [
-                      form.AutoCompleteOption(
+                      form.CompleteOption(
                           value: "search-$searchValue@example.com"),
-                      form.AutoCompleteOption(value: "$searchValue@rogueskies.net"),
+                      form.CompleteOption(value: "$searchValue@rogueskies.net"),
                     ].where((opt) => opt.value.contains(searchValue)).toList();
                   },
                   debounceWait: const Duration(
                       milliseconds: 250), // Wait before calling updateOptions
                 ),
                 validators: [
-                  form.FormBuilderValidator(
+                  form.Validator(
                     validator: (results) =>
-                        form.DefaultValidators().stringIsNotEmpty(results),
+                        form.Validators.stringIsNotEmpty(results),
                     reason: "Email cannot be empty.",
                   ),
-                  form.FormBuilderValidator(
+                  form.Validator(
                     validator: (results) =>
-                        form.DefaultValidators().isEmail(results),
+                        form.Validators.isEmail(results),
                     reason: "Please enter a valid email address.",
                   ),
                 ],
@@ -215,9 +215,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 validateLive: true,
                 onSubmit: (results) => _executeLogin(), // Submit on Enter
                 validators: [
-                  form.FormBuilderValidator(
+                  form.Validator(
                       validator: (results) =>
-                          form.DefaultValidators().stringIsNotEmpty(results),
+                          form.Validators.stringIsNotEmpty(results),
                       reason: "Password cannot be empty."),
                   // Add more password validators if needed (e.g., length)
                 ],
@@ -236,13 +236,13 @@ class _MyHomePageState extends State<MyHomePage> {
         // multiselect: true,
         description: "Choose one from the list.",
         defaultValue: [
-          form.MultiselectOption(label: "Option 1", value: "Value 1"),
+          form.FieldOption(label: "Option 1", value: "Value 1"),
         ],
         options: [
-          form.MultiselectOption(label: "Option 1", value: "Value 1"),
-          form.MultiselectOption(label: "Option 2", value: "Value 2"),
-          form.MultiselectOption(label: "Option 3", value: "Value 3"),
-          form.MultiselectOption(label: "Option 4", value: "Value 4"),
+          form.FieldOption(label: "Option 1", value: "Value 1"),
+          form.FieldOption(label: "Option 2", value: "Value 2"),
+          form.FieldOption(label: "Option 3", value: "Value 3"),
+          form.FieldOption(label: "Option 4", value: "Value 4"),
         ],
         // defaultValue: ["Value 2"], // Set a default selection
       ),
@@ -256,18 +256,18 @@ class _MyHomePageState extends State<MyHomePage> {
         validateLive: true,
         validators: [
           // Example: require at least one selection
-          form.FormBuilderValidator(
+          form.Validator(
               validator: (results) =>
-                  form.DefaultValidators().listIsNotEmpty(results),
+                  form.Validators.listIsNotEmpty(results),
               reason: "Please select at least one option."),
         ],
         defaultValue: [
-          form.MultiselectOption(value: "Hiya", label: "Wat"),
+          form.FieldOption(value: "Hiya", label: "Wat"),
         ],
         options: [
-          form.MultiselectOption(value: "Hi", label: "Hello"),
-          form.MultiselectOption(value: "Hiya", label: "Wat"),
-          form.MultiselectOption(value: "Yoz", label: "Sup"),
+          form.FieldOption(value: "Hi", label: "Hello"),
+          form.FieldOption(value: "Hiya", label: "Wat"),
+          form.FieldOption(value: "Yoz", label: "Sup"),
         ],
         // defaultValue: ["Hiya", "Yoz"], // Set default checked items
       ),
@@ -290,18 +290,18 @@ class _MyHomePageState extends State<MyHomePage> {
         // ),
         validators: [
           // Example: Ensure at least one file is uploaded
-          // form.FormBuilderValidator(
-          //     validator: (results) => form.DefaultValidators().isEmpty(results),
+          // form.Validator(
+          //     validator: (results) => form.Validators.isEmpty(results),
           //     reason: "Please upload at least one image."),
           // Example: Validate that uploaded files are indeed images
-          form.FormBuilderValidator(
+          form.Validator(
             reason: "Only image files (JPG, PNG) are allowed.",
-            validator: (results) => form.DefaultValidators().fileIsImage(results),
+            validator: (results) => form.Validators.fileIsImage(results),
           ),
           // Or use a more specific validator:
-          // form.FormBuilderValidator(
+          // form.Validator(
           //   reason: "Only JPG or PNG images allowed.",
-          //   validator: (results) => form.DefaultValidators().fileIsCommonImage(results), // Checks common image types
+          //   validator: (results) => form.Validators.fileIsCommonImage(results), // Checks common image types
           // ),
         ],
       ),
@@ -313,22 +313,22 @@ class _MyHomePageState extends State<MyHomePage> {
         hintText: "Start typing...",
         autoComplete: form.AutoCompleteBuilder(
             initialOptions: [
-              form.AutoCompleteOption(value: "Apple"),
-              form.AutoCompleteOption(value: "Banana"),
-              form.AutoCompleteOption(value: "Cherry"),
-              form.AutoCompleteOption(value: "Date"),
-              form.AutoCompleteOption(value: "Fig"),
-              form.AutoCompleteOption(value: "Grape"),
+              form.CompleteOption(value: "Apple"),
+              form.CompleteOption(value: "Banana"),
+              form.CompleteOption(value: "Cherry"),
+              form.CompleteOption(value: "Date"),
+              form.CompleteOption(value: "Fig"),
+              form.CompleteOption(value: "Grape"),
             ],
             // Simple filtering on initial options
             updateOptions: (searchValue) async {
               return [
-                form.AutoCompleteOption(value: "Apple"),
-                form.AutoCompleteOption(value: "Banana"),
-                form.AutoCompleteOption(value: "Cherry"),
-                form.AutoCompleteOption(value: "Date"),
-                form.AutoCompleteOption(value: "Fig"),
-                form.AutoCompleteOption(value: "Grape"),
+                form.CompleteOption(value: "Apple"),
+                form.CompleteOption(value: "Banana"),
+                form.CompleteOption(value: "Cherry"),
+                form.CompleteOption(value: "Date"),
+                form.CompleteOption(value: "Fig"),
+                form.CompleteOption(value: "Grape"),
               ]
                   .where((opt) => opt.value
                       .toLowerCase()
