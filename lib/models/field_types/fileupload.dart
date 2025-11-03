@@ -1,12 +1,12 @@
 import 'package:championforms/models/colorscheme.dart';
-import 'package:championforms/models/field_types/championoptionselect.dart';
+import 'package:championforms/models/field_types/optionselect.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_external/field_builders/fileupload_field_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-class ChampionFileUpload extends ChampionOptionSelect {
+class FileUpload extends OptionSelect {
   /// Display Uploaded Files
   final bool displayUploadedFiles;
 
@@ -27,10 +27,10 @@ class ChampionFileUpload extends ChampionOptionSelect {
   /// Change the display of the drag and drop zone for file uploads.
   /// Takes parameters of the current color scheme and the
   /// field details so they're available for building your custom implementation.
-  final Widget Function(FieldColorScheme, ChampionFileUpload)?
+  final Widget Function(FieldColorScheme, FileUpload)?
       dropDisplayWidget;
 
-  ChampionFileUpload({
+  FileUpload({
     required super.id,
     super.icon,
     super.multiselect = false,
@@ -71,8 +71,8 @@ class ChampionFileUpload extends ChampionOptionSelect {
         if (value is List<MultiselectOption>) {
           effectiveOptions = value;
         } else if (value == null) {
-          // Use the defaultValue from the superclass (ChampionOptionSelect)
-          // which should be an empty list for ChampionFileUpload if not specified otherwise.
+          // Use the defaultValue from the superclass (OptionSelect)
+          // which should be an empty list for FileUpload if not specified otherwise.
           effectiveOptions = defaultValue;
         } else {
           // If value is not List<MultiselectOption> and not null, it's an unexpected type.
@@ -85,7 +85,7 @@ class ChampionFileUpload extends ChampionOptionSelect {
             files.add(option.additionalData as FileModel);
           } else {
             debugPrint(
-                "Warning: ChampionFileUpload field '${super.id}' encountered an option ('${option.value}') without a FileModel in additionalData.");
+                "Warning: FileUpload field '${super.id}' encountered an option ('${option.value}') without a FileModel in additionalData.");
           }
         }
         return files;

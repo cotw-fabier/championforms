@@ -6,13 +6,13 @@ import 'package:collection/collection.dart';
 
 import 'package:flutter/foundation.dart'; // For debugPrint
 
-// Assuming FormFieldDef, BaseFieldResults, FieldResults, ChampionFormController,
+// Assuming Field, BaseFieldResults, FieldResults, ChampionFormController,
 // FormBuilderValidator, and FormBuilderError classes are accessible.
 
 List<FormBuilderError> getFormBuilderErrors({
   required List<BaseFieldResults> results, // Changed to List<BaseFieldResults>
-  required Map<String, FormFieldDef> definitions, // Added definitions map
-  required ChampionFormController
+  required Map<String, Field> definitions, // Added definitions map
+  required FormController
       controller, // Keep controller for error management
 }) {
   final List<FormBuilderError> errors = [];

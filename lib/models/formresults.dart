@@ -28,7 +28,7 @@ class FieldResults<T> extends BaseFieldResults {
 class FieldResultAccessor {
   final String _id;
   final dynamic _value; // The raw value directly stored
-  final FormFieldDef
+  final Field
       _definition; // The corresponding field definition, stored as dynamic
 
   FieldResultAccessor._(this._id, this._value, this._definition);
@@ -164,14 +164,14 @@ class FieldResultAccessor {
   }
 
   /// Get the value as a List<MultiselectOption>.
-  /// This method specifically handles ChampionOptionSelect fields.
+  /// This method specifically handles OptionSelect fields.
   /// It doesn't use a generic converter but checks the value type directly.
   List<MultiselectOption> asMultiselectList() {
     // Check definition type for early exit and clarity.
-    if (_definition is! ChampionOptionSelect) {
+    if (_definition is! OptionSelect) {
       // Log if called on an incompatible field type.
       debugPrint(
-          "asMultiselectList called on field '$_id' which is not a ChampionOptionSelect type (${_definition.runtimeType}). Returning empty list.");
+          "asMultiselectList called on field '$_id' which is not a OptionSelect type (${_definition.runtimeType}). Returning empty list.");
       return [];
     }
 
@@ -330,7 +330,7 @@ class FormResults {
   // Store raw values directly, keyed by field ID.
   final Map<String, dynamic> results;
   // Store field definitions, keyed by field ID. Use dynamic type argument.
-  final Map<String, FormFieldDef> fieldDefinitions;
+  final Map<String, Field> fieldDefinitions;
   const FormResults({
     this.errorState = false,
     this.formErrors = const [],
@@ -339,16 +339,16 @@ class FormResults {
   });
 
   factory FormResults.getResults({
-    required ChampionFormController controller,
+    required FormController controller,
     bool checkForErrors = true, // Whether to run validation.
-    List<FormFieldDef>? fields, // Optional: Process only specific fields.
+    List<Field>? fields, // Optional: Process only specific fields.
   }) {
     // Determine the list of fields to process.
-    List<FormFieldDef> finalFields = fields ?? controller.activeFields;
+    List<Field> finalFields = fields ?? controller.activeFields;
 
     // Initialize containers for results, definitions, and errors.
     Map<String, dynamic> collectedResults = {};
-    Map<String, FormFieldDef> definitions = {};
+    Map<String, Field> definitions = {};
     List<FormBuilderError> formErrors = [];
     bool errorState = false; // Track overall error status.
 
@@ -358,8 +358,8 @@ class FormResults {
       if (field.hideField) continue;
 
       // Store the field definition, casting its type parameter to dynamic for the map.
-      // The actual instance retains its specific type (e.g., FormFieldDef<String>).
-      definitions[field.id] = field as FormFieldDef;
+      // The actual instance retains its specific type (e.g., Field<String>).
+      definitions[field.id] = field as Field;
 
       // Retrieve the raw value from the controller.
       // Use dynamic type hint. Fall back to the field's default value if controller returns null.
@@ -373,16 +373,16 @@ class FormResults {
 
       if (rawValue is String) {
         _validateField<String>(
-            field as FormFieldDef, rawValue, controller, formErrors);
+            field as Field, rawValue, controller, formErrors);
       } else if (rawValue is int) {
         _validateField<int>(
-            field as FormFieldDef, rawValue, controller, formErrors);
+            field as Field, rawValue, controller, formErrors);
       } else if (rawValue is bool) {
         _validateField<bool>(
-            field as FormFieldDef, rawValue, controller, formErrors);
+            field as Field, rawValue, controller, formErrors);
       } else if (rawValue is List<MultiselectOption>) {
         _validateField<List<MultiselectOption>>(
-            field as FormFieldDef, rawValue, controller, formErrors);
+            field as Field, rawValue, controller, formErrors);
       } else {
         // Fallback to the safe validation method
         _validateField(field, rawValue, controller, formErrors);
@@ -404,7 +404,7 @@ class FormResults {
 
   // --- Helper to get result and definition ---
   // Returns null if field not found
-  // ({FieldResults<T>? result, FormFieldDef<T>? definition}) _getResultAndDef<T>(
+  // ({FieldResults<T>? result, Field<T>? definition}) _getResultAndDef<T>(
   //     String id) {
   //   final baseResult = results.firstWhereOrNull((item) => item.id == id);
   //   final definition = fieldDefinitions[id];
@@ -414,10 +414,10 @@ class FormResults {
   //   }
 
   //   // Try to safely cast
-  //   if (baseResult is FieldResults<T> && definition is FormFieldDef<T>) {
+  //   if (baseResult is FieldResults<T> && definition is Field<T>) {
   //     return (
   //       result: baseResult as FieldResults<T>?,
-  //       definition: definition as FormFieldDef<T>?
+  //       definition: definition as Field<T>?
   //     );
   //   } else {
   //     // Log or handle type mismatch error?
@@ -464,7 +464,7 @@ class FormResults {
               "Available field definition keys: ${fieldDefinitions.keys.join(', ')}");
 
       // Create the "dummy" definition.
-      final FormFieldDef dummyDefinition = FormFieldNull(id: id);
+      final Field dummyDefinition = NullField(id: id);
 
       // Create the accessor, passing null for the value (as it's an "empty" accessor
       // due to missing definition) and the dummy definition.
@@ -480,9 +480,9 @@ class FormResults {
 
 // Add this helper method to your FormResults class:
 void _validateField<T>(
-  FormFieldDef field,
+  Field field,
   T? rawValue,
-  ChampionFormController controller,
+  FormController controller,
   List<FormBuilderError> formErrors,
 ) {
   if (field.validators == null || field.validators!.isEmpty || field.disabled) {

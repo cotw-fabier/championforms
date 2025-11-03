@@ -170,7 +170,7 @@ class FormTheme {
 
     // --- Step 2: Apply Global Singleton Overrides ---
     // Get the singleton's current theme state
-    final singletonThemeOverrides = ChampionFormTheme.instance.asFormTheme;
+    final singletonThemeOverrides = FormThemeSingleton.instance.asFormTheme;
     FormTheme themeAfterSingleton =
         baseTheme.copyWith(theme: singletonThemeOverrides);
 

@@ -1,10 +1,7 @@
 // /Users/fabier/Documents/championforms/example/lib/main.dart
 
-import 'package:championforms/championforms.dart';
-import 'package:championforms/models/autocomplete/autocomplete_class.dart';
-import 'package:championforms/models/autocomplete/autocomplete_option_class.dart';
-// AutoCompleteType is implicitly imported via autocomplete_class.dart
-import 'package:championforms/models/multiselect_option.dart';
+import 'package:championforms/championforms.dart' as form;
+import 'package:championforms/championforms_themes.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -28,7 +25,7 @@ class MyApp extends StatelessWidget {
     // Retrieve a pre-defined theme (or create your own FormTheme object)
     final globalTheme = softBlueColorTheme(context);
     // Set it using the singleton instance
-    ChampionFormTheme.instance.setTheme(globalTheme);
+    FormThemeSingleton.instance.setTheme(globalTheme);
 
     return MaterialApp(
       title: 'ChampionForms Demo',
@@ -53,13 +50,13 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   // --- Form Controller ---
   // The controller manages the state of the form fields.
-  late ChampionFormController controller;
+  late form.FormController controller;
 
   @override
   void initState() {
     super.initState();
     // Initialize the controller
-    controller = ChampionFormController(
+    controller = form.FormController(
         // Optionally give the controller an ID, useful if managing
         // multiple distinct logical forms that might share field IDs.
         // id: "myFormId"
@@ -77,7 +74,7 @@ class _MyHomePageState extends State<MyHomePage> {
   // --- Handling Form Submission ---
   void _executeLogin() {
     // Get results and trigger validation by creating FormResults instance.
-    final FormResults results = FormResults.getResults(controller: controller);
+    final form.FormResults results = form.FormResults.getResults(controller: controller);
 
     // Check the error state.
     final errors = results.errorState;
@@ -151,16 +148,16 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     // --- Defining Form Fields ---
-    // Uses new features: ChampionRow, ChampionColumn, ChampionFileUpload, AutoCompleteBuilder
-    final List<ChampionFormElement> fields = [
+    // Uses new features: Row, Column, FileUpload, AutoCompleteBuilder
+    final List<form.FormElement> fields = [
       // --- Row & Column Layout ---
-      ChampionRow(
+      form.Row(
         children: [
           // --- Column 1 (Email) ---
-          ChampionColumn(
+          form.Column(
             widthFactor: 2,
             children: [
-              ChampionTextField(
+              form.TextField(
                 id: "Email",
                 textFieldTitle: "Email Address",
                 hintText: "Enter your email",
@@ -168,13 +165,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 maxLines: 1,
                 validateLive: true, // Validate on losing focus
                 // --- Autocomplete Example ---
-                autoComplete: AutoCompleteBuilder(
+                autoComplete: form.AutoCompleteBuilder(
                   // type: AutoCompleteType.dropdown, // Default
                   initialOptions: [
-                    AutoCompleteOption(value: "test1@example.com"),
-                    AutoCompleteOption(value: "test2@example.com"),
-                    AutoCompleteOption(value: "another@domain.net"),
-                    AutoCompleteOption(value: "fabier@rogueskies.net"),
+                    form.AutoCompleteOption(value: "test1@example.com"),
+                    form.AutoCompleteOption(value: "test2@example.com"),
+                    form.AutoCompleteOption(value: "another@domain.net"),
+                    form.AutoCompleteOption(value: "fabier@rogueskies.net"),
                   ],
                   // Example async update (can fetch from API)
                   updateOptions: (searchValue) async {
@@ -182,23 +179,23 @@ class _MyHomePageState extends State<MyHomePage> {
                     await Future.delayed(const Duration(milliseconds: 300));
                     // Filter initial options (replace with actual API call)
                     return [
-                      AutoCompleteOption(
+                      form.AutoCompleteOption(
                           value: "search-$searchValue@example.com"),
-                      AutoCompleteOption(value: "$searchValue@rogueskies.net"),
+                      form.AutoCompleteOption(value: "$searchValue@rogueskies.net"),
                     ].where((opt) => opt.value.contains(searchValue)).toList();
                   },
                   debounceWait: const Duration(
                       milliseconds: 250), // Wait before calling updateOptions
                 ),
                 validators: [
-                  FormBuilderValidator(
+                  form.FormBuilderValidator(
                     validator: (results) =>
-                        DefaultValidators().stringIsNotEmpty(results),
+                        form.DefaultValidators().stringIsNotEmpty(results),
                     reason: "Email cannot be empty.",
                   ),
-                  FormBuilderValidator(
+                  form.FormBuilderValidator(
                     validator: (results) =>
-                        DefaultValidators().isEmail(results),
+                        form.DefaultValidators().isEmail(results),
                     reason: "Please enter a valid email address.",
                   ),
                 ],
@@ -207,9 +204,9 @@ class _MyHomePageState extends State<MyHomePage> {
             ],
           ),
           // --- Column 2 (Password) ---
-          ChampionColumn(
+          form.Column(
             children: [
-              ChampionTextField(
+              form.TextField(
                 id: "Password", // Changed ID
                 textFieldTitle: "Password",
                 description: "Enter your password",
@@ -218,9 +215,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 validateLive: true,
                 onSubmit: (results) => _executeLogin(), // Submit on Enter
                 validators: [
-                  FormBuilderValidator(
+                  form.FormBuilderValidator(
                       validator: (results) =>
-                          DefaultValidators().stringIsNotEmpty(results),
+                          form.DefaultValidators().stringIsNotEmpty(results),
                       reason: "Password cannot be empty."),
                   // Add more password validators if needed (e.g., length)
                 ],
@@ -233,25 +230,25 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
 
       // --- Dropdown ---
-      ChampionOptionSelect(
+      form.OptionSelect(
         id: "DropdownField",
         title: "Select an Option",
         // multiselect: true,
         description: "Choose one from the list.",
         defaultValue: [
-          MultiselectOption(label: "Option 1", value: "Value 1"),
+          form.MultiselectOption(label: "Option 1", value: "Value 1"),
         ],
         options: [
-          MultiselectOption(label: "Option 1", value: "Value 1"),
-          MultiselectOption(label: "Option 2", value: "Value 2"),
-          MultiselectOption(label: "Option 3", value: "Value 3"),
-          MultiselectOption(label: "Option 4", value: "Value 4"),
+          form.MultiselectOption(label: "Option 1", value: "Value 1"),
+          form.MultiselectOption(label: "Option 2", value: "Value 2"),
+          form.MultiselectOption(label: "Option 3", value: "Value 3"),
+          form.MultiselectOption(label: "Option 4", value: "Value 4"),
         ],
         // defaultValue: ["Value 2"], // Set a default selection
       ),
 
       // --- Checkboxes ---
-      ChampionCheckboxSelect(
+      form.CheckboxSelect(
         id: "SelectBox",
         title: "Choose Multiple",
         description: "Select all that apply.",
@@ -259,24 +256,24 @@ class _MyHomePageState extends State<MyHomePage> {
         validateLive: true,
         validators: [
           // Example: require at least one selection
-          FormBuilderValidator(
+          form.FormBuilderValidator(
               validator: (results) =>
-                  DefaultValidators().listIsNotEmpty(results),
+                  form.DefaultValidators().listIsNotEmpty(results),
               reason: "Please select at least one option."),
         ],
         defaultValue: [
-          MultiselectOption(value: "Hiya", label: "Wat"),
+          form.MultiselectOption(value: "Hiya", label: "Wat"),
         ],
         options: [
-          MultiselectOption(value: "Hi", label: "Hello"),
-          MultiselectOption(value: "Hiya", label: "Wat"),
-          MultiselectOption(value: "Yoz", label: "Sup"),
+          form.MultiselectOption(value: "Hi", label: "Hello"),
+          form.MultiselectOption(value: "Hiya", label: "Wat"),
+          form.MultiselectOption(value: "Yoz", label: "Sup"),
         ],
         // defaultValue: ["Hiya", "Yoz"], // Set default checked items
       ),
 
       // --- File Upload ---
-      ChampionFileUpload(
+      form.FileUpload(
         id: "fileUpload",
         title: "Upload Images",
         description: "Drag & drop or click to upload (JPG, PNG only).",
@@ -293,45 +290,45 @@ class _MyHomePageState extends State<MyHomePage> {
         // ),
         validators: [
           // Example: Ensure at least one file is uploaded
-          // FormBuilderValidator(
-          //     validator: (results) => DefaultValidators().isEmpty(results),
+          // form.FormBuilderValidator(
+          //     validator: (results) => form.DefaultValidators().isEmpty(results),
           //     reason: "Please upload at least one image."),
           // Example: Validate that uploaded files are indeed images
-          FormBuilderValidator(
+          form.FormBuilderValidator(
             reason: "Only image files (JPG, PNG) are allowed.",
-            validator: (results) => DefaultValidators().fileIsImage(results),
+            validator: (results) => form.DefaultValidators().fileIsImage(results),
           ),
           // Or use a more specific validator:
-          // FormBuilderValidator(
+          // form.FormBuilderValidator(
           //   reason: "Only JPG or PNG images allowed.",
-          //   validator: (results) => DefaultValidators().fileIsCommonImage(results), // Checks common image types
+          //   validator: (results) => form.DefaultValidators().fileIsCommonImage(results), // Checks common image types
           // ),
         ],
       ),
 
       // --- Another Text Field with Autocomplete ---
-      ChampionTextField(
+      form.TextField(
         id: "BottomText",
         textFieldTitle: "Autocomplete Example 2",
         hintText: "Start typing...",
-        autoComplete: AutoCompleteBuilder(
+        autoComplete: form.AutoCompleteBuilder(
             initialOptions: [
-              AutoCompleteOption(value: "Apple"),
-              AutoCompleteOption(value: "Banana"),
-              AutoCompleteOption(value: "Cherry"),
-              AutoCompleteOption(value: "Date"),
-              AutoCompleteOption(value: "Fig"),
-              AutoCompleteOption(value: "Grape"),
+              form.AutoCompleteOption(value: "Apple"),
+              form.AutoCompleteOption(value: "Banana"),
+              form.AutoCompleteOption(value: "Cherry"),
+              form.AutoCompleteOption(value: "Date"),
+              form.AutoCompleteOption(value: "Fig"),
+              form.AutoCompleteOption(value: "Grape"),
             ],
             // Simple filtering on initial options
             updateOptions: (searchValue) async {
               return [
-                AutoCompleteOption(value: "Apple"),
-                AutoCompleteOption(value: "Banana"),
-                AutoCompleteOption(value: "Cherry"),
-                AutoCompleteOption(value: "Date"),
-                AutoCompleteOption(value: "Fig"),
-                AutoCompleteOption(value: "Grape"),
+                form.AutoCompleteOption(value: "Apple"),
+                form.AutoCompleteOption(value: "Banana"),
+                form.AutoCompleteOption(value: "Cherry"),
+                form.AutoCompleteOption(value: "Date"),
+                form.AutoCompleteOption(value: "Fig"),
+                form.AutoCompleteOption(value: "Grape"),
               ]
                   .where((opt) => opt.value
                       .toLowerCase()
@@ -354,8 +351,8 @@ class _MyHomePageState extends State<MyHomePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              // --- ChampionForm Widget ---
-              ChampionForm(
+              // --- Form Widget ---
+              form.Form(
                 // theme: specificTheme, // Optionally override the global theme here
                 controller: controller,
                 spacing: 12, // Spacing between fields

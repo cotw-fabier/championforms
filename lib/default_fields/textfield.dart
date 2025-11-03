@@ -1,14 +1,14 @@
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/colorscheme.dart';
-import 'package:championforms/models/field_types/championtextfield.dart';
+import 'package:championforms/models/field_types/textfield.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/widgets_internal/field_widgets/textfieldwidget.dart';
 import 'package:flutter/widgets.dart';
 
-Widget buildChampionTextField(
+Widget buildTextField(
     BuildContext context,
-    ChampionFormController controller,
-    ChampionTextField field,
+    FormController controller,
+    TextField field,
     FieldState currentState,
     FieldColorScheme currentColors,
     Function(bool focused) updateFocus) {
@@ -25,7 +25,7 @@ Widget buildChampionTextField(
   );
 }
 
-extension ChampionTextFieldController on ChampionFormController {
+extension TextFieldController on FormController {
   TextEditingController getTextEditingController(String fieldId) {
     // Check if we already have a FieldController for this field:
     final existing = getFieldController<TextEditingController>(fieldId);

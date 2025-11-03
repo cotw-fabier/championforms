@@ -6,22 +6,22 @@ import 'package:flutter/material.dart';
 /// A singleton class to hold global theme overrides for ChampionForms.
 ///
 /// This theme is applied *after* the default Theme.of(context) colors
-/// but *before* any theme specified directly on a ChampionForm widget
+/// but *before* any theme specified directly on a Form widget
 /// or an individual form field.
 ///
-/// Use `ChampionFormTheme.instance.setTheme(...)` to apply
+/// Use `FormThemeSingleton.instance.setTheme(...)` to apply
 /// overrides globally.
-class ChampionFormTheme {
+class FormThemeSingleton {
   // --- Singleton Setup ---
-  static final ChampionFormTheme _instance = ChampionFormTheme._internal();
+  static final FormThemeSingleton _instance = FormThemeSingleton._internal();
 
-  factory ChampionFormTheme() {
+  factory FormThemeSingleton() {
     return _instance;
   }
 
-  ChampionFormTheme._internal();
+  FormThemeSingleton._internal();
 
-  static ChampionFormTheme get instance => _instance;
+  static FormThemeSingleton get instance => _instance;
 
   // --- Theme Properties (Nullable) ---
   // Mirroring FormTheme properties, but nullable

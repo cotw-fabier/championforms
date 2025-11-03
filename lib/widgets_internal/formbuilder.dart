@@ -2,19 +2,19 @@ import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/core/field_builder_registry.dart';
 import 'package:championforms/functions/gather_child_errors.dart';
 import 'package:championforms/models/colorscheme.dart';
-import 'package:championforms/models/field_types/championcolumn.dart';
-import 'package:championforms/models/field_types/championrow.dart';
-import 'package:championforms/models/field_types/championtextfield.dart';
+import 'package:championforms/models/field_types/column.dart';
+import 'package:championforms/models/field_types/row.dart';
+import 'package:championforms/models/field_types/textfield.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/themes.dart';
 import 'package:championforms/widgets_external/form_wrappers/simple_wrapper.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as flutter;
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/field_types/formfieldbase.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 
-class FormBuilderWidget extends StatefulWidget {
+class FormBuilderWidget extends flutter.StatefulWidget {
   const FormBuilderWidget({
     super.key,
     this.fields = const [],
@@ -28,33 +28,33 @@ class FormBuilderWidget extends StatefulWidget {
   });
 
   final List<FormBuilderError>? parentErrors;
-  final EdgeInsets? fieldPadding;
+  final flutter.EdgeInsets? fieldPadding;
 
-  final List<ChampionFormElement> fields;
+  final List<FormElement> fields;
   final String? pageName;
   final double? spacer;
-  final ChampionFormController controller;
-  final Widget Function(
-    BuildContext context,
-    List<Widget> form,
+  final FormController controller;
+  final flutter.Widget Function(
+    flutter.BuildContext context,
+    List<flutter.Widget> form,
   )? formWrapper;
 
   final FormTheme theme;
   @override
-  State<StatefulWidget> createState() => _FormBuilderWidgetState();
+  flutter.State<flutter.StatefulWidget> createState() => _FormBuilderWidgetState();
 }
 
-class _FormBuilderWidgetState extends State<FormBuilderWidget> {
+class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(_rebuildOnControllerUpdate);
 
-    if (!ChampionFormFieldRegistry.instance.isInitialized) {
-      ChampionFormFieldRegistry.instance.registerCoreBuilders();
+    if (!FormFieldRegistry.instance.isInitialized) {
+      FormFieldRegistry.instance.registerCoreBuilders();
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    flutter.WidgetsBinding.instance.addPostFrameCallback((_) {
       final allFieldDefs = _flattenAllFields(widget.fields);
       _updateDefaults(allFieldDefs);
       widget.controller.updateActiveFields(allFieldDefs);
@@ -73,16 +73,16 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
     super.dispose();
   }
 
-  List<FormFieldDef> _flattenAllFields(List<ChampionFormElement> elements) {
-    final List<FormFieldDef> flatList = [];
+  List<Field> _flattenAllFields(List<FormElement> elements) {
+    final List<Field> flatList = [];
     for (final element in elements) {
-      if (element is FormFieldDef) {
+      if (element is Field) {
         flatList.add(element);
-      } else if (element is ChampionRow) {
+      } else if (element is Row) {
         for (final column in element.children) {
           flatList.addAll(_flattenAllFields(column.children));
         }
-      } else if (element is ChampionColumn) {
+      } else if (element is Column) {
         flatList.addAll(_flattenAllFields(element.children));
       }
     }
@@ -97,7 +97,7 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
     });
   }
 
-  void _updateDefaults(List<FormFieldDef> fieldDefs) {
+  void _updateDefaults(List<Field> fieldDefs) {
     widget.controller.addFields(fieldDefs, noNotify: true);
     for (final field in fieldDefs) {
       final currentValue = widget.controller.getFieldValue(field.id);
@@ -114,24 +114,24 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  flutter.Widget build(flutter.BuildContext context) {
     // The root of the builder now uses LayoutBuilder to capture width constraints.
-    return LayoutBuilder(
+    return flutter.LayoutBuilder(
       builder: (context, constraints) {
         // Build the list of widgets from the form elements.
-        List<Widget> output = _buildElementList(widget.fields);
+        List<flutter.Widget> output = _buildElementList(widget.fields);
 
         // Get the user-provided wrapper or the default.
         final formWrapper = widget.formWrapper ?? simpleWrapper;
 
         // The wrapper lays out the widgets.
-        Widget formContent = formWrapper(context, output);
+        flutter.Widget formContent = formWrapper(context, output);
 
         // The FocusTraversalGroup should wrap the actual content.
-        return FocusTraversalGroup(
-          policy: OrderedTraversalPolicy(),
+        return flutter.FocusTraversalGroup(
+          policy: flutter.OrderedTraversalPolicy(),
           // The SizedBox ensures the content has a defined width, solving Row issues.
-          child: SizedBox(
+          child: flutter.SizedBox(
             width: constraints.maxWidth,
             child: formContent,
           ),
@@ -140,37 +140,37 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
     );
   }
 
-  List<Widget> _buildElementList(List<ChampionFormElement> elements) {
-    List<Widget> output = [];
+  List<flutter.Widget> _buildElementList(List<FormElement> elements) {
+    List<flutter.Widget> output = [];
     for (final element in elements) {
-      if ((element is ChampionRow && element.hideField) ||
-          (element is ChampionColumn && element.hideField) ||
-          (element is FormFieldDef && element.hideField)) {
+      if ((element is Row && element.hideField) ||
+          (element is Column && element.hideField) ||
+          (element is Field && element.hideField)) {
         continue;
       }
 
-      if (element is FormFieldDef) {
+      if (element is Field) {
         output.add(_buildFormField(element));
-      } else if (element is ChampionRow) {
+      } else if (element is Row) {
         output.add(_buildRow(element));
-      } else if (element is ChampionColumn) {
+      } else if (element is Column) {
         // Standalone columns are wrapped in a full-width row
-        output.add(_buildRow(ChampionRow(children: [element])));
+        output.add(_buildRow(Row(children: [element])));
       }
     }
     return output;
   }
 
-  Widget _buildRow(ChampionRow row) {
-    Widget layout;
+  flutter.Widget _buildRow(Row row) {
+    flutter.Widget layout;
     if (row.collapse) {
-      layout = Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+      layout = flutter.Column(
+        mainAxisSize: flutter.MainAxisSize.min,
+        crossAxisAlignment: flutter.CrossAxisAlignment.start,
         children: row.children.map((col) => _buildColumn(col)).toList(),
       );
     } else {
-      final List<Widget> spacedChildren = [];
+      final List<flutter.Widget> spacedChildren = [];
       for (int i = 0; i < row.children.length; i++) {
         final column = row.children[i];
         bool hasAnyWidthFactor = row.children.any((c) => c.widthFactor != null);
@@ -180,7 +180,7 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
         }
 
         spacedChildren.add(
-          Expanded(
+          flutter.Expanded(
             flex: flex,
             child: _buildColumn(column),
           ),
@@ -188,12 +188,12 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
 
         // Add spacing after each column except the last one
         if (i < row.children.length - 1) {
-          spacedChildren.add(SizedBox(width: row.spacing));
+          spacedChildren.add(flutter.SizedBox(width: row.spacing));
         }
       }
 
-      layout = Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      layout = flutter.Row(
+        crossAxisAlignment: flutter.CrossAxisAlignment.start,
         children: spacedChildren,
       );
     }
@@ -202,20 +202,20 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
       List<FormBuilderError> childErrors =
           gatherAllChildErrors(row.children, widget.controller);
       if (childErrors.isNotEmpty) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        return flutter.Column(
+          mainAxisSize: flutter.MainAxisSize.min,
+          crossAxisAlignment: flutter.CrossAxisAlignment.start,
           children: [
             layout,
-            Container(color: Colors.red, width: row.spacing),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            flutter.Container(color: flutter.Colors.red, width: row.spacing),
+            flutter.Padding(
+              padding: const flutter.EdgeInsets.symmetric(horizontal: 8.0),
+              child: flutter.Column(
+                crossAxisAlignment: flutter.CrossAxisAlignment.start,
                 children: childErrors
-                    .map((err) => Text(
+                    .map((err) => flutter.Text(
                           err.reason,
-                          style: TextStyle(
+                          style: flutter.TextStyle(
                               color: widget.theme.errorColorScheme?.textColor),
                         ))
                     .toList(),
@@ -228,21 +228,21 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
     return layout;
   }
 
-  Widget _buildColumn(ChampionColumn column) {
-    List<Widget> childWidgets = _buildElementList(column.children);
-    final List<Widget> spacedChildren = [];
+  flutter.Widget _buildColumn(Column column) {
+    List<flutter.Widget> childWidgets = _buildElementList(column.children);
+    final List<flutter.Widget> spacedChildren = [];
 
     for (int i = 0; i < childWidgets.length; i++) {
       spacedChildren.add(childWidgets[i]);
       // Add spacing after each child except the last one
       if (i < childWidgets.length - 1) {
-        spacedChildren.add(SizedBox(height: column.spacing));
+        spacedChildren.add(flutter.SizedBox(height: column.spacing));
       }
     }
 
-    Widget layout = Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
+    flutter.Widget layout = flutter.Column(
+      mainAxisSize: flutter.MainAxisSize.min,
+      crossAxisAlignment: flutter.CrossAxisAlignment.start,
       children: spacedChildren,
     );
 
@@ -257,20 +257,20 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
       List<FormBuilderError> childErrors =
           gatherAllChildErrors(column.children, widget.controller);
       if (childErrors.isNotEmpty) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        return flutter.Column(
+          mainAxisSize: flutter.MainAxisSize.min,
+          crossAxisAlignment: flutter.CrossAxisAlignment.start,
           children: [
             layout,
-            Container(color: Colors.red, width: column.spacing),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            flutter.Container(color: flutter.Colors.red, width: column.spacing),
+            flutter.Padding(
+              padding: const flutter.EdgeInsets.symmetric(horizontal: 8.0),
+              child: flutter.Column(
+                crossAxisAlignment: flutter.CrossAxisAlignment.start,
                 children: childErrors
-                    .map((err) => Text(
+                    .map((err) => flutter.Text(
                           err.reason,
-                          style: TextStyle(
+                          style: flutter.TextStyle(
                               color: widget.theme.errorColorScheme?.textColor),
                         ))
                     .toList(),
@@ -283,7 +283,7 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
     return layout;
   }
 
-  Widget _buildFormField(FormFieldDef field) {
+  flutter.Widget _buildFormField(Field field) {
     final mergedTheme = (field.theme != null)
         ? widget.theme.copyWith(theme: field.theme)
         : widget.theme;
@@ -306,7 +306,7 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
         break;
     }
 
-    Widget outputWidget = ChampionFormFieldRegistry.instance.buildField(
+    flutter.Widget outputWidget = FormFieldRegistry.instance.buildField(
       context,
       widget.controller,
       field,
@@ -317,9 +317,9 @@ class _FormBuilderWidgetState extends State<FormBuilderWidget> {
       },
     );
 
-    if (widget.fieldPadding != null && widget.fieldPadding != EdgeInsets.zero) {
+    if (widget.fieldPadding != null && widget.fieldPadding != flutter.EdgeInsets.zero) {
       outputWidget =
-          Padding(padding: widget.fieldPadding!, child: outputWidget);
+          flutter.Padding(padding: widget.fieldPadding!, child: outputWidget);
     }
 
     return field.fieldLayout(

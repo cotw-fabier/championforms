@@ -1,22 +1,22 @@
 import 'package:championforms/controllers/form_controller.dart';
-import 'package:championforms/models/field_types/championcolumn.dart';
-import 'package:championforms/models/field_types/championrow.dart';
+import 'package:championforms/models/field_types/column.dart';
+import 'package:championforms/models/field_types/row.dart';
 import 'package:championforms/models/field_types/formfieldbase.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 
-/// Recursively finds all FormFieldDef instances within a list of elements.
-List<FormFieldDef> _flattenFields(List<ChampionFormElement> elements) {
-  final List<FormFieldDef> flatList = [];
+/// Recursively finds all Field instances within a list of elements.
+List<Field> _flattenFields(List<FormElement> elements) {
+  final List<Field> flatList = [];
   for (final element in elements) {
-    if (element is FormFieldDef) {
+    if (element is Field) {
       flatList.add(element);
-    } else if (element is ChampionRow) {
+    } else if (element is Row) {
       // Recurse into the row's children (which are columns)
       for (final column in element.children) {
         flatList.addAll(_flattenFields(column.children));
       }
-    } else if (element is ChampionColumn) {
+    } else if (element is Column) {
       // Recurse into the column's children
       flatList.addAll(_flattenFields(element.children));
     }
@@ -26,11 +26,11 @@ List<FormFieldDef> _flattenFields(List<ChampionFormElement> elements) {
 
 /// Gathers all validation errors from child fields within a given list of elements.
 List<FormBuilderError> gatherAllChildErrors(
-  List<ChampionFormElement> elements,
-  ChampionFormController controller,
+  List<FormElement> elements,
+  FormController controller,
 ) {
   final List<FormBuilderError> allErrors = [];
-  final List<FormFieldDef> allFields = _flattenFields(elements);
+  final List<Field> allFields = _flattenFields(elements);
 
   for (final field in allFields) {
     allErrors.addAll(controller.findErrors(field.id));

@@ -7,7 +7,7 @@ import 'package:championforms/models/themes.dart';
 import 'package:championforms/models/validatorclass.dart';
 import 'package:championforms/widgets_external/field_backgrounds/simplewrapper.dart';
 import 'package:championforms/widgets_external/field_layouts/simple_layout.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 enum FormFieldType {
   textField,
@@ -35,7 +35,7 @@ class FormFieldChoiceOption {
   }) : name = name ?? value;
 }
 
-abstract class FormFieldDef implements FormFieldBase {
+abstract class Field implements FieldBase {
   // Add an ID
   @override
   final String id;
@@ -72,15 +72,15 @@ abstract class FormFieldDef implements FormFieldBase {
 
   final Widget Function(
     BuildContext context,
-    FormFieldDef fieldDetails,
-    ChampionFormController controller,
+    Field fieldDetails,
+    FormController controller,
     FieldColorScheme currentColors,
     Widget renderedField,
   ) fieldLayout; // This is a wrapper around the entire field which adds things like title and description. You can override this with anything you want.
   final Widget Function(
     BuildContext context,
-    FormFieldDef fieldDetails,
-    ChampionFormController controller,
+    Field fieldDetails,
+    FormController controller,
     FieldColorScheme currentColors,
     Widget renderedField,
   ) fieldBackground; // This is the background around the field itself.
@@ -108,7 +108,7 @@ abstract class FormFieldDef implements FormFieldBase {
   /// Throws a TypeError if the input value cannot be cast to T and conversion is attempted.
   List<FileModel>? Function(dynamic value)? get asFileListConverter;
 
-  FormFieldDef({
+  Field({
     required this.id,
     this.icon,
     this.theme,

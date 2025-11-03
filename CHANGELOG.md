@@ -1,3 +1,106 @@
+## 0.4.0
+
+**API Modernization - Namespace Pattern Adoption**
+
+### Breaking Changes
+
+This release modernizes the ChampionForms API by removing the "Champion" prefix from all classes and adopting idiomatic Dart namespace patterns. This is a **clean break** with no deprecation period.
+
+**All public classes renamed** (requires namespace import):
+- `ChampionTextField` → `form.TextField`
+- `ChampionOptionSelect` → `form.OptionSelect`
+- `ChampionFileUpload` → `form.FileUpload`
+- `ChampionCheckboxSelect` → `form.CheckboxSelect`
+- `ChampionChipSelect` → `form.ChipSelect`
+- `ChampionRow` → `form.Row`
+- `ChampionColumn` → `form.Column`
+- `ChampionForm` → `form.Form`
+- `ChampionFormController` → `form.FormController`
+- `ChampionFormTheme` → `FormTheme` (from separate themes import)
+- `ChampionFormElement` → `form.FormElement`
+- `FormFieldBase` → `form.FieldBase`
+- `FormFieldDef` → `form.Field`
+- `FormFieldNull` → `form.NullField`
+- `ChampionAutocompleteWrapper` → `form.AutocompleteWrapper`
+- `ChampionFormFieldRegistry` → `FormFieldRegistry` (from separate themes import)
+
+**Builder functions renamed**:
+- `buildChampionTextField` → `buildTextField`
+- `buildChampionOptionSelect` → `buildOptionSelect`
+- `buildChampionCheckboxSelect` → `buildCheckboxSelect`
+- `buildChampionFileUpload` → `buildFileUpload`
+- `buildChampionChipSelect` → `buildChipSelect`
+
+**Extension renamed**:
+- `ChampionTextFieldController` → `TextFieldController`
+
+### Namespace Strategy
+
+To avoid namespace collisions with Flutter's built-in `Form`, `Row`, and `Column` widgets, ChampionForms now adopts the idiomatic Dart namespace import pattern:
+
+```dart
+// Required import pattern
+import 'package:championforms/championforms.dart' as form;
+
+// Usage with namespace prefix
+form.FormController controller = form.FormController();
+form.Form(
+  controller: controller,
+  fields: [
+    form.TextField(id: 'email', textFieldTitle: 'Email'),
+    form.Row(
+      columns: [
+        form.Column(fields: [...]),
+        form.Column(fields: [...]),
+      ],
+    ),
+  ],
+)
+```
+
+**Two-tier export system** for better organization:
+- `championforms.dart` - Form lifecycle classes (import as `form`)
+- `championforms_themes.dart` - Theme configuration and field registry (import without namespace)
+
+Theme-related classes now in separate import:
+```dart
+import 'package:championforms/championforms_themes.dart';
+
+FormTheme.instance.setTheme(softBlueColorTheme(context));
+FormFieldRegistry.instance.registerField(...);
+```
+
+### Migration
+
+**Comprehensive migration resources available**:
+- **Migration Guide**: See `MIGRATION-0.4.0.md` for complete before/after examples and step-by-step instructions
+- **Automated Script**: Run `dart run tools/project-migration.dart /path/to/your/project` to automatically update your codebase
+- **Find-and-Replace Table**: Reference table in migration guide lists all class name changes
+
+**Migration time estimate**: 5-15 minutes with automated script, 30-60 minutes manually
+
+This is a **breaking change** with no backward compatibility. All users on v0.3.x must migrate to use v0.4.0. The automated migration script creates backup files and provides a detailed summary of changes.
+
+### Why This Change
+
+**Moving to idiomatic Dart patterns**:
+- Aligns with Dart style guide recommendations for namespace collision handling
+- Follows established patterns used throughout the Flutter ecosystem
+- Cleaner, more readable code: `form.TextField()` vs `ChampionTextField()`
+- Better explicit namespace control
+- Future-proof architecture that's easier to maintain and extend
+
+**Benefits**:
+- Shorter, cleaner class names
+- No more verbose "Champion" prefix
+- Works seamlessly alongside Flutter's built-in widgets
+- Explicit namespace makes code intent clearer
+- More professional, maintainable API
+
+**No functional changes**: All field types, validation logic, theming system, and form behavior remain identical to v0.3.x. This is purely an API naming refactor.
+
+---
+
 ## 0.3.1
 
 **File Upload and Autocomplete Enhancements**

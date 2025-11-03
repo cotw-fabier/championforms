@@ -1,42 +1,86 @@
-// Export the form builder sugar syntax widget
+/// ChampionForms - Form Lifecycle Classes
+///
+/// This file exports all classes needed for building and managing forms
+/// throughout your application.
+///
+/// ## Recommended Usage:
+/// ```dart
+/// import 'package:championforms/championforms.dart' as form;
+/// ```
+///
+/// This namespace approach prevents collisions with Flutter's built-in
+/// Form, Row, and Column widgets.
+///
+/// ## Quick Examples:
+/// ```dart
+/// // Create a controller
+/// final controller = form.FormController();
+///
+/// // Build a form
+/// form.Form(
+///   controller: controller,
+///   fields: [
+///     form.TextField(id: 'email', title: 'Email'),
+///     form.Row(
+///       children: [
+///         form.TextField(id: 'first', title: 'First Name'),
+///         form.TextField(id: 'last', title: 'Last Name'),
+///       ],
+///     ),
+///     form.OptionSelect(id: 'country', title: 'Country', options: [...]),
+///   ],
+/// )
+/// ```
+///
+/// For theming and custom field registration, use:
+/// ```dart
+/// import 'package:championforms/championforms_themes.dart';
+/// ```
+library;
 
-export 'package:championforms/widgets_external/championform.dart';
-// TODO: Create provider container widget for projects which don't implement riverpod but want to use this project
+// Export Form widget
+export 'package:championforms/widgets_external/form.dart';
 
-// Export Form Field Base Classes
-export 'package:championforms/models/field_types/formfieldbase.dart';
-export 'package:championforms/models/field_types/formfieldclass.dart';
-
-export 'package:championforms/models/field_types/championtextfield.dart';
-export 'package:championforms/models/field_types/championoptionselect.dart';
-export 'package:championforms/models/field_types/championfileupload.dart';
-
-// Export rows and columns
-export 'package:championforms/models/field_types/championrow.dart';
-export 'package:championforms/models/field_types/championcolumn.dart';
-
-// Export additional field convenience classes
-export 'package:championforms/models/field_types/convienence_classes/championcheckboxselect.dart';
-
-// Export default validators
-export 'package:championforms/models/validatorclass.dart';
-
-// Export form Controller
+// Export Form Controller
 export 'package:championforms/controllers/form_controller.dart';
 
-// Export Field Builders for crafting different types of fields.
+// Export Base Classes
+export 'package:championforms/models/field_types/formfieldbase.dart';
+export 'package:championforms/models/field_types/formfieldclass.dart';
+export 'package:championforms/models/field_types/formfielddefnull.dart';
 
-// export themes for use
-export 'package:championforms/themes/export_themes.dart';
+// Export Field Types
+export 'package:championforms/models/field_types/textfield.dart';
+export 'package:championforms/models/field_types/optionselect.dart';
+export 'package:championforms/models/field_types/fileupload.dart';
+export 'package:championforms/models/field_types/convienence_classes/checkboxselect.dart';
+export 'package:championforms/models/field_types/convienence_classes/chipselect.dart';
 
-// Export functions to get results and validate forms
-export 'package:championforms/functions/geterrors.dart';
+// Export Multiselect Option
+export 'package:championforms/models/multiselect_option.dart';
 
-// This is the list of default validators you can use for field validation
+// Export Layout Classes
+export 'package:championforms/models/field_types/row.dart';
+export 'package:championforms/models/field_types/column.dart';
+
+// Export Validators
+export 'package:championforms/models/validatorclass.dart';
 export 'package:championforms/functions/defaultvalidators/defaultvalidators.dart';
 
-// Export the global theme singleton
-export 'package:championforms/models/theme_singleton.dart';
-
-// Export FormResults type
+// Export Form Results
 export 'package:championforms/models/formresults.dart';
+
+// Export Functions to Get Errors
+export 'package:championforms/functions/geterrors.dart';
+
+// Export Autocomplete Classes
+export 'package:championforms/models/autocomplete/autocomplete_class.dart';
+export 'package:championforms/models/autocomplete/autocomplete_option_class.dart';
+export 'package:championforms/models/autocomplete/autocomplete_type.dart';
+
+// Export Field Layout Functions
+export 'package:championforms/widgets_external/field_layouts/simple_layout.dart';
+
+// Export Field Background Functions
+export 'package:championforms/widgets_external/field_backgrounds/simplewrapper.dart';
+export 'package:championforms/widgets_external/field_backgrounds/coloredbox.dart';

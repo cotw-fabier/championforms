@@ -3,7 +3,7 @@ import 'package:championforms/models/multiselect_option.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/foundation.dart'; // For debugPrint
 
-/// A collection of reusable validator functions for ChampionForms fields.
+/// A collection of reusable validator functions for form fields.
 ///
 /// These validators operate on a `dynamic` value. They are designed to be safe by
 /// attempting to first convert the dynamic input into an expected type. If this

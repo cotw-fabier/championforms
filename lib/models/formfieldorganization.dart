@@ -1,6 +1,6 @@
 import 'package:championforms/models/field_types/formfieldbase.dart';
 
-class FormFieldRow implements FormFieldBase {
+class FormFieldRow implements FieldBase {
   @override
   final String id;
   @override
@@ -17,7 +17,7 @@ class FormFieldRow implements FormFieldBase {
   });
 }
 
-class FormFieldColumn implements FormFieldBase {
+class FormFieldColumn implements FieldBase {
   @override
   final String id;
   @override

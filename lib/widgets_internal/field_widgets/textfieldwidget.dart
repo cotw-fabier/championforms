@@ -2,12 +2,13 @@ import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/fieldbuilders/textfieldbuilder.dart';
 import 'package:championforms/models/autocomplete/autocomplete_type.dart';
 import 'package:championforms/models/colorscheme.dart';
-import 'package:championforms/models/field_types/championtextfield.dart';
+import 'package:championforms/models/field_types/textfield.dart' as form_types;
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/widgets_internal/autocomplete_overlay_widget.dart';
 import 'package:championforms/widgets_internal/fieldwrapperdefault.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide TextField;
+import 'package:flutter/material.dart' as material_tf show TextField;
 import 'package:flutter/services.dart';
 
 class TextFieldWidget extends StatefulWidget {
@@ -21,9 +22,9 @@ class TextFieldWidget extends StatefulWidget {
     this.validate,
     Widget Function({required Widget child})? fieldBuilder,
   }) : fieldBuilder = fieldBuilder ?? defaultFieldBuilder;
-  final ChampionFormController controller;
-  final ChampionTextField field;
-  final TextField? fieldOverride;
+  final FormController controller;
+  final form_types.TextField field;
+  final material_tf.TextField? fieldOverride;
   final FieldState fieldState;
   final FieldColorScheme? colorScheme;
 
@@ -198,7 +199,7 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
                   baseField: widget.fieldOverride!,
                 )
               : widget.fieldOverride!
-          : TextField(
+          : material_tf.TextField(
               maxLines: widget.field.maxLines,
               onSubmitted: (value) {
                 if (widget.field.onSubmit == null) return;
@@ -214,7 +215,7 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
     // Wrap with autocomplete if configured
     final wrappedField = widget.field.autoComplete != null &&
             widget.field.autoComplete!.type != AutoCompleteType.none
-        ? ChampionAutocompleteWrapper(
+        ? AutocompleteWrapper(
             child: textField,
             autoComplete: widget.field.autoComplete!,
             focusNode: _focusNode,

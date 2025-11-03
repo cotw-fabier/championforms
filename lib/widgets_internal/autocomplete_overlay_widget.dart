@@ -16,7 +16,7 @@ import 'package:flutter/services.dart';
 ///
 /// Example usage:
 /// ```dart
-/// ChampionAutocompleteWrapper(
+/// AutocompleteWrapper(
 ///   child: TextField(controller: myController),
 ///   autoComplete: AutoCompleteBuilder(
 ///     type: AutoCompleteType.dropdown,
@@ -26,13 +26,13 @@ import 'package:flutter/services.dart';
 ///   textEditingController: myController,
 /// )
 /// ```
-class ChampionAutocompleteWrapper extends StatefulWidget {
+class AutocompleteWrapper extends StatefulWidget {
   /// Creates an autocomplete wrapper widget.
   ///
   /// The [child] parameter is the field widget to wrap (e.g., TextField).
   /// The [autoComplete] parameter configures autocomplete behavior.
   /// The [focusNode] parameter is the field's focus node for blur detection.
-  const ChampionAutocompleteWrapper({
+  const AutocompleteWrapper({
     super.key,
     required this.child,
     required this.autoComplete,
@@ -74,16 +74,16 @@ class ChampionAutocompleteWrapper extends StatefulWidget {
   final FocusNode focusNode;
 
   @override
-  State<ChampionAutocompleteWrapper> createState() =>
-      _ChampionAutocompleteWrapperState();
+  State<AutocompleteWrapper> createState() =>
+      _AutocompleteWrapperState();
 }
 
-/// State class for ChampionAutocompleteWrapper.
+/// State class for AutocompleteWrapper.
 ///
 /// Manages overlay lifecycle, positioning calculations, keyboard navigation,
 /// focus tracking, and debounced option updates.
-class _ChampionAutocompleteWrapperState
-    extends State<ChampionAutocompleteWrapper> {
+class _AutocompleteWrapperState
+    extends State<AutocompleteWrapper> {
   /// LayerLink connects the field widget to the overlay for positioning.
   final LayerLink _layerLink = LayerLink();
 
@@ -357,7 +357,7 @@ class _ChampionAutocompleteWrapperState
 
       // Enter key selects the focused option
       if (event.logicalKey == LogicalKeyboardKey.enter) {
-        _championCallback(_autoCompleteOptions[index]);
+        _optionSelectedCallback(_autoCompleteOptions[index]);
         return KeyEventResult.handled;
       }
 
@@ -537,7 +537,7 @@ class _ChampionAutocompleteWrapperState
                                           ? (widget.colorScheme?.textBackgroundColor ??
                                               theme.colorScheme.surfaceContainerHighest)
                                           : null,
-                                      onTap: () => _championCallback(option),
+                                      onTap: () => _optionSelectedCallback(option),
                                     ),
                                   ),
                                 );
@@ -562,7 +562,7 @@ class _ChampionAutocompleteWrapperState
   /// If [onOptionSelected] is provided, it delegates to that callback.
   /// Otherwise, updates the controller or notifier with the selected value,
   /// calls the option's callback if present, and removes the overlay.
-  void _championCallback(AutoCompleteOption option) {
+  void _optionSelectedCallback(AutoCompleteOption option) {
     // If custom callback provided, use it and return
     if (widget.onOptionSelected != null) {
       widget.onOptionSelected!(option);

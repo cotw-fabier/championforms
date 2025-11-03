@@ -13,8 +13,8 @@ class MultiselectWidget extends StatefulWidget {
   });
   final String id;
   final Widget child;
-  final FormFieldDef field;
-  final ChampionFormController controller;
+  final Field field;
+  final FormController controller;
   final bool requestFocus;
   @override
   State<StatefulWidget> createState() => _MultiselectWidgetState();

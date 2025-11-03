@@ -1,12 +1,12 @@
-import 'package:championforms/models/field_types/championcolumn.dart';
+import 'package:championforms/models/field_types/column.dart';
 import 'package:championforms/models/field_types/formfieldbase.dart';
 
 /// Build rows to store column blocks.
 /// Rows can take a collapse bool which allows for responsive
 /// layouts.
-class ChampionRow extends ChampionFormElement {
+class Row extends FormElement {
   /// A list of columns to display in your row content.
-  final List<ChampionColumn> children;
+  final List<Column> children;
 
   /// If true, collapses the columns into a single vertical layout.
   /// Useful for responsive design on smaller screens.
@@ -22,7 +22,7 @@ class ChampionRow extends ChampionFormElement {
   /// Spacing between columns in the row.
   final double spacing;
 
-  ChampionRow({
+  Row({
     this.children = const [],
     this.collapse = false,
     this.rollUpErrors = false,

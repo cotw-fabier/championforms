@@ -6,7 +6,7 @@ import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_external/field_builders/dropdownfield_builder.dart';
 import 'package:flutter/widgets.dart';
 
-class ChampionOptionSelect extends FormFieldDef {
+class OptionSelect extends Field {
   // Define the type of field type
   //
 
@@ -28,14 +28,14 @@ class ChampionOptionSelect extends FormFieldDef {
   // Add a builder for defining the field style
   Widget Function(
     BuildContext context,
-    ChampionFormController controller,
-    ChampionOptionSelect field,
+    FormController controller,
+    OptionSelect field,
     FieldColorScheme currentColors,
     Function(bool focused) updateFocus,
     Function(MultiselectOption? selectedOption) updateSelectedOption,
   ) fieldBuilder;
 
-  ChampionOptionSelect({
+  OptionSelect({
     required super.id,
     super.icon,
     this.options,
@@ -59,7 +59,7 @@ class ChampionOptionSelect extends FormFieldDef {
     this.fieldBuilder = dropdownFieldBuilder,
   });
 
-  // --- Implementation of FormFieldDef<List<MultiselectOption>> ---
+  // --- Implementation of Field<List<MultiselectOption>> ---
 
   // @override
   // List<MultiselectOption> get defaultValue => _defaultValue; // Implement getter
@@ -107,15 +107,15 @@ class ChampionOptionSelect extends FormFieldDef {
         return effectiveValue.isNotEmpty;
       };
 
-  /// Base ChampionOptionSelect does not handle files. Returns null.
-  /// Subclasses like ChampionFileUpload should override this.
+  /// Base OptionSelect does not handle files. Returns null.
+  /// Subclasses like FileUpload should override this.
   @override
   List<FileModel>? Function(dynamic value)? get asFileListConverter =>
       (dynamic value) {
         // This specific field type doesn't produce files directly from its primary value T.
         // Subclasses must override if they store FileModel in T or handle it differently.
         // If `value` were `List<MultiselectOption>` and additionalData held files,
-        // the logic would go here, but ChampionFileUpload overrides this.
+        // the logic would go here, but FileUpload overrides this.
         if (value is List<MultiselectOption> || value == null) {
           // It's the correct primary type (or null), but this base class doesn't convert it to files.
           return null;

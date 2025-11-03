@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 Widget multiSelectBuilder(
   BuildContext context,
-  FormFieldDef field,
+  Field field,
   FieldState currentState,
   FieldColorScheme currentColors,
   Function(String? val) onChanged,

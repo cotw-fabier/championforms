@@ -6,8 +6,8 @@ import 'package:championforms/widgets_external/form_wrappers/simple_wrapper.dart
 import 'package:championforms/widgets_internal/formbuilder.dart';
 import 'package:flutter/material.dart';
 
-class ChampionForm extends StatefulWidget {
-  const ChampionForm({
+class Form extends StatefulWidget {
+  const Form({
     super.key,
     required this.controller,
     required this.fields,
@@ -20,21 +20,21 @@ class ChampionForm extends StatefulWidget {
     this.fieldPadding = const EdgeInsets.all(8),
   });
 
-  /// Takes in a ChampionFormController() instance. Stores all fields and associated data in the controller.
-  /// You can reuse the same controller for multiple ChampionForm() instances as long as all fields have unique IDs.
+  /// Takes in a FormController() instance. Stores all fields and associated data in the controller.
+  /// You can reuse the same controller for multiple Form() instances as long as all fields have unique IDs.
   /// This is encouraged behavior for building dynamic form layouts.
-  final ChampionFormController controller;
+  final FormController controller;
 
   /// Form Fields. Takes in all the various types of form Fields.
-  /// Base class is FormFieldBase, then various fields are built on top of that:
-  /// ChampionRow(),
-  /// ChampionColumn(),
-  /// ChampionTextField(),
-  /// ChampionDropDown(),
-  /// ChampionOptionSelect(),
-  /// ChampionCheckboxSelect(),
+  /// Base class is FieldBase, then various fields are built on top of that:
+  /// Row(),
+  /// Column(),
+  /// TextField(),
+  /// DropDown(),
+  /// OptionSelect(),
+  /// CheckboxSelect(),
   /// etc
-  final List<ChampionFormElement> fields;
+  final List<FormElement> fields;
 
   /// pageName is a unique name for a page of fields.
   /// You can use the same name across widgets
@@ -76,16 +76,16 @@ class ChampionForm extends StatefulWidget {
   final FormTheme? theme;
 
   @override
-  State<StatefulWidget> createState() => _ChampionFormWidgetState();
+  State<StatefulWidget> createState() => _FormWidgetState();
 }
 
-class _ChampionFormWidgetState extends State<ChampionForm> {
+class _FormWidgetState extends State<Form> {
   @override
   void initState() {
     super.initState();
     // Register the default builders on first launch.
-    if (!ChampionFormFieldRegistry.instance.isInitialized) {
-      ChampionFormFieldRegistry.instance.registerCoreBuilders();
+    if (!FormFieldRegistry.instance.isInitialized) {
+      FormFieldRegistry.instance.registerCoreBuilders();
     }
   }
 

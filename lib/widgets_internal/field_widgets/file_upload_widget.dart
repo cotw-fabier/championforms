@@ -1,8 +1,8 @@
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/functions/filetype_from_mime.dart';
-import 'package:championforms/models/field_types/championfileupload.dart';
+import 'package:championforms/models/field_types/fileupload.dart';
 import 'package:championforms/models/colorscheme.dart';
-import 'package:championforms/models/field_types/championoptionselect.dart';
+import 'package:championforms/models/field_types/optionselect.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/mime_filetypes.dart';
@@ -17,8 +17,8 @@ import 'dart:typed_data';
 
 class FileUploadWidget extends StatefulWidget {
   final String id;
-  final ChampionFormController controller;
-  final ChampionOptionSelect field;
+  final FormController controller;
+  final OptionSelect field;
   final FieldColorScheme currentColors;
   final ValueChanged<bool> onFocusChange;
   final Function(MultiselectOption? file) onFileOptionChange;
@@ -107,10 +107,10 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
     final fileType;
     final allowedExtensions;
 
-    if ((widget.field as ChampionFileUpload).allowedExtensions != null) {
+    if ((widget.field as FileUpload).allowedExtensions != null) {
       fileType = FileType.custom;
       allowedExtensions =
-          (widget.field as ChampionFileUpload).allowedExtensions;
+          (widget.field as FileUpload).allowedExtensions;
     } else {
       fileType = FileType.any;
       allowedExtensions = null;
@@ -130,7 +130,7 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
 
     if (result != null) {
       // Clear existing files if clearOnUpload is true
-      if ((widget.field as ChampionFileUpload).clearOnUpload) {
+      if ((widget.field as FileUpload).clearOnUpload) {
         _files.clear();
         widget.controller.updateMultiselectValues(
           widget.field.id,
@@ -165,10 +165,10 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
 
     name = await fileReader.getSuggestedName() ?? "untitled";
 
-    if ((widget.field as ChampionFileUpload).allowedExtensions != null) {
+    if ((widget.field as FileUpload).allowedExtensions != null) {
       bool foundExtension = false;
       for (final ext
-          in (widget.field as ChampionFileUpload).allowedExtensions!) {
+          in (widget.field as FileUpload).allowedExtensions!) {
         if (name.toLowerCase().endsWith('.' + ext.toLowerCase())) {
           foundExtension = true;
           break;
@@ -180,7 +180,7 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
     }
 
     // Clear existing files if clearOnUpload is true and this is the first dropped file
-    if ((widget.field as ChampionFileUpload).clearOnUpload && isFirstFile) {
+    if ((widget.field as FileUpload).clearOnUpload && isFirstFile) {
       setState(() {
         _files.clear();
       });
@@ -386,19 +386,19 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
               // Title row
               InkWell(
                 onTap: _pickFiles,
-                child: (widget.field as ChampionFileUpload).dropDisplayWidget !=
+                child: (widget.field as FileUpload).dropDisplayWidget !=
                         null
-                    ? (widget.field as ChampionFileUpload).dropDisplayWidget!(
+                    ? (widget.field as FileUpload).dropDisplayWidget!(
                         widget.currentColors,
-                        widget.field as ChampionFileUpload)
+                        widget.field as FileUpload)
                     : DropZoneWidget(
-                        field: widget.field as ChampionFileUpload,
+                        field: widget.field as FileUpload,
                         currentColors: widget.currentColors),
               ),
-              if ((widget.field as ChampionFileUpload).displayUploadedFiles)
+              if ((widget.field as FileUpload).displayUploadedFiles)
                 const SizedBox(height: 8),
               // Show file previews
-              if ((widget.field as ChampionFileUpload).displayUploadedFiles)
+              if ((widget.field as FileUpload).displayUploadedFiles)
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -474,7 +474,7 @@ class DropZoneWidget extends StatelessWidget {
   final FieldColorScheme currentColors;
 
   /// Field settings
-  final ChampionFileUpload field;
+  final FileUpload field;
 
   @override
   Widget build(BuildContext context) {

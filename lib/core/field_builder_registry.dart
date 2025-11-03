@@ -1,18 +1,18 @@
 import 'package:championforms/championforms.dart';
-import 'package:championforms/default_fields/championcheckboxselect.dart';
-import 'package:championforms/default_fields/championchipselect.dart';
-import 'package:championforms/default_fields/championfileupload.dart';
-import 'package:championforms/default_fields/championoptionselect.dart';
-import 'package:championforms/default_fields/championtextfield.dart';
-import 'package:championforms/models/field_types/convienence_classes/championchipselect.dart';
-import 'package:flutter/material.dart';
+import 'package:championforms/default_fields/checkboxselect.dart';
+import 'package:championforms/default_fields/chipselect.dart';
+import 'package:championforms/default_fields/fileupload.dart';
+import 'package:championforms/default_fields/optionselect.dart';
+import 'package:championforms/default_fields/textfield.dart';
+import 'package:championforms/models/field_types/convienence_classes/chipselect.dart';
+import 'package:flutter/material.dart' as flutter;
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/colorscheme.dart';
 
 // Generic builder function type
-typedef FormFieldBuilder<T extends FormFieldDef> = Widget Function(
-  BuildContext context,
-  ChampionFormController controller,
+typedef FormFieldBuilder<T extends Field> = flutter.Widget Function(
+  flutter.BuildContext context,
+  FormController controller,
   T field, // The specific field definition instance
   FieldState currentState,
   FieldColorScheme currentColors,
@@ -20,15 +20,14 @@ typedef FormFieldBuilder<T extends FormFieldDef> = Widget Function(
       updateFocus, // Callback to update focus state in controller
 );
 
-class ChampionFormFieldRegistry {
+class FormFieldRegistry {
   bool initialized = false;
 
   // Private constructor
-  ChampionFormFieldRegistry._internal();
+  FormFieldRegistry._internal();
 
   // Singleton instance
-  static final ChampionFormFieldRegistry instance =
-      ChampionFormFieldRegistry._internal();
+  static final FormFieldRegistry instance = FormFieldRegistry._internal();
 
   bool get isInitialized => initialized;
 
@@ -36,21 +35,21 @@ class ChampionFormFieldRegistry {
   final Map<Type, Function> _builders =
       {}; // Use Function initially for simplicity
 
-  /// Registers a builder function for a specific FormFieldDef type.
-  /// Example: registerBuilder<ChampionTextField>(textFieldBuilder);
-  void registerBuilder<T extends FormFieldDef>(FormFieldBuilder<T> builder) {
+  /// Registers a builder function for a specific Field type.
+  /// Example: registerBuilder&lt;TextField&gt;(textFieldBuilder);
+  void registerBuilder<T extends Field>(FormFieldBuilder<T> builder) {
     if (_builders.containsKey(T)) {
-      debugPrint('Warning: Overwriting builder for type $T');
+      flutter.debugPrint('Warning: Overwriting builder for type $T');
     }
     _builders[T] = builder;
-    debugPrint('Registered builder for type $T');
+    flutter.debugPrint('Registered builder for type $T');
   }
 
   /// Looks up and executes the builder for a given field definition.
-  Widget buildField(
-    BuildContext context,
-    ChampionFormController controller,
-    FormFieldDef field, // Pass the base class instance
+  flutter.Widget buildField(
+    flutter.BuildContext context,
+    FormController controller,
+    Field field, // Pass the base class instance
     FieldState currentState,
     FieldColorScheme currentColors,
     Function(bool focused) updateFocus,
@@ -71,23 +70,23 @@ class ChampionFormFieldRegistry {
           updateFocus,
         );
       } catch (e, stackTrace) {
-        debugPrint(
+        flutter.debugPrint(
             'Error executing builder for type $fieldType: $e\n$stackTrace');
         return _buildErrorPlaceholder(fieldType, 'Builder execution error');
       }
     } else {
-      debugPrint('Error: No builder registered for type $fieldType');
+      flutter.debugPrint('Error: No builder registered for type $fieldType');
       return _buildErrorPlaceholder(fieldType, 'Builder not registered');
     }
   }
 
-  Widget _buildErrorPlaceholder(Type fieldType, String message) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      color: Colors.red.withValues(alpha: 0.1),
-      child: Text(
+  flutter.Widget _buildErrorPlaceholder(Type fieldType, String message) {
+    return flutter.Container(
+      padding: const flutter.EdgeInsets.all(8),
+      color: flutter.Colors.red.withValues(alpha: 0.1),
+      child: flutter.Text(
         'Error building field ($fieldType): $message',
-        style: const TextStyle(color: Colors.red, fontSize: 12),
+        style: const flutter.TextStyle(color: flutter.Colors.red, fontSize: 12),
       ),
     );
   }
@@ -100,18 +99,15 @@ class ChampionFormFieldRegistry {
   // Method to register core library builders (call this internally)
   void registerCoreBuilders() {
     initialized = true;
-    ChampionFormFieldRegistry.instance
-        .registerBuilder<ChampionTextField>(buildChampionTextField);
-    ChampionFormFieldRegistry.instance
-        .registerBuilder<ChampionOptionSelect>(buildChampionOptionSelect);
-    ChampionFormFieldRegistry.instance
-        .registerBuilder<ChampionCheckboxSelect>(buildChampionCheckboxSelect);
-    ChampionFormFieldRegistry.instance
-        .registerBuilder<ChampionFileUpload>(buildChampionFileUpload);
-    ChampionFormFieldRegistry.instance
-        .registerBuilder<ChampionChipSelect>(buildChampionChipSelect);
+    FormFieldRegistry.instance.registerBuilder<TextField>(buildTextField);
+    FormFieldRegistry.instance
+        .registerBuilder<OptionSelect>(buildOptionSelect);
+    FormFieldRegistry.instance
+        .registerBuilder<CheckboxSelect>(buildCheckboxSelect);
+    FormFieldRegistry.instance.registerBuilder<FileUpload>(buildFileUpload);
+    FormFieldRegistry.instance.registerBuilder<ChipSelect>(buildChipSelect);
   }
 }
 
 // Optional: Initialize core builders immediately
-// ChampionFormFieldRegistry.instance.registerCoreBuilders();
+// FormFieldRegistry.instance.registerCoreBuilders();

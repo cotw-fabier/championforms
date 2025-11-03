@@ -1,13 +1,13 @@
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/file_model.dart';
 
-class FormFieldNull extends FormFieldDef {
+class NullField extends Field {
   // Define the type of field type
 
   @override
   final String? defaultValue;
 
-  FormFieldNull({
+  NullField({
     required super.id,
     super.icon,
     super.theme,
@@ -25,7 +25,7 @@ class FormFieldNull extends FormFieldDef {
     this.defaultValue,
   });
 
-  // --- Implementation of FormFieldDef<String> Converters ---
+  // --- Implementation of Field<String> Converters ---
 
   /// Converts the String value to a String (identity function).
   @override

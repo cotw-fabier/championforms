@@ -2,11 +2,11 @@ import 'package:championforms/models/field_types/formfieldbase.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:flutter/widgets.dart';
 
-/// A layout element that arranges fields vertically within a [ChampionRow].
+/// A layout element that arranges fields vertically within a [Row].
 /// Its width can be defined as a fraction of the available row space.
-class ChampionColumn extends ChampionFormElement {
+class Column extends FormElement {
   /// The form elements (fields, or even nested rows/columns) inside this column.
-  final List<ChampionFormElement> children;
+  final List<FormElement> children;
 
   /// If true, validation errors from child fields within this column will be
   /// displayed together at the bottom of the column.
@@ -29,7 +29,7 @@ class ChampionColumn extends ChampionFormElement {
     List<FormBuilderError>? errors,
   )? columnWrapper;
 
-  ChampionColumn({
+  Column({
     this.children = const [],
     this.rollUpErrors = false,
     this.hideField = false,

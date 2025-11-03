@@ -1,23 +1,22 @@
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/colorscheme.dart';
-import 'package:championforms/models/field_types/championoptionselect.dart';
-import 'package:championforms/models/fieldstate.dart';
+import 'package:championforms/models/field_types/optionselect.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_external/field_builders/checkboxfield_builder.dart';
 import 'package:flutter/widgets.dart';
 
-class ChampionCheckboxSelect extends ChampionOptionSelect {
+class ChipSelect extends OptionSelect {
   // Add a builder for defining the field style
   @override
   Widget Function(
     BuildContext context,
-    ChampionFormController controller,
-    ChampionOptionSelect field,
+    FormController controller,
+    OptionSelect field,
     FieldColorScheme currentColors,
     Function(bool focused) updateFocus,
     Function(MultiselectOption? selectedOption) updateSelectedOption,
   ) fieldBuilder;
-  ChampionCheckboxSelect({
+  ChipSelect({
     required super.id,
     super.icon,
     required super.options,

@@ -1,6 +1,6 @@
 // We are going to build one giant controller to handle all aspects of our form.
 
-import 'package:championforms/models/field_types/championoptionselect.dart';
+import 'package:championforms/models/field_types/optionselect.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
@@ -11,7 +11,7 @@ import 'package:uuid/uuid.dart';
 
 /// Central state management controller for ChampionForms.
 ///
-/// The [ChampionFormController] manages all aspects of form state including
+/// The [FormController] manages all aspects of form state including
 /// field values, validation errors, focus states, and TextEditingController
 /// lifecycles. It serves as the single source of truth for form data and
 /// enables programmatic control over form fields.
@@ -29,10 +29,10 @@ import 'package:uuid/uuid.dart';
 ///
 /// ```dart
 /// // 1. Create a controller
-/// final controller = ChampionFormController();
+/// final controller = FormController();
 ///
-/// // 2. Use in ChampionForm widget
-/// ChampionForm(
+/// // 2. Use in Form widget
+/// Form(
 ///   controller: controller,
 ///   fields: myFields,
 /// )
@@ -57,24 +57,24 @@ import 'package:uuid/uuid.dart';
 /// - **ChangeNotifier**: Extends [ChangeNotifier], so listeners are notified
 ///   of state changes. Most methods accept a `noNotify` parameter to suppress
 ///   notifications during batch operations
-/// - **Integration**: Designed to work seamlessly with [ChampionForm],
-///   [FormFieldDef], and [FormResults]
+/// - **Integration**: Designed to work seamlessly with [Form],
+///   [Field], and [FormResults]
 ///
 /// See also:
-/// - [ChampionForm] for the form widget
+/// - [Form] for the form widget
 /// - [FormResults] for retrieving validated form data
-/// - [FormFieldDef] for field definitions
-class ChampionFormController extends ChangeNotifier {
+/// - [Field] for field definitions
+class FormController extends ChangeNotifier {
   // ===========================================================================
   // CONSTRUCTOR
   // ===========================================================================
 
-  ChampionFormController({
+  FormController({
     String? id,
     this.fields = const [],
     this.formErrors = const [],
     this.activeFields = const [],
-    Map<String, List<FormFieldDef>>? pageFields,
+    Map<String, List<Field>>? pageFields,
   })  : id = id ?? Uuid().v4(),
         pageFields = pageFields ?? {};
 
@@ -91,9 +91,9 @@ class ChampionFormController extends ChangeNotifier {
 
   /// List of all field definitions linked to this controller.
   ///
-  /// Contains all [FormFieldDef] instances that have been associated with
+  /// Contains all [Field] instances that have been associated with
   /// this controller. Primarily used for initialization and bulk operations.
-  List<FormFieldDef> fields;
+  List<Field> fields;
 
   /// List of current validation errors in the form.
   ///
@@ -106,18 +106,18 @@ class ChampionFormController extends ChangeNotifier {
 
   /// List of currently rendered field definitions.
   ///
-  /// Contains an updated list of [FormFieldDef] objects currently rendered
-  /// in [ChampionForm] widgets. Automatically maintained by the form widget
+  /// Contains an updated list of [Field] objects currently rendered
+  /// in [Form] widgets. Automatically maintained by the form widget
   /// lifecycle methods.
   ///
   /// This differs from [fields] in that it only contains fields actively
   /// being displayed, not all fields that have been registered.
-  List<FormFieldDef> activeFields;
+  List<Field> activeFields;
 
   /// Map of field definitions organized by page name.
   ///
   /// Groups fields into named pages for multi-step form workflows. Fields
-  /// are added to pages using the `pageName` parameter on [ChampionForm].
+  /// are added to pages using the `pageName` parameter on [Form].
   /// Retrieve a page's fields using [getPageFields].
   ///
   /// Example: `{'step-1': [field1, field2], 'step-2': [field3, field4]}`
@@ -125,7 +125,7 @@ class ChampionFormController extends ChangeNotifier {
   /// See also:
   /// - [getPageFields] to retrieve fields for a specific page
   /// - [updatePageFields] to add fields to a page
-  Map<String, List<FormFieldDef>> pageFields;
+  Map<String, List<Field>> pageFields;
 
   // ===========================================================================
   // PRIVATE PROPERTIES
@@ -155,8 +155,8 @@ class ChampionFormController extends ChangeNotifier {
   /// access to field metadata, validators, and properties. Populated by
   /// [addFields].
   ///
-  /// Example: `{'name': ChampionTextField(...), 'email': ChampionTextField(...)}`
-  final Map<String, FormFieldDef> _fieldDefinitions = {};
+  /// Example: `{'name': TextField(...), 'email': TextField(...)}`
+  final Map<String, Field> _fieldDefinitions = {};
 
   /// Internal storage for field focus states indexed by field ID.
   ///
@@ -213,7 +213,7 @@ class ChampionFormController extends ChangeNotifier {
   ///
   /// Populates the controller with new field definitions, initializing their
   /// internal state tracking. This is automatically called when fields are
-  /// added to a [ChampionForm] widget, but can be manually called to
+  /// added to a [Form] widget, but can be manually called to
   /// prepopulate the controller before a form widget is created.
   ///
   /// Only adds fields that don't already exist or updates them if the
@@ -228,18 +228,18 @@ class ChampionFormController extends ChangeNotifier {
   /// // Multi-page form: prepopulate controller with all pages
   /// controller.addFields([...page1Fields, ...page2Fields, ...page3Fields]);
   ///
-  /// // Then use the controller with different ChampionForm widgets
-  /// ChampionForm(controller: controller, fields: page1Fields)
+  /// // Then use the controller with different Form widgets
+  /// Form(controller: controller, fields: page1Fields)
   /// ```
   ///
   /// See also:
   /// - [updateActiveFields] to track currently rendered fields
   void addFields(
-    List<FormFieldDef> newFields, {
+    List<Field> newFields, {
     bool noNotify = false,
   }) {
     bool changed = false;
-    for (final FormFieldDef field in newFields) {
+    for (final Field field in newFields) {
       if (!_fieldDefinitions.containsKey(field.id)) {
         _fieldDefinitions[field.id] = field;
         _fieldFocusStates.putIfAbsent(field.id, () => false);
@@ -259,7 +259,7 @@ class ChampionFormController extends ChangeNotifier {
   /// Updates the list of currently rendered fields.
   ///
   /// Merges the provided fields into [activeFields], which tracks all field
-  /// definitions currently being displayed in [ChampionForm] widgets.
+  /// definitions currently being displayed in [Form] widgets.
   /// Automatically called by the form widget during its build lifecycle.
   ///
   /// Removes any existing fields with matching IDs before adding to prevent
@@ -269,7 +269,7 @@ class ChampionFormController extends ChangeNotifier {
   /// - [fields]: List of field definitions currently being rendered
   /// - [noNotify]: If true, suppresses listener notification. Defaults to false.
   void updateActiveFields(
-    List<FormFieldDef> fields, {
+    List<Field> fields, {
     bool noNotify = false,
   }) {
     removeActiveFields(fields, noNotify: true);
@@ -284,14 +284,14 @@ class ChampionFormController extends ChangeNotifier {
   /// Removes fields from the active fields list.
   ///
   /// Removes the provided field definitions from [activeFields]. Automatically
-  /// called by [ChampionForm] when the widget is torn down. Can also be called
+  /// called by [Form] when the widget is torn down. Can also be called
   /// manually to track which fields are no longer rendered.
   ///
   /// **Parameters:**
   /// - [fields]: List of field definitions to remove from active fields
   /// - [noNotify]: If true, suppresses listener notification. Defaults to false.
   void removeActiveFields(
-    List<FormFieldDef> fields, {
+    List<Field> fields, {
     bool noNotify = false,
   }) {
     activeFields = activeFields
@@ -322,8 +322,8 @@ class ChampionFormController extends ChangeNotifier {
   /// controller.updatePageFields('personal-info', [nameField, emailField]);
   /// controller.updatePageFields('address', [streetField, cityField]);
   ///
-  /// // Or let ChampionForm do it automatically:
-  /// ChampionForm(
+  /// // Or let Form do it automatically:
+  /// Form(
   ///   controller: controller,
   ///   pageName: 'personal-info',
   ///   fields: [nameField, emailField],
@@ -334,7 +334,7 @@ class ChampionFormController extends ChangeNotifier {
   /// - [getPageFields] to retrieve fields for a page
   void updatePageFields(
     String pageName,
-    List<FormFieldDef> fields,
+    List<Field> fields,
   ) {
     if (pageFields.containsKey(pageName)) {
       pageFields[pageName] = [...pageFields[pageName]!, ...fields];
@@ -345,7 +345,7 @@ class ChampionFormController extends ChangeNotifier {
 
   /// Retrieves all field definitions for a specific page.
   ///
-  /// Returns the list of [FormFieldDef] objects associated with the
+  /// Returns the list of [Field] objects associated with the
   /// specified page name. Returns an empty list if the page doesn't exist.
   ///
   /// **Parameters:**
@@ -368,7 +368,7 @@ class ChampionFormController extends ChangeNotifier {
   ///
   /// See also:
   /// - [updatePageFields] to add fields to a page
-  List<FormFieldDef> getPageFields(String pageName) {
+  List<Field> getPageFields(String pageName) {
     if (pageFields.containsKey(pageName)) {
       return pageFields[pageName] ?? [];
     } else {
@@ -594,7 +594,7 @@ class ChampionFormController extends ChangeNotifier {
 
   /// Retrieves the default value for a field.
   ///
-  /// Returns the [FormFieldDef.defaultValue] specified in the field definition.
+  /// Returns the [Field.defaultValue] specified in the field definition.
   ///
   /// **Parameters:**
   /// - [fieldId]: The unique identifier of the field
@@ -690,13 +690,13 @@ class ChampionFormController extends ChangeNotifier {
   /// controller.updateField(updatedField);
   ///
   /// // Add a new field dynamically
-  /// controller.updateField(ChampionTextField(id: 'dynamic-field', ...));
+  /// controller.updateField(TextField(id: 'dynamic-field', ...));
   /// ```
   ///
   /// See also:
   /// - [addFields] to add multiple fields at once
   /// - [removeField] to remove a field
-  void updateField(FormFieldDef field) {
+  void updateField(Field field) {
     _fieldDefinitions[field.id] = field;
     _fieldFocusStates.putIfAbsent(field.id, () => false);
     _updateFieldState(field.id);
@@ -769,7 +769,7 @@ class ChampionFormController extends ChangeNotifier {
 
   /// Resets a field to its default value.
   ///
-  /// Sets the field's value back to its [FormFieldDef.defaultValue] and clears
+  /// Sets the field's value back to its [Field.defaultValue] and clears
   /// any validation errors for that field.
   ///
   /// **Parameters:**
@@ -804,7 +804,7 @@ class ChampionFormController extends ChangeNotifier {
   /// Resets all fields to their default values.
   ///
   /// Iterates through all field definitions and resets each to its
-  /// [FormFieldDef.defaultValue]. Clears all validation errors.
+  /// [Field.defaultValue]. Clears all validation errors.
   ///
   /// **Parameters:**
   /// - [noNotify]: If true, suppresses listener notification. Defaults to false.
@@ -920,7 +920,7 @@ class ChampionFormController extends ChangeNotifier {
   ///
   /// **Throws:**
   /// - [ArgumentError]: If field with [id] does not exist
-  /// - [TypeError]: If field is not a ChampionOptionSelect
+  /// - [TypeError]: If field is not a OptionSelect
   ///
   /// **Example:**
   /// ```dart
@@ -969,7 +969,7 @@ class ChampionFormController extends ChangeNotifier {
     final field = _fieldDefinitions[id];
 
     // Validate field type
-    if (field is! ChampionOptionSelect) {
+    if (field is! OptionSelect) {
       throw TypeError();
     }
 
@@ -1029,7 +1029,7 @@ class ChampionFormController extends ChangeNotifier {
   ///
   /// **Throws:**
   /// - [ArgumentError]: If field with [fieldId] does not exist
-  /// - [TypeError]: If field is not a ChampionOptionSelect
+  /// - [TypeError]: If field is not a OptionSelect
   ///
   /// **Example:**
   /// ```dart
@@ -1075,7 +1075,7 @@ class ChampionFormController extends ChangeNotifier {
     final fieldDef = _fieldDefinitions[fieldId];
 
     // Validate field type
-    if (fieldDef is! ChampionOptionSelect) {
+    if (fieldDef is! OptionSelect) {
       throw TypeError();
     }
 
@@ -1270,7 +1270,7 @@ class ChampionFormController extends ChangeNotifier {
   /// Validates all fields on a specific page.
   ///
   /// Runs validators for all fields that were registered to the specified page
-  /// using the `pageName` parameter in [ChampionForm]. Useful for multi-step
+  /// using the `pageName` parameter in [Form]. Useful for multi-step
   /// forms where you want to validate one page at a time.
   ///
   /// **Parameters:**
@@ -1810,7 +1810,7 @@ class ChampionFormController extends ChangeNotifier {
   /// cursor position or highlighting text.
   ///
   /// **Warning:** Direct controller manipulation may desync values between
-  /// the controller and ChampionFormController. Generally prefer using
+  /// the controller and FormController. Generally prefer using
   /// [updateFieldValue] instead.
   ///
   /// **Parameters:**

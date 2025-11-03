@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 
 Widget fieldSimpleLayout(
   BuildContext context,
-  FormFieldDef fieldDetails,
-  ChampionFormController controller,
+  Field fieldDetails,
+  FormController controller,
   FieldColorScheme currentColors,
   Widget renderedField,
 ) {

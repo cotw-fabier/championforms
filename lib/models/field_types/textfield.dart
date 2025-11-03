@@ -1,14 +1,14 @@
 import 'package:championforms/models/autocomplete/autocomplete_class.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/file_model.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as flutter;
 import 'package:flutter/services.dart';
 
-class ChampionTextField extends FormFieldDef {
+class TextField extends Field {
   // Define the type of field type
 
   // Add a TextField override so we could write our own widget if we prefer. This will override the default field.
-  final TextField? fieldOverride;
+  final flutter.TextField? fieldOverride;
 
   final int? maxLines;
 
@@ -24,8 +24,8 @@ class ChampionTextField extends FormFieldDef {
   // Add hint text if needed
   final String hintText;
 
-  final Widget? leading;
-  final Widget? trailing;
+  final flutter.Widget? leading;
+  final flutter.Widget? trailing;
 
   // Does this field have a max length?
   final int? maxLength;
@@ -39,7 +39,7 @@ class ChampionTextField extends FormFieldDef {
   /// Text Input type. Defaults to normal input.
   /// But if you want a numeric only field you can use this to set it to numeric
   /// Direct passthrough of default field
-  final TextInputType? keyboardType;
+  final flutter.TextInputType? keyboardType;
 
   /// Text input formatters. Defaults to empty.
   /// Direct passthrough of inputFormatters from TextField
@@ -49,7 +49,7 @@ class ChampionTextField extends FormFieldDef {
 
   // We need to have a callback which will be called when drag and drop
   final Future<void> Function({
-    TextEditingController controller,
+    flutter.TextEditingController controller,
     required String formId,
     required String fieldId,
   })? onDrop;
@@ -59,12 +59,12 @@ class ChampionTextField extends FormFieldDef {
 
   // We need to have a callback which will be called when content is pasted
   final Future<void> Function({
-    TextEditingController controller,
+    flutter.TextEditingController controller,
     required String formId,
     required String fieldId,
   })? onPaste;
 
-  ChampionTextField({
+  TextField({
     required super.id,
     this.fieldOverride,
     this.maxLines,
@@ -96,7 +96,7 @@ class ChampionTextField extends FormFieldDef {
     super.fieldBackground,
   });
 
-  // --- Implementation of FormFieldDef<String> Converters ---
+  // --- Implementation of Field<String> Converters ---
 
   /// Converts the String value to a String (identity function).
   @override

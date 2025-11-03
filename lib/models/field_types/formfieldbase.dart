@@ -1,14 +1,14 @@
 // New base class for any element that can be in the form's `fields` list.
-abstract class ChampionFormElement {
-  const ChampionFormElement();
+abstract class FormElement {
+  const FormElement();
 }
 
-abstract class FormFieldBase extends ChampionFormElement {
+abstract class FieldBase extends FormElement {
   final String id;
   final String? title;
   final String? description;
 
-  FormFieldBase({
+  FieldBase({
     required this.id,
     this.title,
     this.description,
