@@ -462,6 +462,11 @@ class FormController extends ChangeNotifier {
   /// field's `onChange` callback if the value actually changed. If
   /// `validateLive` is enabled on the field, also runs validation.
   ///
+  /// This method validates that a field definition exists before updating.
+  /// If you want to set field values without requiring field existence
+  /// validation (e.g., for pre-populating values before field initialization),
+  /// use [createFieldValue] instead.
+  ///
   /// Pass null as [newValue] to remove the explicit value, causing the field
   /// to revert to its default value.
   ///
@@ -489,45 +494,24 @@ class FormController extends ChangeNotifier {
   ///
   /// See also:
   /// - [getFieldValue] to retrieve a field's value
+  /// - [createFieldValue] to set values without field existence validation
   /// - [updateMultiselectValues] for multiselect-specific updates
   void updateFieldValue<T>(String id, T? newValue, {bool noNotify = false}) {
     // Validate field exists
     if (!_fieldDefinitions.containsKey(id)) {
       throw ArgumentError(
-        'Field "$id" does not exist in controller. '
+        'Field "$id" does not exist in controller. Perhaps use createFieldValue() if you wish to initalize a new field.'
         'Available fields: ${_fieldDefinitions.keys.join(", ")}',
       );
     }
 
-    final T? oldValue =
-        _fieldValues.containsKey(id) ? _fieldValues[id] as T? : null;
-
-    if (newValue != null) {
-      _fieldValues[id] = newValue;
-    } else {
-      _fieldValues.remove(id);
-    }
-
-    if (oldValue != newValue) {
-      final fieldDef = _fieldDefinitions[id];
-      if (fieldDef?.onChange != null) {
-        try {
-          final results = FormResults.getResults(
-              controller: this, fields: [if (fieldDef != null) fieldDef]);
-          fieldDef!.onChange!(results);
-        } catch (e) {
-          // Silent error handling - onChange is external code
-        }
-      }
-
-      if (fieldDef?.validateLive ?? false) {
-        _validateField(id);
-      }
-
-      if (!noNotify) {
-        notifyListeners();
-      }
-    }
+    // Delegate to createFieldValue with callbacks enabled
+    createFieldValue<T>(
+      id,
+      newValue,
+      noNotify: noNotify,
+      triggerCallbacks: true,
+    );
   }
 
   /// Returns all field values as a Map.
@@ -638,6 +622,89 @@ class FormController extends ChangeNotifier {
   /// - [getFieldValue] to retrieve the value
   bool hasFieldValue(String fieldId) {
     return _fieldValues.containsKey(fieldId);
+  }
+
+  /// Creates or overwrites a field value without requiring field definition.
+  ///
+  /// Unlike [updateFieldValue], this method does NOT validate that a field
+  /// definition exists before setting the value. This is useful for
+  /// pre-populating controller values before field initialization or when
+  /// dynamically managing field data without form field definitions.
+  ///
+  /// By default, this method operates silently without triggering onChange
+  /// callbacks or validation, making it ideal for batch pre-population
+  /// scenarios. Set [triggerCallbacks] to true if you need onChange and
+  /// validation behavior.
+  ///
+  /// **Parameters:**
+  /// - [id]: The unique identifier for the field value
+  /// - [newValue]: The value to set, or null to remove the value
+  /// - [noNotify]: If true, suppresses listener notification. Defaults to true.
+  /// - [triggerCallbacks]: If true, runs onChange callback and validation. Defaults to false.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// // Pre-populate values before fields are defined
+  /// controller.createFieldValue<String>('email', 'user@example.com');
+  /// controller.createFieldValue<String>('name', 'John Doe');
+  ///
+  /// // Later, when fields are added, values will already be present
+  /// Form(controller: controller, fields: [emailField, nameField]);
+  ///
+  /// // Create value with callbacks enabled
+  /// controller.createFieldValue<String>(
+  ///   'phone',
+  ///   '555-1234',
+  ///   triggerCallbacks: true,
+  /// );
+  ///
+  /// // Batch creation without notifications
+  /// controller.createFieldValue<String>('field1', 'value1', noNotify: true);
+  /// controller.createFieldValue<String>('field2', 'value2', noNotify: true);
+  /// controller.notifyListeners();
+  /// ```
+  ///
+  /// **Note:** If you need to ensure a field definition exists before
+  /// setting a value, use [updateFieldValue] instead.
+  ///
+  /// See also:
+  /// - [updateFieldValue] for updating values with field existence validation
+  /// - [getFieldValue] to retrieve a field's value
+  void createFieldValue<T>(
+    String id,
+    T? newValue, {
+    bool noNotify = true,
+    bool triggerCallbacks = false,
+  }) {
+    final T? oldValue =
+        _fieldValues.containsKey(id) ? _fieldValues[id] as T? : null;
+
+    if (newValue != null) {
+      _fieldValues[id] = newValue;
+    } else {
+      _fieldValues.remove(id);
+    }
+
+    if (triggerCallbacks && oldValue != newValue) {
+      final fieldDef = _fieldDefinitions[id];
+      if (fieldDef?.onChange != null) {
+        try {
+          final results = FormResults.getResults(
+              controller: this, fields: [if (fieldDef != null) fieldDef]);
+          fieldDef!.onChange!(results);
+        } catch (e) {
+          // Silent error handling - onChange is external code
+        }
+      }
+
+      if (fieldDef?.validateLive ?? false) {
+        _validateField(id);
+      }
+    }
+
+    if (!noNotify) {
+      notifyListeners();
+    }
   }
 
   /// Checks if any field has been modified from its default value.
@@ -975,8 +1042,8 @@ class FormController extends ChangeNotifier {
 
     final isMultiselect = multiselect ?? field.multiselect;
 
-    List<FieldOption> currentValues = List<FieldOption>.from(
-        getFieldValue<List<FieldOption>>(id) ?? []);
+    List<FieldOption> currentValues =
+        List<FieldOption>.from(getFieldValue<List<FieldOption>>(id) ?? []);
     List<FieldOption> finalValue;
 
     if (overwrite) {
@@ -1011,15 +1078,20 @@ class FormController extends ChangeNotifier {
       finalValue = mergedValues;
     }
 
-    updateFieldValue<List<FieldOption>>(id, finalValue,
-        noNotify: noNotify);
+    updateFieldValue<List<FieldOption>>(id, finalValue, noNotify: noNotify);
   }
 
-  /// Toggles specific options on or off for a multiselect field.
+  /// Toggles specific options on or off for a multiselect or single-select field.
   ///
   /// Provides a convenient way to ensure specific options are selected
   /// (toggleOn) or deselected (toggleOff) without needing to manage the full
   /// list of selections. Works with option values (not labels).
+  ///
+  /// **Behavior:**
+  /// - **Multi-select fields** (`multiselect: true`): Adds all toggleOn values
+  ///   and removes all toggleOff values from the current selection
+  /// - **Single-select fields** (`multiselect: false`): Clears all selections
+  ///   and sets only the first toggleOn value (radio button behavior)
   ///
   /// **Parameters:**
   /// - [fieldId]: The unique identifier of the field
@@ -1033,7 +1105,7 @@ class FormController extends ChangeNotifier {
   ///
   /// **Example:**
   /// ```dart
-  /// // Select some options
+  /// // Multi-select: Select multiple options
   /// controller.toggleMultiSelectValue(
   ///   'skills',
   ///   toggleOn: ['dart', 'flutter'],
@@ -1045,11 +1117,10 @@ class FormController extends ChangeNotifier {
   ///   toggleOff: ['java', 'kotlin'],
   /// );
   ///
-  /// // Combine both
+  /// // Single-select: Behaves like radio button (only one selected)
   /// controller.toggleMultiSelectValue(
-  ///   'skills',
-  ///   toggleOn: ['dart', 'flutter'],
-  ///   toggleOff: ['java'],
+  ///   'priority',  // multiselect: false
+  ///   toggleOn: ['high'],  // Clears other selections, only 'high' selected
   /// );
   /// ```
   ///
@@ -1085,17 +1156,31 @@ class FormController extends ChangeNotifier {
     final Set<String> newSelectedValues =
         currentSelectedOptions.map((o) => o.value).toSet();
 
-    for (final valueToSelect in toggleOn) {
-      newSelectedValues.add(valueToSelect);
-    }
-    for (final valueToDeselect in toggleOff) {
-      newSelectedValues.remove(valueToDeselect);
+    // Check if this is a multiselect field
+    if (fieldDef.multiselect) {
+      // Multi-select: add/remove values as requested
+      for (final valueToSelect in toggleOn) {
+        newSelectedValues.add(valueToSelect);
+      }
+      for (final valueToDeselect in toggleOff) {
+        newSelectedValues.remove(valueToDeselect);
+      }
+    } else {
+      // Single-select: only allow one value (radio button behavior)
+      if (toggleOn.isNotEmpty) {
+        // Clear all selections and set only the first toggleOn value
+        newSelectedValues.clear();
+        newSelectedValues.add(toggleOn.first);
+      }
+      // Apply toggleOff (deselect if it's the current value)
+      for (final valueToDeselect in toggleOff) {
+        newSelectedValues.remove(valueToDeselect);
+      }
     }
 
-    final List<FieldOption> finalSelectedOptions =
-        (fieldDef.options ?? [])
-            .where((option) => newSelectedValues.contains(option.value))
-            .toList();
+    final List<FieldOption> finalSelectedOptions = (fieldDef.options ?? [])
+        .where((option) => newSelectedValues.contains(option.value))
+        .toList();
 
     updateFieldValue<List<FieldOption>>(
       fieldId,

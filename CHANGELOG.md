@@ -1,3 +1,110 @@
+## 0.5.3
+
+**Bug Fix - CheckboxSelect Single-Select Mode**
+
+### Fixed
+
+**`toggleMultiSelectValue` now respects `multiselect` property**:
+- Fixed critical bug where CheckboxSelect fields with `multiselect: false` incorrectly allowed multiple selections
+- Single-select fields now behave like radio buttons (selecting one option automatically deselects others)
+- Method now properly checks the field's `multiselect` property before updating selections
+
+**Behavior:**
+- **Multi-select mode** (`multiselect: true`): Unchanged - allows multiple selections
+- **Single-select mode** (`multiselect: false`): Fixed - only allows one selection at a time
+
+**Example:**
+```dart
+// This now works correctly - only one checkbox can be selected
+CheckboxSelect(
+  id: 'priority',
+  options: [lowOption, mediumOption, highOption],
+  multiselect: false,  // Radio button behavior
+)
+```
+
+### Migration
+
+**No changes required!** Just update your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  championforms: ^0.5.3
+```
+
+If you were working around this bug by manually clearing selections, you can now remove that workaround code.
+
+---
+
+## 0.5.2
+
+**Field Value Pre-population - Create Values Before Field Initialization**
+
+### Breaking Changes
+
+**None** - This is a backward-compatible enhancement. All existing code continues to work without modification.
+
+### New Features
+
+**`createFieldValue<T>()` Method**:
+- Added `createFieldValue<T>()` method to FormController for setting field values without requiring field definitions to exist
+- Enables pre-populating controller values before field initialization
+- Useful for loading saved form data or setting values dynamically before rendering fields
+- Defaults to silent operation (no onChange callbacks, no validation, no notifications)
+- Optional `triggerCallbacks` parameter to enable onChange and validation if needed
+
+**Example**:
+```dart
+// Pre-populate values before fields are defined
+final controller = FormController();
+controller.createFieldValue<String>('email', 'user@example.com');
+controller.createFieldValue<String>('name', 'John Doe');
+
+// Later, when fields are added, values will already be present
+Form(
+  controller: controller,
+  fields: [emailField, nameField],
+)
+```
+
+### What Changed
+
+**Refactored `updateFieldValue<T>()`**:
+- Now uses `createFieldValue<T>()` internally after field existence validation
+- Maintains existing behavior (validates field exists, triggers callbacks, runs validation)
+- Updated documentation to reference `createFieldValue` for pre-population scenarios
+
+**Benefits**:
+- **Flexible Value Management**: Set values before or after field initialization
+- **Better Pre-population**: Load saved form drafts before rendering fields
+- **Backward Compatible**: Existing code continues to work unchanged
+- **Clean API**: Clear separation between validated updates and permissive creation
+
+### Migration
+
+**No changes required!** This is a new optional feature. Just update your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  championforms: ^0.5.2
+```
+
+Then run:
+```bash
+flutter pub upgrade
+```
+
+**Optional**: Use `createFieldValue` for pre-populating form data:
+```dart
+// Load saved draft before creating form
+final savedData = await loadDraft();
+savedData.forEach((key, value) {
+  controller.createFieldValue(key, value);
+});
+```
+
+---
+
 ## 0.5.1
 
 **Desktop_Drop Integration - Unified Cross-Platform Drag-and-Drop**
