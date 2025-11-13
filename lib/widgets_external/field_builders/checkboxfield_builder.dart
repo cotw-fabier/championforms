@@ -5,12 +5,15 @@ import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_internal/field_widgets/multiselect_widget.dart';
 import 'package:flutter/material.dart';
 
+/// Checkbox field builder for OptionSelect fields.
+///
+/// Updated in v0.5.4 to remove updateFocus parameter.
+/// Focus management is now handled automatically by StatefulFieldWidget.
 Widget checkboxFieldBuilder(
   BuildContext context,
   FormController controller,
   OptionSelect field,
   FieldColorScheme currentColors,
-  Function(bool focused) updateFocus,
   // updateSelectedOption is no longer directly needed here as we use toggleMultiSelectValue
   Function(FieldOption? selectedOption) updateSelectedOption,
 ) {

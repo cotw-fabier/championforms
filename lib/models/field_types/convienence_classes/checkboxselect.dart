@@ -8,13 +8,14 @@ import 'package:flutter/widgets.dart';
 
 class CheckboxSelect extends OptionSelect {
   // Add a builder for defining the field style
+  // Note: Signature updated in v0.5.4 to remove updateFocus callback
+  // Focus management is now handled automatically by StatefulFieldWidget
   @override
   Widget Function(
     BuildContext context,
     FormController controller,
     OptionSelect field,
     FieldColorScheme currentColors,
-    Function(bool focused) updateFocus,
     Function(FieldOption? selectedOption) updateSelectedOption,
   ) fieldBuilder;
   CheckboxSelect({

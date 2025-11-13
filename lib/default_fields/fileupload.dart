@@ -9,6 +9,14 @@ import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:flutter/widgets.dart';
 
+/// Builder function for FileUpload fields.
+///
+/// Updated in v0.5.4 to remove updateFocus parameter for consistency with
+/// other field types. FileUpload will be fully refactored to use StatefulFieldWidget
+/// in a future release.
+///
+/// For now, this builder continues to use the old internal widget implementation
+/// while maintaining the new external API.
 Widget buildFileUpload(
     BuildContext context,
     FormController controller,
@@ -22,7 +30,6 @@ Widget buildFileUpload(
     controller,
     field, // Pass the specific field instance
     currentColors,
-    updateFocus,
     (FieldOption? selectedOption) {
       // Update selected logic: A new file is uploaded/selected, or potentially removed.
       // The FieldOption's additionalData should contain the FileModel.

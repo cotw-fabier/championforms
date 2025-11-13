@@ -5,6 +5,15 @@
 
 A declarative Flutter form builder focusing on clean structure, easy validation, state management via a central controller, and customizable theming. Designed to simplify form creation and management.
 
+## Documentation
+
+📚 **[Complete Documentation](docs/README.md)** - Comprehensive guides, API references, and examples
+
+### Quick Links
+- **[Custom Field Cookbook](docs/custom-fields/custom-field-cookbook.md)** - 6 practical examples for creating custom fields
+- **[Migration Guide v0.5.x → v0.6.0](docs/migrations/MIGRATION-0.6.0.md)** - Upgrade to simplified custom field API
+- **[Migration Guide v0.3.x → v0.4.0](docs/migrations/MIGRATION-0.4.0.md)** - Upgrade to namespace-based API
+
 ## Features
 
 *   **Declarative Field Definition:** Define form fields using clear widget classes (`form.TextField`, `form.OptionSelect`, `form.CheckboxSelect`, `form.FileUpload`, etc.).
@@ -16,8 +25,29 @@ A declarative Flutter form builder focusing on clean structure, easy validation,
 *   **Autocomplete:** Add autocomplete suggestions to `form.TextField` using `form.AutoCompleteBuilder`, supporting initial lists and asynchronous fetching.
 *   **File Uploads:** `form.FileUpload` widget integrates with `file_picker` and supports drag-and-drop, file type restrictions (`allowedExtensions`), and validation.
 *   **Controller Interaction:** Programmatically update field values (`updateTextFieldValue`, `toggleMultiSelectValue`) and clear selections (`removeMultiSelectOptions`).
+*   **🆕 Simplified Custom Fields (v0.6.0+):** Create custom fields with 60-70% less boilerplate using `StatefulFieldWidget` and `FieldBuilderContext`.
 
 ## What's New
+
+### v0.6.0 - Simplified Custom Field API (Breaking Changes)
+
+Version 0.6.0 dramatically simplifies custom field creation by reducing boilerplate from **120-150 lines to 30-50 lines** (60-70% reduction).
+
+**New Features:**
+- **FieldBuilderContext** - Bundles 6 parameters into one clean context object
+- **StatefulFieldWidget** - Abstract base class with automatic lifecycle management
+- **Converter Mixins** - Reusable type conversion logic
+- **Simplified FormFieldRegistry** - Static registration methods
+
+**Who This Affects:**
+- ✅ **Custom field developers**: If you've created custom field types, you need to migrate
+- ❌ **Regular users**: If you only use built-in fields (TextField, OptionSelect, FileUpload), **no changes required**
+
+**Migration:**
+- **[Migration Guide v0.5.x → v0.6.0](docs/migrations/MIGRATION-0.6.0.md)** - Complete upgrade instructions
+- **[Custom Field Cookbook](docs/custom-fields/custom-field-cookbook.md)** - Updated examples using new API
+- **[StatefulFieldWidget Guide](docs/custom-fields/stateful-field-widget.md)** - Learn the base class pattern
+- **[FieldBuilderContext API](docs/custom-fields/field-builder-context.md)** - Context object reference
 
 ### v0.4.0 - API Modernization (Breaking Changes)
 
@@ -29,7 +59,7 @@ Version 0.4.0 modernizes the ChampionForms API by removing the "Champion" prefix
 *   Two-tier export system (form lifecycle vs. theming/configuration)
 *   No functional changes - all behavior remains identical
 
-**Migration Required:** If you're upgrading from v0.3.x, please see the [Migration from v0.3.x](#migration-from-v03x) section below.
+**Migration Required:** If you're upgrading from v0.3.x, please see the **[Migration Guide v0.3.x → v0.4.0](docs/migrations/MIGRATION-0.4.0.md)**.
 
 ### v0.3.x Features
 
@@ -48,22 +78,21 @@ Add the following to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  championforms: ^0.4.0 # Use the latest version
+  championforms: ^0.6.0 # Use the latest version
   flutter:
     sdk: flutter
   # Required for File Uploads:
-  file_picker: ^9.0.0 # Or latest compatible version
-  super_drag_and_drop: ^0.9.0 # Or latest compatible version
-  super_clipboard: ^0.8.7 # Or latest compatible version
-  mime: ^1.0.5 # Or latest compatible version
+  file_picker: ^10.0.0 # Or latest compatible version
+  desktop_drop: ^0.7.0 # Or latest compatible version (for drag-and-drop on desktop)
+  mime: ^2.0.0 # Or latest compatible version
 
   # Other dependencies if needed (e.g., email_validator for default email check)
-  email_validator: ^2.1.17
+  email_validator: ^3.0.0
 ```
 
 Then run `flutter pub get`.
 
-**Important:** ChampionForms v0.4.0 uses a namespace import approach. Import the library as:
+**Important:** ChampionForms v0.4.0+ uses a namespace import approach. Import the library as:
 
 ```dart
 import 'package:championforms/championforms.dart' as form;
@@ -160,6 +189,58 @@ Widget build(BuildContext context) {
   );
 }
 ```
+
+## Custom Fields (v0.6.0+)
+
+Creating custom fields is now dramatically simpler with the v0.6.0 API:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:championforms/championforms.dart' as form;
+
+class RatingFieldWidget extends form.StatefulFieldWidget {
+  const RatingFieldWidget({required super.context});
+
+  @override
+  Widget buildWithTheme(
+    BuildContext buildContext,
+    FormTheme theme,
+    form.FieldBuilderContext ctx,
+  ) {
+    final rating = ctx.getValue<int>() ?? 0;
+
+    return Row(
+      children: List.generate(5, (index) {
+        return IconButton(
+          icon: Icon(
+            index < rating ? Icons.star : Icons.star_border,
+            color: ctx.colors.iconColor,
+          ),
+          onPressed: () => ctx.setValue<int>(index + 1),
+        );
+      }),
+    );
+  }
+
+  @override
+  void onValueChanged(dynamic oldValue, dynamic newValue) {
+    if (context.field.onChange != null) {
+      final results = form.FormResults.getResults(controller: context.controller);
+      context.field.onChange!(results);
+    }
+  }
+}
+```
+
+**That's it!** ~30 lines vs ~120 lines in the old API.
+
+For more examples, see the **[Custom Field Cookbook](docs/custom-fields/custom-field-cookbook.md)** with 6 complete, working examples:
+1. Phone number field with formatting
+2. Tag selector with autocomplete
+3. Rich text editor field
+4. Date/time picker field
+5. Signature pad field
+6. File upload with preview enhancement
 
 ## Form Controller (`form.FormController`)
 
@@ -306,117 +387,6 @@ ChampionForms uses a `FormTheme` object to control appearance.
     *   `.asMultiselectList()`: Returns selected options as `List<form.FieldOption>`.
     *   `.asMultiselectSingle()`: Returns the first selected option as `form.FieldOption?`.
     *   `.asFile()`: Returns uploaded files as `List<form.FileResultData>`, containing name, path, and `FileModel` (with bytes/stream/MIME details).
-
-## Migration from v0.3.x
-
-Version 0.4.0 is a **breaking change release**. If you're upgrading from v0.3.x, you need to migrate your code to use the new namespace approach.
-
-### Quick Migration Overview
-
-**What Changed:**
-- All class names lost their "Champion" prefix
-- Imports now require namespace alias (`as form`)
-- Two-tier export system (lifecycle vs. themes)
-
-**What Stayed the Same:**
-- All functionality and behavior
-- All field types and their properties
-- Validation system, theme system, controller API
-- Form state management and result handling
-
-### Migration Options
-
-1. **Automated Migration (Recommended):** Use the provided migration script (~5-15 minutes)
-   ```bash
-   dart run tools/project-migration.dart /path/to/your/flutter/project
-   ```
-
-2. **Manual Migration:** Follow the step-by-step guide in [MIGRATION-0.4.0.md](MIGRATION-0.4.0.md) (~30-60 minutes)
-
-### Quick Example
-
-**Before (v0.3.x):**
-```dart
-import 'package:championforms/championforms.dart';
-
-ChampionFormController controller = ChampionFormController();
-ChampionForm(
-  controller: controller,
-  fields: [
-    ChampionTextField(id: 'email', textFieldTitle: 'Email'),
-  ],
-)
-```
-
-**After (v0.4.0):**
-```dart
-import 'package:championforms/championforms.dart' as form;
-
-form.FormController controller = form.FormController();
-form.Form(
-  controller: controller,
-  fields: [
-    form.TextField(id: 'email', textFieldTitle: 'Email'),
-  ],
-)
-```
-
-### Full Migration Guide
-
-For complete migration instructions, before/after examples, common issues, and FAQ, please see:
-
-**[MIGRATION-0.4.0.md](MIGRATION-0.4.0.md)**
-
-The migration guide covers:
-- Why we changed the API
-- Comprehensive before/after examples
-- Find-and-replace reference table
-- Step-by-step manual migration instructions
-- Automated migration script usage
-- Common issues and FAQ
-- Version checklist
-
-## Advanced Usage
-
-### Custom Field Registration
-
-If you're creating custom field types, you can register them with the `FormFieldRegistry`:
-
-```dart
-import 'package:championforms/championforms.dart' as form;
-import 'package:championforms/championforms_themes.dart';
-
-// Register your custom field builder
-FormFieldRegistry.instance.registerField(
-  'myCustomField',
-  (field) => buildMyCustomField(field),
-);
-```
-
-### Controller Extensions
-
-The `TextFieldController` extension on `form.FormController` provides convenient methods for text field manipulation:
-
-```dart
-import 'package:championforms/championforms.dart' as form;
-
-final controller = form.FormController();
-
-// Update a text field value
-controller.updateTextFieldValue("fieldId", "new value");
-
-// Toggle multiselect options
-controller.toggleMultiSelectValue(
-  "checkboxId",
-  toggleOn: ["option1", "option2"],
-  toggleOff: ["option3"],
-);
-
-// Clear all multiselect options
-controller.removeMultiSelectOptions("fieldId");
-```
-
----
 
 ## Contributing
 

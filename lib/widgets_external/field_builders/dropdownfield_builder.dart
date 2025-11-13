@@ -8,12 +8,15 @@ import 'package:championforms/widgets_internal/field_widgets/multiselect_widget.
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
+/// Dropdown field builder for OptionSelect fields.
+///
+/// Updated in v0.5.4 to remove updateFocus parameter.
+/// Focus management is now handled automatically by StatefulFieldWidget.
 Widget dropdownFieldBuilder(
   BuildContext context,
   FormController controller,
   OptionSelect field,
   FieldColorScheme currentColors,
-  Function(bool focused) updateFocus,
   Function(FieldOption? selectedOption) updateSelectedOption,
 ) {
   return MultiselectWidget(

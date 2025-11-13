@@ -1,0 +1,31 @@
+task_assignments:
+  - task_group: "Task Group 1: Core Context and Converter Classes"
+    assigned_subagent: "api-engineer"
+    rationale: "Core classes with business logic, type conversions, and controller integration - closest match to API engineer's expertise in handling data transformations and integration patterns"
+
+  - task_group: "Task Group 2: StatefulFieldWidget Implementation"
+    assigned_subagent: "ui-designer"
+    rationale: "Widget development, UI lifecycle management, and component implementation - aligns with UI designer's expertise in creating reusable UI components"
+
+  - task_group: "Task Group 3: Migrate Existing Fields to New API"
+    assigned_subagent: "ui-designer"
+    rationale: "Refactoring existing widget implementations (TextField, OptionSelect, FileUpload) - requires UI component expertise"
+
+  - task_group: "Task Group 4: Comprehensive Documentation"
+    assigned_subagent: "api-engineer"
+    rationale: "API documentation, migration guides, and technical writing - API engineer can document the new API patterns and integration points"
+
+  - task_group: "Task Group 5: Custom Field Examples in Example App"
+    assigned_subagent: "ui-designer"
+    rationale: "Creating example widgets (RatingField, DatePickerField) and UI demonstrations - UI designer's core responsibility"
+
+  - task_group: "Task Group 6: Comprehensive Testing and Release"
+    assigned_subagent: "testing-engineer"
+    rationale: "Testing, quality validation, and release preparation - testing engineer's primary responsibility"
+
+notes:
+  - "This is a Flutter package project, which doesn't perfectly match the standard implementer roles"
+  - "api-engineer is being used for core business logic and API patterns (Task Groups 1, 4)"
+  - "ui-designer is being used for all widget implementation work (Task Groups 2, 3, 5)"
+  - "testing-engineer handles final testing and release (Task Group 6)"
+  - "All implementers will need to work with Flutter/Dart codebase despite role definitions"

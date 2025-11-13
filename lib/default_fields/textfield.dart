@@ -1,28 +1,23 @@
 import 'package:championforms/controllers/form_controller.dart';
-import 'package:championforms/models/colorscheme.dart';
-import 'package:championforms/models/field_types/textfield.dart';
-import 'package:championforms/models/fieldstate.dart';
+import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/widgets_internal/field_widgets/textfieldwidget.dart';
 import 'package:flutter/widgets.dart';
 
-Widget buildTextField(
-    BuildContext context,
-    FormController controller,
-    TextField field,
-    FieldState currentState,
-    FieldColorScheme currentColors,
-    Function(bool focused) updateFocus) {
-  // ... logic from TextFieldWidget build, calling overrideTextField etc.
-  // You'll need to manage the TextEditingController and FocusNode interaction here or within TextFieldWidget.
-  // This part requires careful adaptation of TextFieldWidget's logic.
-  return TextFieldWidget(
-    // Or directly build the TextField here
-    controller: controller,
-    field: field,
-    fieldState: currentState,
-    colorScheme: currentColors,
-    // ... other parameters derived from field, state, controller
-  );
+/// Builder function for TextField using the new simplified API (v0.6.0+).
+///
+/// Creates a [TextFieldWidget] with the provided [FieldBuilderContext].
+/// This builder uses the new single-parameter signature for cleaner integration.
+///
+/// **Example:**
+/// ```dart
+/// // Register globally (done automatically for built-in fields)
+/// FormFieldRegistry.register<TextField>(
+///   'textField',
+///   buildTextField,
+/// );
+/// ```
+Widget buildTextField(FieldBuilderContext context) {
+  return TextFieldWidget(context: context);
 }
 
 extension TextFieldController on FormController {

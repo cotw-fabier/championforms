@@ -1920,7 +1920,9 @@ class FormController extends ChangeNotifier {
   /// - [addFieldController] to store a controller
   /// - [updateFieldValue] for value updates without direct controller access
   T? getFieldController<T>(String fieldId) {
-    final existing = _fieldControllers[fieldId];
+    // Use composite key: fieldId + type name
+    final key = '${fieldId}_${T.toString()}';
+    final existing = _fieldControllers[key];
     if (existing is T) {
       return existing;
     }
@@ -1949,7 +1951,11 @@ class FormController extends ChangeNotifier {
   /// See also:
   /// - [getFieldController] to retrieve a stored controller
   void addFieldController<T>(String fieldId, T controller) {
-    _fieldControllers[fieldId] = controller;
+    // Use composite key: fieldId + type name
+    // This allows multiple controller types (TextEditingController, FocusNode, etc.)
+    // to be stored for the same field without overwriting each other
+    final key = '${fieldId}_${T.toString()}';
+    _fieldControllers[key] = controller;
   }
 
   // ===========================================================================

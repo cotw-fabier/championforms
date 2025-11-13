@@ -7,12 +7,18 @@ import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_internal/field_widgets/file_upload_widget.dart';
 import 'package:flutter/material.dart';
 
+/// File upload field builder for FileUpload fields.
+///
+/// Updated in v0.5.4 to remove updateFocus parameter.
+/// Focus management will be handled automatically by StatefulFieldWidget
+/// when FileUpload is refactored (planned for future release).
+///
+/// Note: FileUpload widget still uses old API internally until full refactoring.
 Widget fileUploadFieldBuilder(
   BuildContext context,
   FormController controller,
   OptionSelect field,
   FieldColorScheme currentColors,
-  Function(bool focused) updateFocus,
   Function(FieldOption? selectedOption) updateSelectedOption,
 ) {
   return FileUploadWidget(
@@ -20,7 +26,11 @@ Widget fileUploadFieldBuilder(
     controller: controller,
     field: field,
     currentColors: currentColors,
-    onFocusChange: (bool focus) => updateFocus(focus),
+    onFocusChange: (bool focus) {
+      // TODO: Remove this when FileUpload is refactored to use StatefulFieldWidget
+      // For now, manually update focus tracking in controller
+      controller.setFieldFocus(field.id, focus);
+    },
     onFileOptionChange: (FieldOption? option) {
       // Commented out because we don't know what file options we have previously to uploading files.
       // So this has to be handled down at the widget level.

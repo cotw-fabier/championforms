@@ -1,36 +1,14 @@
-import 'package:championforms/controllers/form_controller.dart';
-import 'package:championforms/models/colorscheme.dart';
-import 'package:championforms/models/field_types/optionselect.dart';
-import 'package:championforms/models/fieldstate.dart';
-import 'package:championforms/models/formresults.dart';
-import 'package:championforms/models/multiselect_option.dart';
+import 'package:championforms/models/field_builder_context.dart';
+import 'package:championforms/widgets_internal/field_widgets/optionselect_widget.dart';
 import 'package:flutter/widgets.dart';
 
-Widget buildOptionSelect(
-    BuildContext context,
-    FormController controller,
-    OptionSelect field,
-    FieldState currentState,
-    FieldColorScheme currentColors,
-    Function(bool focused) updateFocus) {
-  // Use the field's own builder logic
-  return field
-      .fieldBuilder(context, controller, field, currentColors, updateFocus,
-          (FieldOption? selectedOption) {
-    // Update selected logic
-    if (selectedOption != null) {
-      controller.updateMultiselectValues(field.id, [selectedOption],
-          multiselect: field.multiselect);
-    } else {
-      controller.resetMultiselectChoices(field.id);
-    }
-    if (field.validateLive == true) {
-      FormResults.getResults(controller: controller, fields: [field]);
-    }
-    if (field.onChange != null) {
-      final results =
-          FormResults.getResults(controller: controller, fields: [field]);
-      field.onChange!(results);
-    }
-  });
+/// Builder function for OptionSelect fields using the new StatefulFieldWidget API.
+///
+/// This simplified builder creates an [OptionSelectWidget] which handles all
+/// lifecycle management, validation, and change detection automatically.
+///
+/// The actual UI rendering is delegated to the field's `fieldBuilder` property
+/// (e.g., dropdownFieldBuilder, checkboxFieldBuilder, chipFieldBuilder).
+Widget buildOptionSelect(FieldBuilderContext context) {
+  return OptionSelectWidget(context: context);
 }
