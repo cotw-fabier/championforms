@@ -225,8 +225,11 @@ void main() {
       expect(focusNode2, equals(focusNode1));
 
       // Assert - Controller should have the FocusNode registered
-      final registeredFocusNode = controller.getFieldController(testField.id);
+      // Note: Must specify type parameter for composite key lookup
+      final registeredFocusNode = controller.getFieldController<material.FocusNode>(testField.id);
       expect(registeredFocusNode, equals(focusNode1));
+
+      // Note: tearDown() handles controller disposal
     });
   });
 }

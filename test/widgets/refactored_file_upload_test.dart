@@ -25,8 +25,10 @@ void main() {
       );
     });
 
-    tearDown(() {
-      controller.dispose();
+    tearDown(() async {
+      // IMPORTANT: Unmount widget tree BEFORE disposing controller
+      // This prevents "FormController was used after being disposed" errors
+      // No need to do this in tearDown since each test builds its own widget tree
     });
 
     testWidgets('FileUpload renders correctly', (WidgetTester tester) async {
@@ -48,6 +50,11 @@ void main() {
       // Assert - Check that upload zone is rendered
       expect(find.text('Upload File'), findsOneWidget);
       expect(find.byIcon(Icons.upload_file), findsOneWidget);
+
+      // Cleanup
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+      controller.dispose();
     });
 
     testWidgets('File selection behavior (simulated)',
@@ -90,6 +97,11 @@ void main() {
       expect(value, isNotNull);
       expect(value!.length, equals(1));
       expect(value.first.value, equals('test.pdf'));
+
+      // Cleanup
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+      controller.dispose();
     });
 
     testWidgets('Drag-and-drop integration exists',
@@ -110,6 +122,11 @@ void main() {
       // Assert - Drag target is present (this verifies the component renders)
       // Actual drag-drop testing requires platform-specific setup
       expect(find.byType(form.Form), findsOneWidget);
+
+      // Cleanup
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+      controller.dispose();
     });
 
     testWidgets('Validation behavior works', (WidgetTester tester) async {
@@ -121,9 +138,14 @@ void main() {
         validateLive: true,
         validators: [
           form.Validator(
-            validator: (results) {
-              final value = results.grab('test_file').asFile();
-              return value == null || value.isEmpty;
+            // Validator receives the field value directly (List<FieldOption>)
+            // Returns TRUE when valid, FALSE when invalid
+            validator: (value) {
+              if (value == null) return false;
+              if (value is List<form.FieldOption>) {
+                return value.isNotEmpty;
+              }
+              return false;
             },
             reason: 'File is required',
           ),
@@ -151,6 +173,11 @@ void main() {
         results.formErrors.any((e) => e.fieldId == 'test_file'),
         isTrue,
       );
+
+      // Cleanup
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+      controller.dispose();
     });
 
     test('FileFieldConverters handles FileModel list', () {
@@ -189,6 +216,9 @@ void main() {
       expect(fileListValue, isNotNull);
       expect(fileListValue!.length, equals(2));
       expect(fileListValue.first.fileName, equals('file1.pdf'));
+
+      // Cleanup
+      controller.dispose();
     });
 
     test('FileUpload respects max file size', () {
@@ -200,6 +230,9 @@ void main() {
 
       // Assert
       expect(field.maxFileSize, equals(1024));
+
+      // Cleanup
+      controller.dispose();
     });
 
     test('FileUpload respects allowed extensions', () {
@@ -211,6 +244,9 @@ void main() {
 
       // Assert
       expect(field.allowedExtensions, equals(['pdf', 'jpg', 'png']));
+
+      // Cleanup
+      controller.dispose();
     });
   });
 }
