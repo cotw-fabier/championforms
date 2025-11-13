@@ -56,6 +56,11 @@ export 'package:championforms/models/field_types/fileupload.dart';
 export 'package:championforms/models/field_types/convienence_classes/checkboxselect.dart';
 export 'package:championforms/models/field_types/convienence_classes/chipselect.dart';
 
+// Export Compound Field Types
+export 'package:championforms/models/field_types/compound_field.dart';
+export 'package:championforms/default_fields/name_field.dart';
+export 'package:championforms/default_fields/address_field.dart';
+
 // Export FieldOption (formerly MultiselectOption)
 export 'package:championforms/models/multiselect_option.dart';
 

@@ -1,0 +1,15 @@
+task_assignments:
+  - task_group: "Task Group 1: Compound Field Base Classes and Registry Extension"
+    assigned_subagent: "api-engineer"
+
+  - task_group: "Task Group 2: Form Widget Integration and Sub-field Transparency"
+    assigned_subagent: "api-engineer"
+
+  - task_group: "Task Group 3: Results Accessor and Error Rollup"
+    assigned_subagent: "api-engineer"
+
+  - task_group: "Task Group 4: NameField and AddressField Implementation"
+    assigned_subagent: "ui-designer"
+
+  - task_group: "Task Group 5: Comprehensive Testing and Example App"
+    assigned_subagent: "testing-engineer"

@@ -4,9 +4,14 @@ import 'package:championforms/default_fields/chipselect.dart';
 import 'package:championforms/default_fields/fileupload.dart';
 import 'package:championforms/default_fields/optionselect.dart';
 import 'package:championforms/default_fields/textfield.dart';
+import 'package:championforms/default_fields/name_field.dart';
+import 'package:championforms/default_fields/address_field.dart';
 import 'package:championforms/models/field_types/convienence_classes/chipselect.dart';
+import 'package:championforms/models/field_types/compound_field.dart';
+import 'package:championforms/models/field_types/compound_field_registration.dart';
 import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/field_converters.dart';
+import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:flutter/material.dart' as flutter;
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/themes.dart';
@@ -276,6 +281,9 @@ class FormFieldRegistry {
   /// Internal storage for converters indexed by field type.
   final Map<Type, FieldConverters> _converters = {};
 
+  /// Internal storage for compound field registrations indexed by field type.
+  final Map<Type, CompoundFieldRegistration> _compoundRegistrations = {};
+
   // ===========================================================================
   // NEW STATIC API (v0.6.0+)
   // ===========================================================================
@@ -350,6 +358,83 @@ class FormFieldRegistry {
   }
 
   // ===========================================================================
+  // COMPOUND FIELD API
+  // ===========================================================================
+
+  /// Registers a compound field type with sub-field builder and layout (static method).
+  ///
+  /// Compound fields are composite fields made up of multiple sub-fields that
+  /// function as independent fields from the controller's perspective while
+  /// providing a convenient registration and layout API.
+  ///
+  /// **Type Parameter:**
+  /// - `T`: The compound field type to register (must extend [CompoundField])
+  ///
+  /// **Parameters:**
+  /// - [typeName]: A unique identifier for this compound field type (for debugging)
+  /// - [subFieldsBuilder]: Function that builds the list of sub-fields
+  /// - [layoutBuilder]: Optional custom layout builder for rendering sub-fields
+  /// - [rollUpErrors]: If true, errors from sub-fields are rolled up and displayed together
+  /// - [converters]: Optional custom converters for value conversion
+  ///
+  /// **Example:**
+  /// ```dart
+  /// FormFieldRegistry.registerCompound<NameField>(
+  ///   'name',
+  ///   (field) => field.buildSubFields(),
+  ///   (context, subFields, errors) => Row(
+  ///     children: subFields.map((f) => Expanded(child: f)).toList(),
+  ///   ),
+  ///   rollUpErrors: false,
+  /// );
+  /// ```
+  ///
+  /// See also:
+  /// - [CompoundField] for the base compound field class
+  /// - [CompoundFieldRegistration] for registration metadata
+  /// - [hasCompoundBuilderFor] to check if a compound builder is registered
+  static void registerCompound<T extends CompoundField>(
+    String typeName,
+    List<Field> Function(T) subFieldsBuilder,
+    flutter.Widget Function(
+      flutter.BuildContext context,
+      List<flutter.Widget> subFields,
+      List<FormBuilderError>? errors,
+    )? layoutBuilder, {
+    bool rollUpErrors = false,
+    FieldConverters? converters,
+  }) {
+    _instance._registerCompoundInternal<T>(
+      typeName,
+      subFieldsBuilder,
+      layoutBuilder,
+      rollUpErrors,
+      converters,
+    );
+  }
+
+  /// Checks if a compound builder is registered for a specific field type (static method).
+  ///
+  /// **Type Parameter:**
+  /// - `T`: The compound field type to check (must extend [CompoundField])
+  ///
+  /// **Returns:**
+  /// `true` if a compound builder is registered for type `T`, `false` otherwise.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// if (FormFieldRegistry.hasCompoundBuilderFor<NameField>()) {
+  ///   print('Name field compound builder is registered');
+  /// }
+  /// ```
+  ///
+  /// See also:
+  /// - [registerCompound] to register a compound field
+  static bool hasCompoundBuilderFor<T extends CompoundField>() {
+    return _instance._compoundRegistrations.containsKey(T);
+  }
+
+  // ===========================================================================
   // INTERNAL IMPLEMENTATION
   // ===========================================================================
 
@@ -370,6 +455,76 @@ class FormFieldRegistry {
       _converters[T] = converters;
     }
     flutter.debugPrint('Registered builder for type $T ($typeName)');
+  }
+
+  /// Internal implementation of compound field registration.
+  ///
+  /// This method handles the actual registration logic for compound fields.
+  void _registerCompoundInternal<T extends CompoundField>(
+    String typeName,
+    List<Field> Function(T) subFieldsBuilder,
+    flutter.Widget Function(
+      flutter.BuildContext context,
+      List<flutter.Widget> subFields,
+      List<FormBuilderError>? errors,
+    )? layoutBuilder,
+    bool rollUpErrors,
+    FieldConverters? converters,
+  ) {
+    if (_compoundRegistrations.containsKey(T)) {
+      flutter.debugPrint('Warning: Overwriting compound field for type $T');
+    }
+
+    // Create registration with properly typed builder
+    final registration = CompoundFieldRegistration(
+      typeName: typeName,
+      subFieldsBuilder: (CompoundField field) => subFieldsBuilder(field as T),
+      layoutBuilder: layoutBuilder,
+      rollUpErrors: rollUpErrors,
+      converters: converters,
+    );
+
+    _compoundRegistrations[T] = registration;
+
+    if (converters != null) {
+      _converters[T] = converters;
+    }
+
+    flutter.debugPrint('Registered compound field for type $T ($typeName)');
+  }
+
+  /// Retrieves the compound field registration for a given type.
+  ///
+  /// Used internally by the Form widget to process compound fields.
+  ///
+  /// **Type Parameter:**
+  /// - `T`: The compound field type (must extend [CompoundField])
+  ///
+  /// **Returns:**
+  /// The [CompoundFieldRegistration] for type `T`, or null if not registered.
+  CompoundFieldRegistration? getCompoundRegistration<T extends CompoundField>() {
+    return _compoundRegistrations[T];
+  }
+  ///
+  /// Retrieves the compound field registration by runtime type.
+  ///
+  /// Used internally by the Form widget to look up registrations for
+  /// compound field instances when the specific type parameter is not available.
+  ///
+  /// **Parameters:**
+  /// - [fieldType]: The runtime type of the compound field
+  ///
+  /// **Returns:**
+  /// The [CompoundFieldRegistration] for the type, or null if not registered.
+  CompoundFieldRegistration? getCompoundRegistrationByType(Type fieldType) {
+    return _compoundRegistrations[fieldType];
+  }
+
+  /// Clears all compound field registrations.
+  ///
+  /// Used for testing purposes to reset state between tests.
+  void clearCompoundRegistrations() {
+    _compoundRegistrations.clear();
   }
 
   // ===========================================================================
@@ -517,15 +672,172 @@ class FormFieldRegistry {
   /// - [CheckboxSelect]
   /// - [ChipSelect]
   /// - [FileUpload]
+  /// - [NameField] (compound)
+  /// - [AddressField] (compound)
   ///
   /// This method should only be called once during package initialization.
   void registerCoreBuilders() {
     initialized = true;
-    // Register fields with new StatefulFieldWidget API
+
+    // Register standard fields with new StatefulFieldWidget API
     FormFieldRegistry.register<TextField>('textField', buildTextField);
     FormFieldRegistry.register<OptionSelect>('optionSelect', buildOptionSelect);
     FormFieldRegistry.register<CheckboxSelect>('checkboxSelect', buildCheckboxSelect);
     FormFieldRegistry.register<ChipSelect>('chipSelect', buildChipSelect);
     FormFieldRegistry.register<FileUpload>('fileUpload', buildFileUpload);
+
+    // Register built-in compound fields with custom layouts
+    _registerNameField();
+    _registerAddressField();
+  }
+
+  /// Registers the NameField compound field with custom horizontal layout.
+  ///
+  /// Layout:
+  /// - Row with Expanded widgets
+  /// - Flex ratios: firstname (flex: 1), middlename (flex: 1), lastname (flex: 2)
+  /// - 10px spacing between fields
+  void _registerNameField() {
+    FormFieldRegistry.registerCompound<NameField>(
+      'name',
+      (field) => field.buildSubFields(),
+      (context, subFields, errors) {
+        // Build horizontal layout with flex ratios
+        return flutter.Column(
+          crossAxisAlignment: flutter.CrossAxisAlignment.start,
+          children: [
+            flutter.Row(
+              children: [
+                // First name: flex 1
+                flutter.Expanded(
+                  flex: 1,
+                  child: subFields[0],
+                ),
+                const flutter.SizedBox(width: 10),
+
+                // Middle name (if present): flex 1
+                if (subFields.length > 2) ...[
+                  flutter.Expanded(
+                    flex: 1,
+                    child: subFields[1],
+                  ),
+                  const flutter.SizedBox(width: 10),
+                ],
+
+                // Last name: flex 2
+                flutter.Expanded(
+                  flex: 2,
+                  child: subFields[subFields.length > 2 ? 2 : 1],
+                ),
+              ],
+            ),
+
+            // Error display if errors are rolled up
+            if (errors != null && errors.isNotEmpty) ...[
+              const flutter.SizedBox(height: 8),
+              ...errors.map((error) => flutter.Padding(
+                    padding: const flutter.EdgeInsets.only(bottom: 4),
+                    child: flutter.Text(
+                      error.reason,
+                      style: const flutter.TextStyle(
+                        color: flutter.Colors.red,
+                        fontSize: 12,
+                      ),
+                    ),
+                  )),
+            ],
+          ],
+        );
+      },
+      rollUpErrors: false,
+    );
+  }
+
+  /// Registers the AddressField compound field with custom multi-row layout.
+  ///
+  /// Layout:
+  /// - Row 1: street (full width)
+  /// - Row 2: street2 (full width, if includeStreet2)
+  /// - Row 3: city (flex: 4), state (flex: 3), zip (flex: 3) in horizontal Row
+  /// - Row 4: country (full width, if includeCountry)
+  /// - Error display at bottom if rollUpErrors
+  /// - 10px vertical spacing between rows
+  void _registerAddressField() {
+    FormFieldRegistry.registerCompound<AddressField>(
+      'address',
+      (field) => field.buildSubFields(),
+      (context, subFields, errors) {
+        // Determine which optional fields are present
+        // Sub-fields are in order: street, [street2], city, state, zip, [country]
+        final hasStreet2 = subFields.length > 4;
+        final hasCountry = subFields.length == 6 || (subFields.length == 5 && !hasStreet2);
+
+        int idx = 0;
+        final street = subFields[idx++];
+        final street2 = hasStreet2 ? subFields[idx++] : null;
+        final city = subFields[idx++];
+        final state = subFields[idx++];
+        final zip = subFields[idx++];
+        final country = (idx < subFields.length) ? subFields[idx++] : null;
+
+        return flutter.Column(
+          crossAxisAlignment: flutter.CrossAxisAlignment.start,
+          children: [
+            // Row 1: Street (full width)
+            street,
+
+            // Row 2: Street 2 (full width, if present)
+            if (street2 != null) ...[
+              const flutter.SizedBox(height: 10),
+              street2,
+            ],
+
+            const flutter.SizedBox(height: 10),
+
+            // Row 3: City, State, ZIP in horizontal row
+            flutter.Row(
+              children: [
+                flutter.Expanded(
+                  flex: 4,
+                  child: city,
+                ),
+                const flutter.SizedBox(width: 10),
+                flutter.Expanded(
+                  flex: 3,
+                  child: state,
+                ),
+                const flutter.SizedBox(width: 10),
+                flutter.Expanded(
+                  flex: 3,
+                  child: zip,
+                ),
+              ],
+            ),
+
+            // Row 4: Country (full width, if present)
+            if (country != null) ...[
+              const flutter.SizedBox(height: 10),
+              country,
+            ],
+
+            // Error display if errors are rolled up
+            if (errors != null && errors.isNotEmpty) ...[
+              const flutter.SizedBox(height: 8),
+              ...errors.map((error) => flutter.Padding(
+                    padding: const flutter.EdgeInsets.only(bottom: 4),
+                    child: flutter.Text(
+                      error.reason,
+                      style: const flutter.TextStyle(
+                        color: flutter.Colors.red,
+                        fontSize: 12,
+                      ),
+                    ),
+                  )),
+            ],
+          ],
+        );
+      },
+      rollUpErrors: false,
+    );
   }
 }

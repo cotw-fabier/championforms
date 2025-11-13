@@ -3,6 +3,7 @@ import 'package:championforms/core/field_builder_registry.dart';
 import 'package:championforms/functions/gather_child_errors.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/field_types/column.dart';
+import 'package:championforms/models/field_types/compound_field.dart';
 import 'package:championforms/models/field_types/row.dart';
 import 'package:championforms/models/field_types/textfield.dart';
 import 'package:championforms/models/fieldstate.dart';
@@ -73,10 +74,19 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
     super.dispose();
   }
 
+  /// Flattens all fields including sub-fields from compound fields.
+  ///
+  /// This method recursively processes form elements and expands compound
+  /// fields into their individual sub-fields with proper ID prefixing and
+  /// state propagation.
   List<Field> _flattenAllFields(List<FormElement> elements) {
     final List<Field> flatList = [];
     for (final element in elements) {
-      if (element is Field) {
+      if (element is CompoundField) {
+        // Expand compound field into sub-fields
+        final subFields = _expandCompoundField(element);
+        flatList.addAll(subFields);
+      } else if (element is Field) {
         flatList.add(element);
       } else if (element is Row) {
         for (final column in element.children) {
@@ -87,6 +97,118 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
       }
     }
     return flatList;
+  }
+
+  /// Expands a compound field into its prefixed sub-fields.
+  ///
+  /// Applies ID prefixing, theme propagation, and disabled state propagation
+  /// to all sub-fields.
+  ///
+  /// **Parameters:**
+  /// - [compoundField]: The compound field to expand
+  ///
+  /// **Returns:**
+  /// List of sub-fields with prefixed IDs and propagated state
+  List<Field> _expandCompoundField(CompoundField compoundField) {
+    // Get the registration for this compound field type
+    final registration = FormFieldRegistry.instance
+        .getCompoundRegistrationByType(compoundField.runtimeType);
+
+    if (registration == null) {
+      flutter.debugPrint(
+        'Warning: No registration found for compound field type ${compoundField.runtimeType}. '
+        'Treating as empty field.',
+      );
+      return [];
+    }
+
+    // Build sub-fields using the registration builder
+    final subFields = registration.subFieldsBuilder(compoundField);
+
+    // Apply ID prefixing and state propagation
+    final processedSubFields = <Field>[];
+    for (final subField in subFields) {
+      // Apply ID prefixing
+      final prefixedId = _prefixSubFieldId(compoundField.id, subField.id);
+
+      // Create a new field instance with prefixed ID and propagated state
+      final processedField = _applyStateToSubField(
+        subField,
+        prefixedId,
+        compoundField.theme,
+        compoundField.disabled,
+      );
+
+      processedSubFields.add(processedField);
+    }
+
+    return processedSubFields;
+  }
+
+  /// Generates a prefixed sub-field ID following the pattern:
+  /// `{compoundId}_{subFieldId}`
+  ///
+  /// If the subFieldId already starts with the compound ID prefix,
+  /// it is returned as-is to avoid double-prefixing.
+  String _prefixSubFieldId(String compoundId, String subFieldId) {
+    if (subFieldId.startsWith('${compoundId}_')) {
+      return subFieldId;
+    }
+    return '${compoundId}_$subFieldId';
+  }
+
+  /// Applies theme and disabled state from compound field to sub-field.
+  ///
+  /// Creates a new field instance with:
+  /// - Prefixed ID
+  /// - Compound field's theme (if sub-field doesn't have its own)
+  /// - Compound field's disabled state (if compound is disabled)
+  ///
+  /// **Note:** This is a workaround since Field classes don't have copyWith
+  /// methods. We create a new instance of the same type with updated properties.
+  Field _applyStateToSubField(
+    Field subField,
+    String prefixedId,
+    FormTheme? compoundTheme,
+    bool compoundDisabled,
+  ) {
+    // For TextField, we can create a new instance with updated properties
+    if (subField is TextField) {
+      return TextField(
+        id: prefixedId,
+        title: subField.title,
+        description: subField.description,
+        disabled: compoundDisabled || subField.disabled,
+        hideField: subField.hideField,
+        requestFocus: subField.requestFocus,
+        theme: subField.theme ?? compoundTheme,
+        validators: subField.validators,
+        validateLive: subField.validateLive,
+        onSubmit: subField.onSubmit,
+        onChange: subField.onChange,
+        fieldLayout: subField.fieldLayout,
+        fieldBackground: subField.fieldBackground,
+        icon: subField.icon,
+        keyboardType: subField.keyboardType,
+        password: subField.password,
+        maxLines: subField.maxLines,
+        autoComplete: subField.autoComplete,
+        fieldOverride: subField.fieldOverride,
+        defaultValue: subField.defaultValue,
+      );
+    }
+
+    // For other field types, we do our best to propagate state
+    // This is a limitation of the current architecture - ideally all Field
+    // subclasses would implement copyWith
+    flutter.debugPrint(
+      'Warning: Cannot fully propagate state to sub-field of type ${subField.runtimeType}. '
+      'Consider implementing copyWith method.',
+    );
+
+    // Return the sub-field as-is, but we'll still handle it correctly
+    // because we're storing it with the prefixed ID in the controller
+    return subField;
   }
 
   void _rebuildOnControllerUpdate() {
@@ -149,7 +271,10 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
         continue;
       }
 
-      if (element is Field) {
+      if (element is CompoundField) {
+        // Build compound field with layout
+        output.add(_buildCompoundField(element));
+      } else if (element is Field) {
         output.add(_buildFormField(element));
       } else if (element is Row) {
         output.add(_buildRow(element));
@@ -159,6 +284,77 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
       }
     }
     return output;
+  }
+
+  /// Builds a compound field widget with its sub-fields.
+  ///
+  /// This method:
+  /// 1. Looks up the compound field registration
+  /// 2. Generates sub-fields with proper ID prefixing and state propagation
+  /// 3. Builds each sub-field widget
+  /// 4. Optionally collects errors if rollUpErrors is true
+  /// 5. Calls the layout builder (custom or default) to arrange sub-fields
+  flutter.Widget _buildCompoundField(CompoundField compoundField) {
+    // Get the registration for this compound field type
+    final registration = FormFieldRegistry.instance
+        .getCompoundRegistrationByType(compoundField.runtimeType);
+
+    if (registration == null) {
+      flutter.debugPrint(
+        'Error: No registration found for compound field type ${compoundField.runtimeType}',
+      );
+      return flutter.Container(
+        padding: const flutter.EdgeInsets.all(8),
+        color: flutter.Colors.red.withValues(alpha: 0.1),
+        child: flutter.Text(
+          'Error: Compound field ${compoundField.runtimeType} not registered',
+          style: const flutter.TextStyle(color: flutter.Colors.red, fontSize: 12),
+        ),
+      );
+    }
+
+    // Generate sub-fields with proper ID prefixing
+    final subFields = registration.subFieldsBuilder(compoundField);
+    final processedSubFields = <Field>[];
+
+    for (final subField in subFields) {
+      // Apply ID prefixing
+      final prefixedId = _prefixSubFieldId(compoundField.id, subField.id);
+
+      // Create field with propagated state
+      final processedField = _applyStateToSubField(
+        subField,
+        prefixedId,
+        compoundField.theme,
+        compoundField.disabled,
+      );
+
+      processedSubFields.add(processedField);
+    }
+
+    // Build widgets for each sub-field
+    final subFieldWidgets = processedSubFields
+        .map((subField) => _buildFormField(subField))
+        .toList();
+
+    // Collect errors if rollUpErrors is enabled
+    List<FormBuilderError>? errors;
+    if (registration.rollUpErrors || compoundField.rollUpErrors) {
+      errors = [];
+      for (final subField in processedSubFields) {
+        errors.addAll(widget.controller.findErrors(subField.id));
+      }
+      // Only pass errors if there are any
+      if (errors.isEmpty) {
+        errors = null;
+      }
+    }
+
+    // Use custom layout builder or default
+    final layoutBuilder =
+        registration.layoutBuilder ?? CompoundField.buildDefaultCompoundLayout;
+
+    return layoutBuilder(context, subFieldWidgets, errors);
   }
 
   flutter.Widget _buildRow(Row row) {

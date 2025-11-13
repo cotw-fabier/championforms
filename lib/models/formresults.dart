@@ -30,8 +30,17 @@ class FieldResultAccessor {
   final dynamic _value; // The raw value directly stored
   final Field
       _definition; // The corresponding field definition, stored as dynamic
+  final Map<String, dynamic> _results; // Reference to all results
+  final Map<String, Field>
+      _fieldDefinitions; // Reference to all field definitions
 
-  FieldResultAccessor._(this._id, this._value, this._definition);
+  FieldResultAccessor._(
+    this._id,
+    this._value,
+    this._definition,
+    this._results,
+    this._fieldDefinitions,
+  );
 
   /// Helper to get the value to be used by converters (handles default value).
   dynamic _getValueForConversion() {
@@ -265,6 +274,109 @@ class FieldResultAccessor {
     return fileList.isNotEmpty ? fileList.first : null;
   }
 
+  /// Get the compound field value as a joined string from all sub-fields.
+  ///
+  /// This method detects compound fields by checking if the field ID has
+  /// associated sub-fields (pattern: fields starting with `{fieldId}_`).
+  /// It collects string values from all sub-fields, filters out empty values,
+  /// and joins them with the specified delimiter.
+  ///
+  /// **Parameters:**
+  /// - [delimiter]: String used to join sub-field values (default: ", ")
+  /// - [fallback]: String to return if no sub-fields found or all are empty (default: "")
+  ///
+  /// **Returns:**
+  /// A joined string of all non-empty sub-field values, or the fallback if
+  /// no sub-fields exist or all sub-field values are empty.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// // Assuming compound field "name" has sub-fields:
+  /// // "name_firstname" = "John"
+  /// // "name_middlename" = ""
+  /// // "name_lastname" = "Doe"
+  ///
+  /// final fullName = results.grab("name").asCompound();
+  /// // Result: "John, Doe" (middlename filtered out because empty)
+  ///
+  /// final fullNameSpaced = results.grab("name").asCompound(delimiter: " ");
+  /// // Result: "John Doe"
+  /// ```
+  ///
+  /// **Note:**
+  /// If called on a non-compound field (no sub-fields found), returns the
+  /// fallback value with a debug warning.
+  String asCompound({String delimiter = ", ", String fallback = ""}) {
+    // Get all sub-field IDs for this compound field
+    final subFieldIds = _getSubFieldIds(_id);
+
+    // If no sub-fields found, this is not a compound field
+    if (subFieldIds.isEmpty) {
+      debugPrint(
+          "asCompound called on field '$_id' which has no sub-fields. Returning fallback.");
+      return fallback;
+    }
+
+    // Collect string values from all sub-fields
+    final subValues = <String>[];
+    for (final subFieldId in subFieldIds) {
+      // Access each sub-field's value through a new accessor
+      final subFieldValue = _results[subFieldId];
+      final subFieldDefinition = _fieldDefinitions[subFieldId];
+
+      if (subFieldDefinition != null) {
+        // Create accessor for this sub-field
+        final subFieldAccessor = FieldResultAccessor._(
+          subFieldId,
+          subFieldValue,
+          subFieldDefinition,
+          _results,
+          _fieldDefinitions,
+        );
+
+        // Get string value and add to list if not empty
+        final stringValue = subFieldAccessor.asString();
+        if (stringValue.isNotEmpty) {
+          subValues.add(stringValue);
+        }
+      }
+    }
+
+    // Join all non-empty values with delimiter
+    if (subValues.isEmpty) {
+      return fallback;
+    }
+
+    return subValues.join(delimiter);
+  }
+
+  /// Helper method to get all sub-field IDs for a compound field.
+  ///
+  /// Queries the field definitions map for IDs starting with the pattern
+  /// `{compoundId}_` to identify all sub-fields belonging to a compound field.
+  ///
+  /// **Parameters:**
+  /// - [compoundId]: The ID of the compound field
+  ///
+  /// **Returns:**
+  /// List of sub-field IDs that belong to the compound field, or empty list
+  /// if no sub-fields found.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// // If fieldDefinitions contains:
+  /// // "name_firstname", "name_lastname", "email"
+  ///
+  /// final subFields = _getSubFieldIds("name");
+  /// // Result: ["name_firstname", "name_lastname"]
+  /// ```
+  List<String> _getSubFieldIds(String compoundId) {
+    final prefix = '${compoundId}_';
+    return _fieldDefinitions.keys
+        .where((id) => id.startsWith(prefix))
+        .toList();
+  }
+
   /// Helper for logging conversion errors consistently.
   void _logConversionError(
       String converterName, dynamic error, StackTrace stack) {
@@ -462,7 +574,8 @@ class FormResults {
     if (definition != null) {
       // If yes, the field was processed and has a valid definition.
       // Create the accessor, passing the (potentially null) value and the actual definition.
-      return FieldResultAccessor._(id, value, definition);
+      return FieldResultAccessor._(
+          id, value, definition, results, fieldDefinitions);
     } else {
       // The definition wasn't found for this id.
       debugPrint(// Using debugPrint as this is Flutter code
@@ -477,7 +590,8 @@ class FormResults {
 
       // Create the accessor, passing null for the value (as it's an "empty" accessor
       // due to missing definition) and the dummy definition.
-      return FieldResultAccessor._(id, null, dummyDefinition);
+      return FieldResultAccessor._(
+          id, null, dummyDefinition, results, fieldDefinitions);
     }
   }
 

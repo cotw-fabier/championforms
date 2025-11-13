@@ -4,6 +4,7 @@ import 'package:championforms/championforms.dart' as form;
 import 'package:championforms/championforms_themes.dart';
 import 'package:flutter/material.dart';
 import 'custom_fields/rating_field.dart';
+import 'pages/compound_fields_demo.dart';
 
 void main() {
   // --- Register Custom Fields ---
@@ -388,6 +389,53 @@ class _MyHomePageState extends State<MyHomePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
+              // --- Compound Fields Demo Banner ---
+              Card(
+                color: Colors.blue.shade50,
+                margin: const EdgeInsets.only(bottom: 20),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const CompoundFieldsDemo(),
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.widgets, size: 40, color: Colors.blue.shade700),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '✨ NEW: Compound Fields',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue.shade900,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'See NameField and AddressField in action!',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.blue.shade700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.arrow_forward_ios, color: Colors.blue.shade700),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               // --- Form Widget ---
               form.Form(
                 // theme: specificTheme, // Optionally override the global theme here
