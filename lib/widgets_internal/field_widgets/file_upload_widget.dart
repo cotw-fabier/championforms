@@ -44,8 +44,11 @@ class FileUploadWidget extends StatefulFieldWidget {
     FormTheme theme,
     FieldBuilderContext ctx,
   ) {
+    // Read value here where StatefulFieldWidget protects us from initialization race
+    final files = ctx.getValue<List<FieldOption>>() ?? [];
+
     // Delegate to content widget which handles local UI state
-    return _FileUploadContent(context: ctx);
+    return _FileUploadContent(context: ctx, files: files);
   }
 
   @override
@@ -65,9 +68,11 @@ class FileUploadWidget extends StatefulFieldWidget {
 /// Internal content widget that manages drag-hover UI state.
 class _FileUploadContent extends StatefulWidget {
   final FieldBuilderContext context;
+  final List<FieldOption> files;
 
   const _FileUploadContent({
     required this.context,
+    required this.files,
   });
 
   @override
@@ -76,11 +81,6 @@ class _FileUploadContent extends StatefulWidget {
 
 class _FileUploadContentState extends State<_FileUploadContent> {
   bool _isDragHovering = false;
-
-  List<FieldOption> get _files {
-    final value = widget.context.getValue<List<FieldOption>>();
-    return value ?? [];
-  }
 
   void _showInlineError(String message) {
     // Use FormController's error system (user decision)
@@ -172,7 +172,7 @@ class _FileUploadContentState extends State<_FileUploadContent> {
       );
 
       // Update value
-      final currentFiles = _files;
+      final currentFiles = widget.files;
       final newFiles = field.multiselect
           ? [...currentFiles, option]
           : [option];
@@ -215,7 +215,7 @@ class _FileUploadContentState extends State<_FileUploadContent> {
     );
 
     // Update value
-    final currentFiles = _files;
+    final currentFiles = widget.files;
     final newFiles = field.multiselect
         ? [...currentFiles, option]
         : [option];
@@ -248,7 +248,7 @@ class _FileUploadContentState extends State<_FileUploadContent> {
   }
 
   void _removeFile(FieldOption opt) {
-    final currentFiles = _files;
+    final currentFiles = widget.files;
     final newFiles = currentFiles.where((f) => f.value != opt.value).toList();
     widget.context.setValue(newFiles);
   }
@@ -315,7 +315,7 @@ class _FileUploadContentState extends State<_FileUploadContent> {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: _files.map((opt) {
+                  children: widget.files.map((opt) {
                     final iconAsset = _getFileIcon(opt);
                     return Stack(
                       clipBehavior: Clip.none,

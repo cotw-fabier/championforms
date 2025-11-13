@@ -199,7 +199,25 @@ class FieldBuilderContext {
   /// - [setValue] to update the field value
   /// - [FormController.getFieldValue] for the underlying implementation
   T? getValue<T>() {
-    return controller.getFieldValue<T>(field.id);
+    final fieldId = field.id;
+
+    // Check if field value exists before trying to get it
+    if (!controller.hasFieldValue(fieldId)) {
+      // Field doesn't exist yet - initialize with default value
+      final defaultValue = controller.getFieldDefaultValue(fieldId);
+
+      // Initialize silently (no notifications during initialization)
+      controller.createFieldValue(fieldId, defaultValue, noNotify: true);
+
+      // Return default value with proper type casting
+      if (defaultValue is T) {
+        return defaultValue;
+      }
+      return null;
+    }
+
+    // Field exists, get its value normally
+    return controller.getFieldValue<T>(fieldId);
   }
 
   /// Sets the value for this field.

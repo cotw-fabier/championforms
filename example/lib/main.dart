@@ -183,16 +183,20 @@ class _MyHomePageState extends State<MyHomePage> {
                     form.CompleteOption(value: "another@domain.net"),
                     form.CompleteOption(value: "fabier@rogueskies.net"),
                   ],
-                  // Example async update (can fetch from API)
+                  // Simple filter: search through the initial options
                   updateOptions: (searchValue) async {
                     // Simulate network delay
                     await Future.delayed(const Duration(milliseconds: 300));
-                    // Filter initial options (replace with actual API call)
+
+                    // Filter initial options using contains()
                     return [
-                      form.CompleteOption(
-                          value: "search-$searchValue@example.com"),
-                      form.CompleteOption(value: "$searchValue@rogueskies.net"),
-                    ].where((opt) => opt.value.contains(searchValue)).toList();
+                      form.CompleteOption(value: "test1@example.com"),
+                      form.CompleteOption(value: "test2@example.com"),
+                      form.CompleteOption(value: "another@domain.net"),
+                      form.CompleteOption(value: "fabier@rogueskies.net"),
+                    ].where((opt) =>
+                      opt.value.toLowerCase().contains(searchValue.toLowerCase())
+                    ).toList();
                   },
                   debounceWait: const Duration(
                       milliseconds: 250), // Wait before calling updateOptions
