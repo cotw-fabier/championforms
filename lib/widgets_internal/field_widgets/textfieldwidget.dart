@@ -78,11 +78,9 @@ class TextFieldWidget extends StatefulFieldWidget {
     final wrappedField = field.autoComplete != null &&
             field.autoComplete!.type != AutoCompleteType.none
         ? AutocompleteWrapper(
-            child: textField,
             autoComplete: field.autoComplete!,
-            focusNode: focusNode,
-            textEditingController: textController,
-            colorScheme: ctx.colors,
+            context: ctx,
+            child: textField,
           )
         : textField;
 
@@ -93,6 +91,15 @@ class TextFieldWidget extends StatefulFieldWidget {
   @override
   void onValueChanged(dynamic oldValue, dynamic newValue) {
     final field = context.field as form_types.TextField;
+
+    // Sync FormController value to TextEditingController for display
+    final textController = context.getTextController();
+    final newText = newValue as String? ?? '';
+
+    // Only update if text actually changed (avoid unnecessary cursor movement)
+    if (textController.text != newText) {
+      textController.text = newText;
+    }
 
     // Trigger onChange callback if defined
     if (field.onChange != null) {

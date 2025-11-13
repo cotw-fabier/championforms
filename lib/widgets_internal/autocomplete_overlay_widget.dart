@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:championforms/models/autocomplete/autocomplete_class.dart';
 import 'package:championforms/models/autocomplete/autocomplete_option_class.dart';
 import 'package:championforms/models/autocomplete/autocomplete_type.dart';
-import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/models/field_builder_context.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -31,15 +31,13 @@ class AutocompleteWrapper extends StatefulWidget {
   ///
   /// The [child] parameter is the field widget to wrap (e.g., TextField).
   /// The [autoComplete] parameter configures autocomplete behavior.
-  /// The [focusNode] parameter is the field's focus node for blur detection.
+  /// The [context] parameter provides access to field resources (controller, colors, etc.).
   const AutocompleteWrapper({
     super.key,
     required this.child,
     required this.autoComplete,
-    required this.focusNode,
-    this.colorScheme,
+    required this.context,
     this.onOptionSelected,
-    this.textEditingController,
     this.valueNotifier,
   });
 
@@ -49,8 +47,15 @@ class AutocompleteWrapper extends StatefulWidget {
   /// Configuration for autocomplete behavior, options, and display.
   final AutoCompleteBuilder autoComplete;
 
-  /// Theme colors for the overlay surface and text.
-  final FieldColorScheme? colorScheme;
+  /// Field builder context providing access to controller, colors, focus node, etc.
+  ///
+  /// This context provides everything needed to integrate with the form:
+  /// - controller: FormController for field value updates
+  /// - field: Field definition with id and configuration
+  /// - colors: FieldColorScheme for theming
+  /// - getFocusNode(): Access to the field's focus node
+  /// - getTextController(): Access to the TextEditingController (for cursor positioning)
+  final FieldBuilderContext context;
 
   /// Callback invoked when an option is selected.
   ///
@@ -58,20 +63,10 @@ class AutocompleteWrapper extends StatefulWidget {
   /// the field value. Use this for custom selection handling.
   final Function(CompleteOption)? onOptionSelected;
 
-  /// Text editing controller for TextField integration.
-  ///
-  /// Either [textEditingController] or [valueNotifier] should be provided
-  /// to enable value listening and updates.
-  final TextEditingController? textEditingController;
-
   /// Value notifier for non-TextField field integration.
   ///
-  /// Either [textEditingController] or [valueNotifier] should be provided
-  /// to enable value listening and updates.
+  /// Optional alternative to FieldBuilderContext for simple non-TextField fields.
   final ValueNotifier<String>? valueNotifier;
-
-  /// The field's focus node for detecting focus state and blur events.
-  final FocusNode focusNode;
 
   @override
   State<AutocompleteWrapper> createState() =>
@@ -129,26 +124,32 @@ class _AutocompleteWrapperState
     // Initialize options with initial options from AutoCompleteBuilder
     _autoCompleteOptions = widget.autoComplete.initialOptions;
 
-    // Add listeners for focus and text changes
-    widget.focusNode.addListener(_onFocusChanged);
+    // Add listeners for focus and controller changes
+    final focusNode = widget.context.getFocusNode();
+    focusNode.addListener(_onFocusChanged);
 
-    // Listen to controller/notifier changes
-    if (widget.textEditingController != null) {
-      widget.textEditingController!.addListener(_onControllerChanged);
-    } else if (widget.valueNotifier != null) {
-      widget.valueNotifier!.addListener(_onValueNotifierChanged);
-    }
+    // Listen to FormController changes (via context)
+    widget.context.controller.addListener(_onControllerChanged);
+
+    // Initialize with current value from FormController
+    _lastFieldValue = _getCurrentFieldValue();
+  }
+
+  /// Gets the current field value from FormController via context.
+  ///
+  /// Uses context.getValue() which safely handles uninitialized fields by
+  /// initializing them with default values if they don't exist yet.
+  String _getCurrentFieldValue() {
+    return widget.context.getValue<String>() ?? '';
   }
 
   @override
   void dispose() {
-    widget.focusNode.removeListener(_onFocusChanged);
+    final focusNode = widget.context.getFocusNode();
+    focusNode.removeListener(_onFocusChanged);
 
-    if (widget.textEditingController != null) {
-      widget.textEditingController!.removeListener(_onControllerChanged);
-    } else if (widget.valueNotifier != null) {
-      widget.valueNotifier!.removeListener(_onValueNotifierChanged);
-    }
+    // Remove FormController listener
+    widget.context.controller.removeListener(_onControllerChanged);
 
     _scrollController.dispose();
     _keyboardListenerFocusNode.dispose();
@@ -158,27 +159,16 @@ class _AutocompleteWrapperState
     super.dispose();
   }
 
-  /// Handles text controller changes to filter options and show/hide overlay.
+  /// Handles FormController changes to filter options and show/hide overlay.
+  ///
+  /// This listens to the FormController (single source of truth) and reacts
+  /// when THIS field's value changes, filtering autocomplete options accordingly.
   void _onControllerChanged() {
-    if (widget.textEditingController != null) {
-      final newText = widget.textEditingController!.text;
-      if (newText != _lastFieldValue) {
-        _lastFieldValue = newText;
-        _updatedFromAutoComplete = false;
-        _filterAndShowOptions(newText);
-      }
-    }
-  }
-
-  /// Handles value notifier changes to filter options and show/hide overlay.
-  void _onValueNotifierChanged() {
-    if (widget.valueNotifier != null) {
-      final newText = widget.valueNotifier!.value;
-      if (newText != _lastFieldValue) {
-        _lastFieldValue = newText;
-        _updatedFromAutoComplete = false;
-        _filterAndShowOptions(newText);
-      }
+    final newText = _getCurrentFieldValue();
+    if (newText != _lastFieldValue) {
+      _lastFieldValue = newText;
+      _updatedFromAutoComplete = false;
+      _filterAndShowOptions(newText);
     }
   }
 
@@ -261,7 +251,7 @@ class _AutocompleteWrapperState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      final shouldShow = widget.focusNode.hasFocus &&
+      final shouldShow = widget.context.getFocusNode().hasFocus &&
           widget.autoComplete.type == AutoCompleteType.dropdown &&
           _autoCompleteOptions.isNotEmpty &&
           !_updatedFromAutoComplete;
@@ -280,11 +270,11 @@ class _AutocompleteWrapperState
 
   /// Handles focus changes to dismiss overlay when field loses focus.
   void _onFocusChanged() {
-    if (!widget.focusNode.hasFocus &&
+    if (!widget.context.getFocusNode().hasFocus &&
         !_autoCompleteItemFocusNodes.any((node) => node.hasFocus)) {
       Future.delayed(const Duration(milliseconds: 200), () {
         if (mounted &&
-            !widget.focusNode.hasFocus &&
+            !widget.context.getFocusNode().hasFocus &&
             !_autoCompleteItemFocusNodes.any((node) => node.hasFocus)) {
           _removeOverlay(requestFocus: false);
         }
@@ -308,7 +298,7 @@ class _AutocompleteWrapperState
     // Only intercept when overlay is visible and field has focus
     if (_overlayEntry != null &&
         _autoCompleteOptions.isNotEmpty &&
-        widget.focusNode.hasFocus) {
+        widget.context.getFocusNode().hasFocus) {
       if (event is KeyDownEvent) {
         // Tab or Down Arrow: move focus to first dropdown item
         if (event.logicalKey == LogicalKeyboardKey.tab ||
@@ -348,7 +338,7 @@ class _AutocompleteWrapperState
           } else {
             // Last item: dismiss overlay, let Tab continue to next field
             _removeOverlay(requestFocus: false);
-            widget.focusNode.requestFocus();
+            widget.context.getFocusNode().requestFocus();
             // Return ignored to allow Tab to proceed to next field in form
             return KeyEventResult.ignored;
           }
@@ -473,9 +463,6 @@ class _AutocompleteWrapperState
           },
         );
 
-        // Get theme for color access
-        final theme = Theme.of(context);
-
         return Positioned(
           width: size.width,
           height: height,
@@ -489,8 +476,8 @@ class _AutocompleteWrapperState
                   : size.height + dropdownMargin,
             ),
             child: Material(
-              color: widget.colorScheme?.surfaceBackground,
-              textStyle: TextStyle(color: widget.colorScheme?.surfaceText),
+              color: widget.context.colors.surfaceBackground,
+              textStyle: TextStyle(color: widget.context.colors.surfaceText),
               elevation: 4.0,
               child: Semantics(
                 liveRegion: true,
@@ -534,8 +521,7 @@ class _AutocompleteWrapperState
                                       title: Text(option.title),
                                       tileColor: _autoCompleteItemFocusNodes[index]
                                               .hasFocus
-                                          ? (widget.colorScheme?.textBackgroundColor ??
-                                              theme.colorScheme.surfaceContainerHighest)
+                                          ? widget.context.colors.textBackgroundColor
                                           : null,
                                       onTap: () => _optionSelectedCallback(option),
                                     ),
@@ -570,20 +556,20 @@ class _AutocompleteWrapperState
       return;
     }
 
-    // Default behavior: update the controller/notifier
+    // Default behavior: update FormController (single source of truth)
     _updatedFromAutoComplete = true;
 
-    if (widget.textEditingController != null) {
-      widget.textEditingController!.text = option.value;
-    } else if (widget.valueNotifier != null) {
-      widget.valueNotifier!.value = option.value;
-    }
+    // Update FormController via context
+    widget.context.controller.updateFieldValue(
+      widget.context.field.id,
+      option.value,
+    );
 
     // Call option's callback if provided
     option.callback?.call(option);
 
     // Remove overlay and return focus to field
-    _removeOverlay(keepAway: true, requestFocus: true);
+    _removeOverlay(keepAway: true, requestFocus: false);
   }
 
   /// Removes the overlay entry and cleans up focus nodes.
@@ -592,13 +578,13 @@ class _AutocompleteWrapperState
   /// If [keepAway] is true, prevents immediate overlay reopening.
   void _removeOverlay({bool keepAway = false, bool requestFocus = false}) {
     if (requestFocus && mounted) {
-      widget.focusNode.requestFocus();
-      // Set cursor to end if using TextEditingController
-      if (widget.textEditingController != null) {
-        widget.textEditingController!.selection = TextSelection.fromPosition(
-          TextPosition(offset: widget.textEditingController!.text.length),
-        );
-      }
+      widget.context.getFocusNode().requestFocus();
+
+      // Set cursor to end (fetch TextEditingController on-demand)
+      final textController = widget.context.getTextController();
+      textController.selection = TextSelection.fromPosition(
+        TextPosition(offset: textController.text.length),
+      );
     }
 
     _overlayEntry?.remove();
@@ -616,7 +602,7 @@ class _AutocompleteWrapperState
         onKeyEvent: (node, event) {
           // Intercept Tab key when overlay is visible to prevent default focus traversal
           if (_overlayEntry != null &&
-              widget.focusNode.hasFocus &&
+              widget.context.getFocusNode().hasFocus &&
               event is KeyDownEvent &&
               (event.logicalKey == LogicalKeyboardKey.tab ||
                   event.logicalKey == LogicalKeyboardKey.arrowDown)) {

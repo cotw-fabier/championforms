@@ -624,6 +624,21 @@ class FormController extends ChangeNotifier {
     return _fieldValues.containsKey(fieldId);
   }
 
+  /// Checks if a field definition exists in the controller.
+  ///
+  /// Returns true if the field has been registered via [addFields] or [addField].
+  /// This is different from [hasFieldValue] which checks if a field value has been set.
+  ///
+  /// Use this method to check if a field exists before calling methods that require
+  /// the field definition, such as [getFieldValue].
+  ///
+  /// See also:
+  /// - [hasFieldValue] to check if a field value exists
+  /// - [getFieldValue] which requires field definition to exist
+  bool hasFieldDefinition(String fieldId) {
+    return _fieldDefinitions.containsKey(fieldId);
+  }
+
   /// Creates or overwrites a field value without requiring field definition.
   ///
   /// Unlike [updateFieldValue], this method does NOT validate that a field

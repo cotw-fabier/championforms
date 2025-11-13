@@ -201,9 +201,9 @@ class FieldBuilderContext {
   T? getValue<T>() {
     final fieldId = field.id;
 
-    // Check if field value exists before trying to get it
-    if (!controller.hasFieldValue(fieldId)) {
-      // Field doesn't exist yet - initialize with default value
+    // Check if field definition exists before trying to get value
+    if (!controller.hasFieldDefinition(fieldId)) {
+      // Field definition doesn't exist yet - initialize with default value
       final defaultValue = controller.getFieldDefaultValue(fieldId);
 
       // Initialize silently (no notifications during initialization)
