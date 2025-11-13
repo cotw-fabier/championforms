@@ -526,7 +526,6 @@ class FormFieldRegistry {
     FormFieldRegistry.register<OptionSelect>('optionSelect', buildOptionSelect);
     FormFieldRegistry.register<CheckboxSelect>('checkboxSelect', buildCheckboxSelect);
     FormFieldRegistry.register<ChipSelect>('chipSelect', buildChipSelect);
-    // TODO: Update FileUpload to new API in subsequent refactoring
-    FormFieldRegistry.instance.registerBuilder<FileUpload>(buildFileUpload);
+    FormFieldRegistry.register<FileUpload>('fileUpload', buildFileUpload);
   }
 }

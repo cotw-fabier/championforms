@@ -2,7 +2,6 @@ import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/field_types/optionselect.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/multiselect_option.dart';
-import 'package:championforms/widgets_external/field_builders/fileupload_field_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
@@ -66,7 +65,13 @@ class FileUpload extends OptionSelect {
     this.fileUploadBuilder,
     this.dropDisplayWidget,
   }) : super(
-          fieldBuilder: fileUploadFieldBuilder,
+          // Placeholder builder - not used in new StatefulFieldWidget API
+          // FileUpload now uses FormFieldRegistry.register<FileUpload>(buildFileUpload)
+          fieldBuilder: (context, controller, field, colors, updateSelected) {
+            throw UnimplementedError(
+              'FileUpload should use FormFieldRegistry.register<FileUpload>(buildFileUpload) instead'
+            );
+          },
           options: [],
         );
 

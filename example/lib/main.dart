@@ -3,8 +3,13 @@
 import 'package:championforms/championforms.dart' as form;
 import 'package:championforms/championforms_themes.dart';
 import 'package:flutter/material.dart';
+import 'custom_fields/rating_field.dart';
 
 void main() {
+  // --- Register Custom Fields ---
+  // Register the custom RatingField type before running the app
+  registerRatingField();
+
   // --- Global Theme Setup ---
   // You can set a global theme for all ChampionForm instances.
   // This theme will be used unless overridden by a theme passed directly
@@ -91,6 +96,11 @@ class _MyHomePageState extends State<MyHomePage> {
           "Checkboxes: ${results.grab("SelectBox").asMultiselectList().map((field) => field.value).join(", ")}");
       debugPrint(
           "Autocomplete Field: ${results.grab("BottomText").asString()}");
+
+      // --- Accessing Custom Field Results ---
+      // The RatingField stores int values, can be accessed via asString() or asInt()
+      debugPrint(
+          "Satisfaction Rating: ${results.grab("satisfaction_rating").asString()}");
 
       // --- Accessing File Upload Results ---
       final fileResults =
@@ -335,7 +345,30 @@ class _MyHomePageState extends State<MyHomePage> {
                       .contains(searchValue.toLowerCase()))
                   .toList();
             }),
-      )
+      ),
+
+      // --- Custom Rating Field ---
+      // Demonstrates the new StatefulFieldWidget API for custom fields
+      // See custom_fields/rating_field.dart for implementation
+      RatingField(
+        id: "satisfaction_rating",
+        title: "Rate Your Experience",
+        description: "Tap stars to rate (custom field example using StatefulFieldWidget)",
+        maxStars: 5,
+        defaultValue: 0,
+        validateLive: true,
+        validators: [
+          form.Validator(
+            validator: (value) {
+              // Validator receives raw field value (int for RatingField)
+              if (value == null) return false;
+              if (value is int) return value >= 3;
+              return false;
+            },
+            reason: "Please rate at least 3 stars",
+          ),
+        ],
+      ),
     ];
 
     // --- Building the UI ---
