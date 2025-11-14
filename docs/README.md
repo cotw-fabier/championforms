@@ -8,6 +8,9 @@ Welcome to the ChampionForms documentation! This directory contains comprehensiv
 - [Main README](../README.md) - Quick start, installation, and basic usage
 - [CHANGELOG](../CHANGELOG.md) - Version history and release notes
 
+### Feature Guides
+- [Compound Fields Guide](guides/compound-fields.md) - Reusable composite fields (NameField, AddressField, custom fields)
+
 ### Custom Fields (v0.6.0+)
 - [Custom Field Cookbook](custom-fields/custom-field-cookbook.md) - Practical examples for creating custom fields
 - [FieldBuilderContext API Reference](custom-fields/field-builder-context.md) - Complete API documentation for the context class
@@ -31,13 +34,19 @@ Welcome to the ChampionForms documentation! This directory contains comprehensiv
 
 ### For New Users
 1. Start with the [Main README](../README.md) for installation and basic usage
-2. Review [Field Types](api/field-types.md) to understand available widgets (Coming Soon)
-3. Explore [Custom Field Cookbook](custom-fields/custom-field-cookbook.md) for advanced use cases
+2. Learn about [Compound Fields](guides/compound-fields.md) for reusable field groups (NameField, AddressField)
+3. Review [Field Types](api/field-types.md) to understand available widgets (Coming Soon)
+4. Explore [Custom Field Cookbook](custom-fields/custom-field-cookbook.md) for advanced use cases
 
 ### For v0.5.x Users Upgrading to v0.6.0
 1. **Read First:** [Migration Guide: v0.5.x → v0.6.0](migrations/MIGRATION-0.6.0.md)
 2. Review [Custom Field Cookbook](custom-fields/custom-field-cookbook.md) for updated examples
 3. Reference [FieldBuilderContext API](custom-fields/field-builder-context.md) for new API
+
+### For Compound Field Users
+1. [Compound Fields Guide](guides/compound-fields.md) - Complete guide to using and creating compound fields
+2. Try the [interactive demo](../example/lib/pages/compound_fields_demo.dart) in the example app
+3. Review built-in examples: [NameField](../lib/default_fields/name_field.dart) and [AddressField](../lib/default_fields/address_field.dart)
 
 ### For Custom Field Developers
 1. [Custom Field Cookbook](custom-fields/custom-field-cookbook.md) - Start here with practical examples
@@ -47,9 +56,10 @@ Welcome to the ChampionForms documentation! This directory contains comprehensiv
 
 ## What's New in v0.6.0
 
-ChampionForms v0.6.0 dramatically simplifies custom field creation by reducing boilerplate from **120-150 lines to 30-50 lines** (60-70% reduction).
+ChampionForms v0.6.0 introduces **Compound Fields** and dramatically simplifies custom field creation by reducing boilerplate from **120-150 lines to 30-50 lines** (60-70% reduction).
 
 ### New Features
+- **Compound Fields**: Reusable composite fields (NameField, AddressField) with automatic ID prefixing and controller transparency
 - **FieldBuilderContext**: Bundles 6 parameters into one clean context object
 - **StatefulFieldWidget**: Abstract base class with automatic lifecycle management
 - **Converter Mixins**: Reusable type conversion logic

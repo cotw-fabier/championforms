@@ -20,14 +20,67 @@ A declarative Flutter form builder focusing on clean structure, easy validation,
 *   **Layout Control:** Structure forms visually using `form.Row` and `form.Column` widgets for flexible layouts (responsive collapsing included).
 *   **Centralized State Management:** Uses `form.FormController` to manage field values, focus, and validation state. Access and update form state from anywhere.
 *   **Built-in Validation:** Add validators easily using `form.Validator` and leverage provided `form.Validators` (email, empty, length, numeric, files) or create custom ones. Live validation option available.
-*   **Result Handling:** Simple API (`form.FormResults.getResults`, `results.grab(...)`) to retrieve formatted form data (`asString`, `asStringList`, `asMultiselectList`, `asFile`).
+*   **Result Handling:** Simple API (`form.FormResults.getResults`, `results.grab(...)`) to retrieve formatted form data (`asString`, `asStringList`, `asMultiselectList`, `asFile`, `asCompound`).
 *   **Theming:** Customize the look and feel using `FormTheme`. Apply themes globally (`FormTheme` singleton), per-form, or per-field. Includes pre-built themes.
 *   **Autocomplete:** Add autocomplete suggestions to `form.TextField` using `form.AutoCompleteBuilder`, supporting initial lists and asynchronous fetching.
 *   **File Uploads:** `form.FileUpload` widget integrates with `file_picker` and supports drag-and-drop, file type restrictions (`allowedExtensions`), and validation.
 *   **Controller Interaction:** Programmatically update field values (`updateTextFieldValue`, `toggleMultiSelectValue`) and clear selections (`removeMultiSelectOptions`).
+*   **🆕 Compound Fields:** Create reusable composite fields (like `form.NameField`, `form.AddressField`) that group multiple sub-fields with custom layouts. Sub-fields act as independent fields with automatic ID prefixing.
 *   **🆕 Simplified Custom Fields (v0.6.0+):** Create custom fields with 60-70% less boilerplate using `StatefulFieldWidget` and `FieldBuilderContext`.
 
 ## What's New
+
+### Compound Fields - Reusable Field Groups (Latest)
+
+ChampionForms now supports **compound fields** - composite fields made up of multiple sub-fields that work together as a cohesive unit while maintaining full controller transparency.
+
+**Key Features:**
+- **Built-in Fields:** `form.NameField` and `form.AddressField` ready to use out of the box
+- **Automatic ID Prefixing:** Sub-fields get prefixed IDs (e.g., `address_street`, `address_city`) to prevent conflicts
+- **Controller Transparency:** Sub-fields behave like normal fields - all existing controller methods work unchanged
+- **Custom Layouts:** Each compound field can have its own layout (horizontal, multi-row, etc.)
+- **Flexible Results Access:** Access compound values as joined strings or individual sub-field values
+
+**Example Usage:**
+```dart
+// Use built-in NameField
+form.NameField(
+  id: 'customer_name',
+  title: 'Full Name',
+  includeMiddleName: true, // Optional middle name field
+)
+
+// Use built-in AddressField
+form.AddressField(
+  id: 'shipping_address',
+  title: 'Shipping Address',
+  includeStreet2: true,    // Optional apt/suite field
+  includeCountry: false,   // Optional country field
+)
+
+// Access results
+final fullName = results.grab('customer_name').asCompound(delimiter: ' ');
+final street = results.grab('shipping_address_street').asString();
+final fullAddress = results.grab('shipping_address').asCompound(delimiter: ', ');
+```
+
+**Create Custom Compound Fields:**
+Register your own reusable compound fields with custom sub-field definitions and layouts:
+
+```dart
+FormFieldRegistry.registerCompound<MyCustomField>(
+  'custom',
+  (field) => [
+    form.TextField(id: 'sub1'),
+    form.TextField(id: 'sub2'),
+  ],
+  (context, subFields, errors) => Row(
+    children: subFields.map((f) => Expanded(child: f)).toList(),
+  ),
+);
+```
+
+See the [example app's compound fields demo](example/lib/pages/compound_fields_demo.dart) for a complete interactive demonstration.
 
 ### v0.6.0 - Simplified Custom Field API (Breaking Changes)
 

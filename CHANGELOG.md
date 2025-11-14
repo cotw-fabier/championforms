@@ -29,6 +29,53 @@ Version 0.6.0 dramatically simplifies custom field creation by reducing boilerpl
 
 ### Added
 
+#### Compound Fields API
+
+**CompoundField System**
+- Create reusable composite fields made up of multiple sub-fields
+- Sub-fields act as independent fields with automatic ID prefixing (e.g., `address_street`, `address_city`)
+- Complete controller transparency - all existing controller methods work unchanged on sub-field IDs
+- Custom layouts per compound field with flexible builder functions
+- Error rollup pattern following Row/Column implementation
+- Location: `lib/models/field_types/compound_field.dart`
+
+**FormFieldRegistry.registerCompound()**
+- Register custom compound fields with `FormFieldRegistry.registerCompound<T>()`
+- Type-safe registration with generic type constraints (`T extends CompoundField`)
+- Optional custom layout builder and error rollup configuration
+- Companion method `hasCompoundBuilderFor<T>()` for registration checks
+- Location: `lib/core/field_builder_registry.dart`
+
+**Built-in Compound Fields**
+- **NameField** - Horizontal layout with firstname, lastname, and optional middlename
+  - Configurable via `includeMiddleName` property
+  - Flex ratios: firstname (1), middlename (1), lastname (2)
+  - Location: `lib/default_fields/name_field.dart`
+- **AddressField** - Multi-row layout for complete addresses
+  - Configurable via `includeStreet2` and `includeCountry` properties
+  - Fields: street, street2 (optional), city/state/zip row, country (optional)
+  - City/state/zip flex ratios: 4/3/3
+  - Location: `lib/default_fields/address_field.dart`
+
+**Results Access Enhancement**
+- New `asCompound()` method on FieldResultAccessor
+- Joins sub-field values with configurable delimiter (default: ", ")
+- Automatically detects compound fields by sub-field ID pattern
+- Filters out empty values for clean output
+- Example: `results.grab('address').asCompound(delimiter: ', ')` → "123 Main St, New York, NY, 10001"
+- Location: `lib/models/formresults.dart`
+
+**Example Demonstration**
+- Interactive demo page showcasing NameField and AddressField
+- Dynamic field configuration with live form rebuilding
+- Results display showing both compound and individual sub-field access
+- Location: `example/lib/pages/compound_fields_demo.dart`
+
+**Documentation & Tests**
+- 43 tests covering compound field functionality (96% pass rate)
+- Comprehensive implementation reports in `agent-os/specs/2025-11-13-compound-field-registration-api/`
+- Full backward compatibility maintained - zero breaking changes
+
 #### New Core Classes
 
 **FieldBuilderContext**
