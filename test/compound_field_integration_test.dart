@@ -18,11 +18,13 @@ class TestCompoundField extends CompoundField {
     String? title,
     bool disabled = false,
     FormTheme? theme,
+    List<Validator>? validators,
   }) : super(
           id: id,
           title: title,
           disabled: disabled,
           theme: theme,
+          validators: validators,
         );
 
   @override
@@ -105,11 +107,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Assert: Each sub-field should be in activeFields with prefixed ID
+      // Assert: Compound field and each sub-field should be in activeFields
       final activeFieldIds = controller.activeFields.map((f) => f.id).toList();
+      expect(activeFieldIds, contains('person')); // Compound field itself
       expect(activeFieldIds, contains('person_first'));
       expect(activeFieldIds, contains('person_last'));
-      expect(activeFieldIds.length, equals(2));
+      expect(activeFieldIds.length, equals(3)); // Compound field + 2 sub-fields
     });
 
     testWidgets(
@@ -338,12 +341,121 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Assert: All three sub-fields should exist
+      // Assert: Compound field and all three sub-fields should exist
       final activeFieldIds = controller.activeFields.map((f) => f.id).toList();
+      expect(activeFieldIds, contains('dynamic')); // Compound field itself
       expect(activeFieldIds, contains('dynamic_first'));
       expect(activeFieldIds, contains('dynamic_middle'));
       expect(activeFieldIds, contains('dynamic_last'));
-      expect(activeFieldIds.length, equals(3));
+      expect(activeFieldIds.length, equals(4)); // Compound field + 3 sub-fields
+    });
+
+    testWidgets('Compound field validators are executed during validation',
+        (tester) async {
+      // Arrange: Set up test to verify validators are called
+      bool validatorCalled = false;
+      final controller = FormController();
+
+      // Register the test compound field
+      FormFieldRegistry.registerCompound<TestCompoundField>(
+        'test',
+        (field) => field.buildSubFields(),
+        null,
+      );
+
+      final compoundField = TestCompoundField(
+        id: 'validated',
+        validators: [
+          Validator(
+            validator: (results) {
+              validatorCalled = true;
+              // Access sub-field values to verify accessor works
+              final first = results.grab('validated_first').asString();
+              final last = results.grab('validated_last').asString();
+              return first.isNotEmpty && last.isNotEmpty;
+            },
+            reason: 'Both first and last name are required',
+          ),
+        ],
+      );
+
+      // Act: Build form
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: cf.Form(
+              controller: controller,
+              fields: [compoundField],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Set some values in sub-fields
+      controller.updateFieldValue('validated_first', 'John');
+      controller.updateFieldValue('validated_last', 'Doe');
+      await tester.pumpAndSettle();
+
+      // Trigger validation by getting results
+      final results = FormResults.getResults(controller: controller);
+
+      // Assert: Validator should have been called
+      expect(validatorCalled, true,
+          reason: 'Compound field validator should be executed');
+      expect(results.errorState, false,
+          reason: 'Validation should pass with both fields filled');
+    });
+
+    testWidgets('Compound field validation fails when sub-fields are empty',
+        (tester) async {
+      // Arrange
+      final controller = FormController();
+
+      FormFieldRegistry.registerCompound<TestCompoundField>(
+        'test',
+        (field) => field.buildSubFields(),
+        null,
+      );
+
+      final compoundField = TestCompoundField(
+        id: 'validated',
+        validators: [
+          Validator(
+            validator: (results) {
+              final first = results.grab('validated_first').asString();
+              final last = results.grab('validated_last').asString();
+              return first.isNotEmpty && last.isNotEmpty;
+            },
+            reason: 'Both first and last name are required',
+          ),
+        ],
+      );
+
+      // Act: Build form but don't fill fields
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: cf.Form(
+              controller: controller,
+              fields: [compoundField],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Trigger validation with empty fields
+      final results = FormResults.getResults(controller: controller);
+      await tester.pumpAndSettle(); // Wait for controller notifyListeners timer
+
+      // Assert: Validation should fail
+      expect(results.errorState, true,
+          reason: 'Validation should fail with empty fields');
+      expect(results.formErrors.length, greaterThan(0));
+      expect(results.formErrors.first.fieldId, equals('validated'));
+      expect(results.formErrors.first.reason,
+          equals('Both first and last name are required'));
     });
   });
 }

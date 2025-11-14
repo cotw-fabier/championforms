@@ -142,6 +142,7 @@ class _CompoundFieldsDemoState extends State<CompoundFieldsDemo> {
             ? 'First, middle, and last name'
             : 'First and last name only',
         includeMiddleName: includeMiddleName,
+        rollUpErrors: true, // Enable error display below the compound field
         validators: [
           // Validate at compound field level (will apply to all sub-fields conceptually)
           form.Validator(
@@ -164,6 +165,7 @@ class _CompoundFieldsDemoState extends State<CompoundFieldsDemo> {
         description: _buildAddressDescription(),
         includeStreet2: includeStreet2,
         includeCountry: includeCountry,
+        rollUpErrors: true, // Enable error display below the compound field
         validators: [
           form.Validator(
             validator: (results) {

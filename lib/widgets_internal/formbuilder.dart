@@ -83,6 +83,8 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
     final List<Field> flatList = [];
     for (final element in elements) {
       if (element is CompoundField) {
+        // Add the compound field itself (for validation)
+        flatList.add(element);
         // Expand compound field into sub-fields
         final subFields = _expandCompoundField(element);
         flatList.addAll(subFields);
@@ -341,9 +343,15 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
     List<FormBuilderError>? errors;
     if (registration.rollUpErrors || compoundField.rollUpErrors) {
       errors = [];
+
+      // Collect errors from the compound field ID itself (where validators store errors)
+      errors.addAll(widget.controller.findErrors(compoundField.id));
+
+      // Also collect errors from individual sub-field IDs (if any)
       for (final subField in processedSubFields) {
         errors.addAll(widget.controller.findErrors(subField.id));
       }
+
       // Only pass errors if there are any
       if (errors.isEmpty) {
         errors = null;

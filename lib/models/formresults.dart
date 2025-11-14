@@ -471,7 +471,10 @@ class FormResults {
     List<FormBuilderError> formErrors = [];
     bool errorState = false; // Track overall error status.
 
-    // Iterate through each field definition.
+    // Separate compound fields for later validation
+    List<CompoundField> compoundFields = [];
+
+    // First pass: Collect all field values and definitions
     for (final field in finalFields) {
       // Skip fields explicitly marked as hidden.
       if (field.hideField) continue;
@@ -487,10 +490,26 @@ class FormResults {
       // Store the raw value (which could be null) in the results map.
       collectedResults[field.id] = rawValue;
 
-      // --- Validation (if enabled) ---
-      // Handle validation with proper type checking, including null values
+      // Track compound fields for later validation
+      if (field is CompoundField) {
+        compoundFields.add(field);
+      }
+    }
+
+    // Second pass: Run validation
+    // Validate regular fields first, then compound fields
+    for (final field in finalFields) {
+      if (field.hideField) continue;
+
+      final rawValue = collectedResults[field.id];
+
+      // Skip compound fields in this pass (validated later)
+      if (field is CompoundField) {
+        continue;
+      }
+
+      // Validate regular fields
       if (rawValue == null) {
-        // For null values, call validation with dynamic type
         _validateField<dynamic>(field, rawValue, controller, formErrors);
       } else if (rawValue is String) {
         _validateField<String>(
@@ -505,9 +524,18 @@ class FormResults {
         _validateField<List<FieldOption>>(
             field as Field, rawValue, controller, formErrors);
       } else {
-        // Fallback for other types
         _validateField<dynamic>(field, rawValue, controller, formErrors);
       }
+
+      if (formErrors.isNotEmpty) {
+        errorState = true;
+      }
+    }
+
+    // Third pass: Validate compound fields after all sub-fields are in definitions
+    for (final compoundField in compoundFields) {
+      _validateCompoundField(
+          compoundField, collectedResults, definitions, controller, formErrors);
 
       if (formErrors.isNotEmpty) {
         errorState = true;
@@ -631,6 +659,63 @@ void _validateField<T>(
     } catch (e, s) {
       // Handle validation errors
       debugPrint("Validation error for field ${field.id}: $e");
+      formErrors.add(FormBuilderError(
+        reason: "Validation failed: $e",
+        fieldId: field.id,
+        validatorPosition: i,
+      ));
+    }
+  }
+}
+
+/// Validates a compound field using FormResults accessor.
+///
+/// Compound field validators expect a [FieldResultAccessor] that allows them
+/// to access sub-field values via results.grab(). This is different from
+/// regular field validators which receive the raw field value.
+void _validateCompoundField(
+  CompoundField field,
+  Map<String, dynamic> collectedResults,
+  Map<String, Field> definitions,
+  FormController controller,
+  List<FormBuilderError> formErrors,
+) {
+  if (field.validators == null || field.validators!.isEmpty || field.disabled) {
+    return;
+  }
+
+  controller.clearErrors(field.id);
+
+  // Create a temporary FormResults instance that compound field validators can use
+  // to access sub-field values via results.grab()
+  final tempResults = FormResults(
+    formErrors: formErrors,
+    errorState: formErrors.isNotEmpty,
+    results: collectedResults,
+    fieldDefinitions: definitions,
+  );
+
+  // Run each validator with the FormResults instance
+  // Compound field validators expect FormResults (not FieldResultAccessor)
+  // so they can call results.grab() to access sub-field values
+  for (int i = 0; i < field.validators!.length; i++) {
+    final validator = field.validators![i];
+    try {
+      final bool isValid = validator.validator(tempResults);
+
+      if (!isValid) {
+        final error = FormBuilderError(
+          reason: validator.reason,
+          fieldId: field.id,
+          validatorPosition: i,
+        );
+        formErrors.add(error);
+        controller.addError(error);
+      }
+    } catch (e, s) {
+      // Handle validation errors
+      debugPrint("Compound field validation error for ${field.id}: $e");
+      debugPrint("Stack trace: $s");
       formErrors.add(FormBuilderError(
         reason: "Validation failed: $e",
         fieldId: field.id,
