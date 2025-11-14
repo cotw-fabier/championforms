@@ -2,6 +2,13 @@
 cmake_minimum_required(VERSION 3.13)
 project(runner LANGUAGES CXX)
 
+# Ensure C++17 standard is set globally to fix GLib 2.80+ compatibility
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Workaround for GLib 2.80+ type_traits issue
+add_compile_definitions(GLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_66)
+
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 set(BINARY_NAME "example")
