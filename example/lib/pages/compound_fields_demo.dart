@@ -58,26 +58,35 @@ class _CompoundFieldsDemoState extends State<CompoundFieldsDemo> {
 
     // Name field results
     buffer.writeln('--- Name Field ---');
-    buffer.writeln('Full Name (joined): ${results.grab('customer_name').asCompound(delimiter: ' ')}');
-    buffer.writeln('First Name: ${results.grab('customer_name_firstname').asString()}');
+    buffer.writeln(
+        'Full Name (joined): ${results.grab('customer_name').asCompound(delimiter: ' ')}');
+    buffer.writeln(
+        'First Name: ${results.grab('customer_name_firstname').asString()}');
     if (includeMiddleName) {
-      buffer.writeln('Middle Name: ${results.grab('customer_name_middlename').asString()}');
+      buffer.writeln(
+          'Middle Name: ${results.grab('customer_name_middlename').asString()}');
     }
-    buffer.writeln('Last Name: ${results.grab('customer_name_lastname').asString()}');
+    buffer.writeln(
+        'Last Name: ${results.grab('customer_name_lastname').asString()}');
     buffer.writeln('');
 
     // Address field results
     buffer.writeln('--- Address Field ---');
-    buffer.writeln('Full Address (joined): ${results.grab('shipping_address').asCompound(delimiter: ', ')}');
-    buffer.writeln('Street: ${results.grab('shipping_address_street').asString()}');
+    buffer.writeln(
+        'Full Address (joined): ${results.grab('shipping_address').asCompound(delimiter: ', ')}');
+    buffer.writeln(
+        'Street: ${results.grab('shipping_address_street').asString()}');
     if (includeStreet2) {
-      buffer.writeln('Street 2: ${results.grab('shipping_address_street2').asString()}');
+      buffer.writeln(
+          'Street 2: ${results.grab('shipping_address_street2').asString()}');
     }
     buffer.writeln('City: ${results.grab('shipping_address_city').asString()}');
-    buffer.writeln('State: ${results.grab('shipping_address_state').asString()}');
+    buffer
+        .writeln('State: ${results.grab('shipping_address_state').asString()}');
     buffer.writeln('ZIP: ${results.grab('shipping_address_zip').asString()}');
     if (includeCountry) {
-      buffer.writeln('Country: ${results.grab('shipping_address_country').asString()}');
+      buffer.writeln(
+          'Country: ${results.grab('shipping_address_country').asString()}');
     }
 
     setState(() {
@@ -119,7 +128,8 @@ class _CompoundFieldsDemoState extends State<CompoundFieldsDemo> {
       form.TextField(
         id: 'header_text',
         title: 'Compound Fields Demo',
-        description: 'This form demonstrates NameField and AddressField compound fields with dynamic configuration.',
+        description:
+            'This form demonstrates NameField and AddressField compound fields with dynamic configuration.',
         disabled: true,
         hideField: false,
       ),
@@ -136,8 +146,10 @@ class _CompoundFieldsDemoState extends State<CompoundFieldsDemo> {
           // Validate at compound field level (will apply to all sub-fields conceptually)
           form.Validator(
             validator: (results) {
-              final firstName = results.grab('customer_name_firstname').asString();
-              final lastName = results.grab('customer_name_lastname').asString();
+              final firstName =
+                  results.grab('customer_name_firstname').asString();
+              final lastName =
+                  results.grab('customer_name_lastname').asString();
               return firstName.isNotEmpty && lastName.isNotEmpty;
             },
             reason: 'First and last name are required',
@@ -160,9 +172,9 @@ class _CompoundFieldsDemoState extends State<CompoundFieldsDemo> {
               final state = results.grab('shipping_address_state').asString();
               final zip = results.grab('shipping_address_zip').asString();
               return street.isNotEmpty &&
-                     city.isNotEmpty &&
-                     state.isNotEmpty &&
-                     zip.isNotEmpty;
+                  city.isNotEmpty &&
+                  state.isNotEmpty &&
+                  zip.isNotEmpty;
             },
             reason: 'Street, city, state, and ZIP are required',
           ),
@@ -220,7 +232,7 @@ class _CompoundFieldsDemoState extends State<CompoundFieldsDemo> {
                         setState(() {
                           includeMiddleName = value ?? true;
                         });
-                        _rebuildForm();
+                        // _rebuildForm();
                       },
                       dense: true,
                       contentPadding: EdgeInsets.zero,
@@ -239,7 +251,7 @@ class _CompoundFieldsDemoState extends State<CompoundFieldsDemo> {
                         setState(() {
                           includeStreet2 = value ?? true;
                         });
-                        _rebuildForm();
+                        // _rebuildForm();
                       },
                       dense: true,
                       contentPadding: EdgeInsets.zero,
@@ -251,7 +263,7 @@ class _CompoundFieldsDemoState extends State<CompoundFieldsDemo> {
                         setState(() {
                           includeCountry = value ?? false;
                         });
-                        _rebuildForm();
+                        // _rebuildForm();
                       },
                       dense: true,
                       contentPadding: EdgeInsets.zero,
@@ -360,7 +372,8 @@ class _CompoundFieldsDemoState extends State<CompoundFieldsDemo> {
                       '1. Fill out the form fields\n'
                       '2. Click "Show Results" to see compound and individual values\n'
                       '3. Toggle configuration options to rebuild the form dynamically',
-                      style: TextStyle(fontSize: 13, fontStyle: FontStyle.italic),
+                      style:
+                          TextStyle(fontSize: 13, fontStyle: FontStyle.italic),
                     ),
                   ],
                 ),
