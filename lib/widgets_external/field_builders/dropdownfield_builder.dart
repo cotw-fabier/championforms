@@ -22,7 +22,7 @@ Widget dropdownFieldBuilder(FieldBuilderContext ctx) {
     field: field,
     requestFocus: field.requestFocus,
     child: DropdownButtonFormField<String>(
-      value: field.defaultValue != null && field.defaultValue.isNotEmpty
+      initialValue: field.defaultValue != null && field.defaultValue.isNotEmpty
           ? field.defaultValue.first.value
           : null,
       dropdownColor: currentColors.backgroundColor,

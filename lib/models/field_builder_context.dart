@@ -353,13 +353,12 @@ class FieldBuilderContext {
       controller.createFieldValue(fieldId, defaultValue, noNotify: true);
     }
 
-    final currentlySelected = getValue<List<FieldOption>>() ?? [];
-    final isSelected = currentlySelected.any((o) => o.value == option.value);
-
-    controller.toggleMultiSelectValue(
+    // Use updateMultiselectValues with overwrite: false to toggle
+    // (adds if not present, removes if present)
+    controller.updateMultiselectValues(
       field.id,
-      toggleOn: isSelected ? [] : [option.value],
-      toggleOff: isSelected ? [option.value] : [],
+      [option],
+      overwrite: false,
     );
   }
 
@@ -397,10 +396,18 @@ class FieldBuilderContext {
       controller.createFieldValue(fieldId, defaultValue, noNotify: true);
     }
 
-    controller.toggleMultiSelectValue(
-      field.id,
-      toggleOn: [option.value],
-    );
+    // Get current selections and add the new option if not already present
+    final currentSelected = getValue<List<FieldOption>>() ?? [];
+    final isAlreadySelected = currentSelected.any((o) => o.value == option.value);
+
+    if (!isAlreadySelected) {
+      final updatedSelections = [...currentSelected, option];
+      controller.updateMultiselectValues(
+        field.id,
+        updatedSelections,
+        overwrite: true,
+      );
+    }
   }
 
   /// Ensures an option is deselected for multiselect/option select fields.
@@ -435,10 +442,20 @@ class FieldBuilderContext {
       controller.createFieldValue(fieldId, defaultValue, noNotify: true);
     }
 
-    controller.toggleMultiSelectValue(
-      field.id,
-      toggleOff: [option.value],
-    );
+    // Get current selections and remove the option if present
+    final currentSelected = getValue<List<FieldOption>>() ?? [];
+    final updatedSelections = currentSelected
+        .where((o) => o.value != option.value)
+        .toList();
+
+    // Only update if something changed
+    if (updatedSelections.length != currentSelected.length) {
+      controller.updateMultiselectValues(
+        field.id,
+        updatedSelections,
+        overwrite: true,
+      );
+    }
   }
 
   /// Selects multiple options at once for multiselect fields.
@@ -476,10 +493,21 @@ class FieldBuilderContext {
       controller.createFieldValue(fieldId, defaultValue, noNotify: true);
     }
 
-    controller.toggleMultiSelectValue(
-      field.id,
-      toggleOn: options.map((o) => o.value).toList(),
-    );
+    // Get current selections and merge with new options (avoiding duplicates)
+    final currentSelected = getValue<List<FieldOption>>() ?? [];
+    final currentValues = currentSelected.map((o) => o.value).toSet();
+
+    // Add new options that aren't already selected
+    final newOptions = options.where((o) => !currentValues.contains(o.value)).toList();
+
+    if (newOptions.isNotEmpty) {
+      final updatedSelections = [...currentSelected, ...newOptions];
+      controller.updateMultiselectValues(
+        field.id,
+        updatedSelections,
+        overwrite: true,
+      );
+    }
   }
 
   /// Deselects multiple options at once for multiselect fields.
@@ -515,10 +543,22 @@ class FieldBuilderContext {
       controller.createFieldValue(fieldId, defaultValue, noNotify: true);
     }
 
-    controller.toggleMultiSelectValue(
-      field.id,
-      toggleOff: options.map((o) => o.value).toList(),
-    );
+    // Get current selections and remove the specified options
+    final currentSelected = getValue<List<FieldOption>>() ?? [];
+    final optionsToRemove = options.map((o) => o.value).toSet();
+
+    final updatedSelections = currentSelected
+        .where((o) => !optionsToRemove.contains(o.value))
+        .toList();
+
+    // Only update if something changed
+    if (updatedSelections.length != currentSelected.length) {
+      controller.updateMultiselectValues(
+        field.id,
+        updatedSelections,
+        overwrite: true,
+      );
+    }
   }
 
   /// Replaces all current selections with the provided options.
