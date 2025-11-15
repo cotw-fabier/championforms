@@ -344,6 +344,15 @@ class FieldBuilderContext {
   /// - [deselectOption] to ensure an option is deselected
   /// - [isOptionSelected] to check if option is selected
   void toggleValue(FieldOption option) {
+    final fieldId = field.id;
+
+    // Ensure field is registered before attempting to toggle
+    if (!controller.hasFieldDefinition(fieldId)) {
+      controller.addFields([field], noNotify: true);
+      final defaultValue = controller.getFieldDefaultValue(fieldId);
+      controller.createFieldValue(fieldId, defaultValue, noNotify: true);
+    }
+
     final currentlySelected = getValue<List<FieldOption>>() ?? [];
     final isSelected = currentlySelected.any((o) => o.value == option.value);
 
@@ -379,6 +388,15 @@ class FieldBuilderContext {
   /// - [deselectOption] to remove a selection
   /// - [selectOptions] to select multiple options at once
   void selectOption(FieldOption option) {
+    final fieldId = field.id;
+
+    // Ensure field is registered before attempting to select
+    if (!controller.hasFieldDefinition(fieldId)) {
+      controller.addFields([field], noNotify: true);
+      final defaultValue = controller.getFieldDefaultValue(fieldId);
+      controller.createFieldValue(fieldId, defaultValue, noNotify: true);
+    }
+
     controller.toggleMultiSelectValue(
       field.id,
       toggleOn: [option.value],
@@ -408,6 +426,15 @@ class FieldBuilderContext {
   /// - [selectOption] to add a selection
   /// - [clearSelections] to remove all selections
   void deselectOption(FieldOption option) {
+    final fieldId = field.id;
+
+    // Ensure field is registered before attempting to deselect
+    if (!controller.hasFieldDefinition(fieldId)) {
+      controller.addFields([field], noNotify: true);
+      final defaultValue = controller.getFieldDefaultValue(fieldId);
+      controller.createFieldValue(fieldId, defaultValue, noNotify: true);
+    }
+
     controller.toggleMultiSelectValue(
       field.id,
       toggleOff: [option.value],
@@ -440,6 +467,15 @@ class FieldBuilderContext {
   /// - [selectOption] to select a single option
   /// - [setSelectedOptions] to replace all selections
   void selectOptions(List<FieldOption> options) {
+    final fieldId = field.id;
+
+    // Ensure field is registered before attempting to select
+    if (!controller.hasFieldDefinition(fieldId)) {
+      controller.addFields([field], noNotify: true);
+      final defaultValue = controller.getFieldDefaultValue(fieldId);
+      controller.createFieldValue(fieldId, defaultValue, noNotify: true);
+    }
+
     controller.toggleMultiSelectValue(
       field.id,
       toggleOn: options.map((o) => o.value).toList(),
@@ -470,6 +506,15 @@ class FieldBuilderContext {
   /// - [deselectOption] to deselect a single option
   /// - [clearSelections] to remove all selections
   void deselectOptions(List<FieldOption> options) {
+    final fieldId = field.id;
+
+    // Ensure field is registered before attempting to deselect
+    if (!controller.hasFieldDefinition(fieldId)) {
+      controller.addFields([field], noNotify: true);
+      final defaultValue = controller.getFieldDefaultValue(fieldId);
+      controller.createFieldValue(fieldId, defaultValue, noNotify: true);
+    }
+
     controller.toggleMultiSelectValue(
       field.id,
       toggleOff: options.map((o) => o.value).toList(),
@@ -508,6 +553,15 @@ class FieldBuilderContext {
     List<FieldOption> options, {
     bool overwrite = true,
   }) {
+    final fieldId = field.id;
+
+    // Ensure field is registered before attempting to set values
+    if (!controller.hasFieldDefinition(fieldId)) {
+      controller.addFields([field], noNotify: true);
+      final defaultValue = controller.getFieldDefaultValue(fieldId);
+      controller.createFieldValue(fieldId, defaultValue, noNotify: true);
+    }
+
     controller.updateMultiselectValues(
       field.id,
       options,
@@ -606,6 +660,15 @@ class FieldBuilderContext {
   /// - [deselectOptions] to remove specific options
   /// - [FormController.removeMultiSelectOptions] for the underlying implementation
   void clearSelections() {
+    final fieldId = field.id;
+
+    // Ensure field is registered before attempting to clear
+    if (!controller.hasFieldDefinition(fieldId)) {
+      controller.addFields([field], noNotify: true);
+      final defaultValue = controller.getFieldDefaultValue(fieldId);
+      controller.createFieldValue(fieldId, defaultValue, noNotify: true);
+    }
+
     controller.removeMultiSelectOptions(field.id);
   }
 
