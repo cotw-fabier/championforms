@@ -9,9 +9,24 @@ import 'package:championforms/championforms.dart' as form;
 import 'package:championforms/championforms_themes.dart';
 import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/fieldstate.dart';
-import '../../test/test_helpers.dart';
 
+/// Helper to create FieldBuilderContext for tests
+FieldBuilderContext createTestContext({
+  required form.FormController controller,
+  required form.Field field,
+  FormTheme? theme,
+}) {
+  final resolvedTheme = theme ?? const FormTheme();
+  final colors = resolvedTheme.normalColorScheme ?? const FieldColorScheme();
 
+  return FieldBuilderContext(
+    controller: controller,
+    field: field,
+    theme: resolvedTheme,
+    state: FieldState.normal,
+    colors: colors,
+  );
+}
 
 void main() {
   group('AutocompleteWrapper Structure Tests', () {
@@ -24,10 +39,7 @@ void main() {
           CompleteOption(value: 'Option 2'),
         ],
       );
-      final controller = form.FormController();
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
       final child = TextField();
 
       // Act & Assert - should not throw
@@ -35,7 +47,7 @@ void main() {
         () => AutocompleteWrapper(
           child: child,
           autoComplete: autoComplete,
-          context: ctx,
+          focusNode: focusNode,
         ),
         returnsNormally,
       );
@@ -47,7 +59,6 @@ void main() {
     testWidgets('Widget builds without errors when wrapped around TextField',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
@@ -55,9 +66,8 @@ void main() {
           CompleteOption(value: 'Test 2'),
         ],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
 
       // Act
       await tester.pumpWidget(
@@ -65,11 +75,12 @@ void main() {
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
@@ -81,20 +92,17 @@ void main() {
 
       // Cleanup
       controller.dispose();
-
+      
     });
 
     testWidgets('Widget wraps child with CompositedTransformTarget',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [CompleteOption(value: 'Test')],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
       final child = Container(key: const Key('test-child'));
 
       // Act
@@ -104,7 +112,7 @@ void main() {
             body: AutocompleteWrapper(
               child: child,
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
             ),
           ),
         ),
@@ -125,10 +133,8 @@ void main() {
         type: AutoCompleteType.dropdown,
         initialOptions: [CompleteOption(value: 'Test')],
       );
-      final controller = form.FormController();
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
       final valueNotifier = ValueNotifier<String>('');
       final child = TextField();
       var selectionCalled = false;
@@ -140,7 +146,8 @@ void main() {
             body: AutocompleteWrapper(
               child: child,
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
               valueNotifier: valueNotifier,
               onOptionSelected: (option) {
                 selectionCalled = true;
@@ -155,6 +162,7 @@ void main() {
 
       // Cleanup
       controller.dispose();
+      
       valueNotifier.dispose();
     });
 
@@ -164,23 +172,20 @@ void main() {
         type: AutoCompleteType.dropdown,
         initialOptions: [CompleteOption(value: 'Test')],
       );
-      final controller = form.FormController();
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
       final child = Container();
 
       // Act - Testing named parameter syntax
       final widget = AutocompleteWrapper(
         child: child,
         autoComplete: autoComplete,
-        context: ctx,
+        focusNode: focusNode,
       );
 
       // Assert
       expect(widget.child, equals(child));
       expect(widget.autoComplete, equals(autoComplete));
-      expect(widget.context, equals(ctx));
+      expect(widget.focusNode, equals(focusNode));
 
       // Cleanup
       controller.dispose();
@@ -189,14 +194,11 @@ void main() {
     test('Widget accepts Key parameter', () {
       // Arrange
       const key = Key('autocomplete-wrapper-key');
-      final controller = form.FormController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [CompleteOption(value: 'Test')],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
       final child = Container();
 
       // Act
@@ -204,7 +206,7 @@ void main() {
         key: key,
         child: child,
         autoComplete: autoComplete,
-        context: ctx,
+        focusNode: focusNode,
       );
 
       // Assert

@@ -18,7 +18,7 @@ FieldBuilderContext createTestContext({
   FormTheme? theme,
 }) {
   final resolvedTheme = theme ?? const FormTheme();
-  final colors = resolvedTheme.colorScheme ?? const FieldColorScheme();
+  final colors = resolvedTheme.normalColorScheme ?? const FieldColorScheme();
 
   return FieldBuilderContext(
     controller: controller,

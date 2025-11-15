@@ -6,7 +6,6 @@ import 'package:championforms/widgets_internal/field_widgets/file_upload_widget.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'dart:typed_data';
-import '../../test/test_helpers.dart';
 
 void main() {
   group('FileUploadWidget clearOnUpload behavior', () {
@@ -45,10 +44,12 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FileUploadWidget(
-              context: createTestContext(
-                controller: controller,
-                field: field,
-              ),
+              id: field.id,
+              controller: controller,
+              field: field,
+              currentColors: const FieldColorScheme(),
+              onFocusChange: (_) {},
+              onFileOptionChange: (_) {},
             ),
           ),
         ),
@@ -111,10 +112,12 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FileUploadWidget(
-              context: createTestContext(
-                controller: controller,
-                field: field,
-              ),
+              id: field.id,
+              controller: controller,
+              field: field,
+              currentColors: const FieldColorScheme(),
+              onFocusChange: (_) {},
+              onFileOptionChange: (_) {},
             ),
           ),
         ),
@@ -199,10 +202,12 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FileUploadWidget(
-              context: createTestContext(
-                controller: controller,
-                field: field,
-              ),
+              id: field.id,
+              controller: controller,
+              field: field,
+              currentColors: const FieldColorScheme(),
+              onFocusChange: (_) {},
+              onFileOptionChange: (_) {},
             ),
           ),
         ),
@@ -301,10 +306,12 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FileUploadWidget(
-              context: createTestContext(
-                controller: controller,
-                field: field,
-              ),
+              id: field.id,
+              controller: controller,
+              field: field,
+              currentColors: const FieldColorScheme(),
+              onFocusChange: (_) {},
+              onFileOptionChange: (_) {},
             ),
           ),
         ),
@@ -392,10 +399,12 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FileUploadWidget(
-              context: createTestContext(
-                controller: controller,
-                field: field,
-              ),
+              id: field.id,
+              controller: controller,
+              field: field,
+              currentColors: const FieldColorScheme(),
+              onFocusChange: (_) {},
+              onFileOptionChange: (_) {},
             ),
           ),
         ),
@@ -474,10 +483,12 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FileUploadWidget(
-              context: createTestContext(
-                controller: controller,
-                field: field,
-              ),
+              id: field.id,
+              controller: controller,
+              field: field,
+              currentColors: const FieldColorScheme(),
+              onFocusChange: (_) {},
+              onFileOptionChange: (_) {},
             ),
           ),
         ),
@@ -530,10 +541,12 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FileUploadWidget(
-              context: createTestContext(
-                controller: controller,
-                field: field,
-              ),
+              id: field.id,
+              controller: controller,
+              field: field,
+              currentColors: const FieldColorScheme(),
+              onFocusChange: (_) {},
+              onFileOptionChange: (_) {},
             ),
           ),
         ),

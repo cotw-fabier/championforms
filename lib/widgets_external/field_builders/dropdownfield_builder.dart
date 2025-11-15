@@ -1,6 +1,5 @@
-import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/functions/inputdecoration_from_theme.dart';
-import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/field_types/optionselect.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/multiselect_option.dart';
@@ -10,15 +9,13 @@ import 'package:flutter/material.dart';
 
 /// Dropdown field builder for OptionSelect fields.
 ///
-/// Updated in v0.5.4 to remove updateFocus parameter.
-/// Focus management is now handled automatically by StatefulFieldWidget.
-Widget dropdownFieldBuilder(
-  BuildContext context,
-  FormController controller,
-  OptionSelect field,
-  FieldColorScheme currentColors,
-  Function(FieldOption? selectedOption) updateSelectedOption,
-) {
+/// Updated in v0.6.0+ to use FieldBuilderContext signature.
+/// The context provides access to controller, field, theme, colors, and convenience methods.
+Widget dropdownFieldBuilder(FieldBuilderContext ctx) {
+  // final context = ctx.controller.context;
+  final field = ctx.field as OptionSelect;
+  final currentColors = ctx.colors;
+  final controller = ctx.controller;
   return MultiselectWidget(
     id: field.id,
     controller: controller,
@@ -57,18 +54,18 @@ Widget dropdownFieldBuilder(
                   .firstWhereOrNull((val) => value == val.value.toString()) ??
               FieldOption(label: value, value: value);
 
-          updateSelectedOption(selectedOption);
+          // Update value using FieldBuilderContext
+          controller.updateMultiselectValues(
+            field.id,
+            [selectedOption],
+            multiselect: field.multiselect,
+          );
         } else {
-          updateSelectedOption(null);
+          // Clear selection
+          controller.resetMultiselectChoices(field.id);
         }
 
-        // Handle onchanged behavior
-        if (field.onChange != null) {
-          final FormResults results =
-              FormResults.getResults(controller: controller, fields: [field]);
-
-          field.onChange!(results);
-        }
+        // Note: onChange callback is triggered automatically via onValueChanged hook
       },
       decoration: getInputDecorationFromScheme(currentColors)?.copyWith(
         prefixIcon: field.leading,

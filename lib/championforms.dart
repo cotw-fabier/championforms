@@ -94,3 +94,5 @@ export 'package:championforms/widgets_external/field_backgrounds/coloredbox.dart
 export 'package:championforms/models/field_builder_context.dart';
 export 'package:championforms/widgets_external/stateful_field_widget.dart';
 export 'package:championforms/models/field_converters.dart';
+export 'package:championforms/models/file_model.dart';
+export 'package:championforms/models/themes.dart';

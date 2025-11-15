@@ -37,6 +37,13 @@ class TextFieldWidget extends StatefulFieldWidget {
     FieldBuilderContext ctx,
   ) {
     final field = ctx.field as form_types.TextField;
+
+    // If a custom fieldBuilder is provided, use it instead of default rendering
+    if (field.fieldBuilder != null) {
+      return field.fieldBuilder!(ctx);
+    }
+
+    // Default rendering
     final textController = ctx.getTextController();
     final focusNode = ctx.getFocusNode();
     final materialTheme = Theme.of(context);

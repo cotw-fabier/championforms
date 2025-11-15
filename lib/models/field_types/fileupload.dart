@@ -64,14 +64,8 @@ class FileUpload extends OptionSelect {
     this.clearOnUpload = false,
     this.fileUploadBuilder,
     this.dropDisplayWidget,
+    super.fieldBuilder, // Pass through optional custom fieldBuilder
   }) : super(
-          // Placeholder builder - not used in new StatefulFieldWidget API
-          // FileUpload now uses FormFieldRegistry.register<FileUpload>(buildFileUpload)
-          fieldBuilder: (context, controller, field, colors, updateSelected) {
-            throw UnimplementedError(
-              'FileUpload should use FormFieldRegistry.register<FileUpload>(buildFileUpload) instead'
-            );
-          },
           options: [],
         );
 

@@ -30,27 +30,8 @@ class OptionSelectWidget extends StatefulFieldWidget {
   ) {
     final field = ctx.field as OptionSelect;
 
-    // Call the field's builder with the new signature (no updateFocus callback)
-    return field.fieldBuilder(
-      context,
-      ctx.controller,
-      field,
-      ctx.colors,
-      (FieldOption? selectedOption) {
-        // Handle option selection
-        if (selectedOption != null) {
-          ctx.controller.updateMultiselectValues(
-            field.id,
-            [selectedOption],
-            multiselect: field.multiselect,
-          );
-        } else {
-          ctx.controller.resetMultiselectChoices(field.id);
-        }
-
-        // Note: onChange will be triggered automatically via onValueChanged hook
-      },
-    );
+    // Call the field's builder with the new FieldBuilderContext signature
+    return field.fieldBuilder(ctx);
   }
 
   @override

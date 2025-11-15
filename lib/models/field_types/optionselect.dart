@@ -1,5 +1,4 @@
-import 'package:championforms/controllers/form_controller.dart';
-import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/multiselect_option.dart';
@@ -25,16 +24,25 @@ class OptionSelect extends Field {
   // match default value case sensitive?
   final bool caseSensitiveDefaultValue;
 
-  // Add a builder for defining the field style
-  // Note: Signature updated in v0.5.4 to remove updateFocus callback
-  // Focus management is now handled automatically by StatefulFieldWidget
-  Widget Function(
-    BuildContext context,
-    FormController controller,
-    OptionSelect field,
-    FieldColorScheme currentColors,
-    Function(FieldOption? selectedOption) updateSelectedOption,
-  ) fieldBuilder;
+  /// Custom field builder for overriding the default rendering.
+  ///
+  /// When provided, this builder will be used instead of the default widget.
+  /// The builder receives a [FieldBuilderContext] with access to:
+  /// - Field value via `ctx.getValue<List<FieldOption>>()`
+  /// - Value updates via `ctx.setValue(value)`
+  /// - Theme colors via `ctx.colors`
+  /// - Controller via `ctx.controller`
+  ///
+  /// Example:
+  /// ```dart
+  /// OptionSelect(
+  ///   id: 'tags',
+  ///   fieldBuilder: (ctx) => CustomTagWidget(context: ctx),
+  /// )
+  /// ```
+  ///
+  /// Note: Signature updated in v0.6.0+ to use FieldBuilderContext.
+  final Widget Function(FieldBuilderContext) fieldBuilder;
 
   OptionSelect({
     required super.id,
@@ -57,8 +65,8 @@ class OptionSelect extends Field {
     super.onChange,
     super.fieldLayout,
     super.fieldBackground,
-    this.fieldBuilder = dropdownFieldBuilder,
-  });
+    Widget Function(FieldBuilderContext)? fieldBuilder,
+  }) : fieldBuilder = fieldBuilder ?? dropdownFieldBuilder;
 
   // --- Implementation of Field<List<FieldOption>> ---
 

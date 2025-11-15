@@ -9,16 +9,30 @@ import 'package:championforms/championforms.dart' as form;
 import 'package:championforms/championforms_themes.dart';
 import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/fieldstate.dart';
-import '../../test/test_helpers.dart';
 
+/// Helper to create FieldBuilderContext for tests
+FieldBuilderContext createTestContext({
+  required form.FormController controller,
+  required form.Field field,
+  FormTheme? theme,
+}) {
+  final resolvedTheme = theme ?? const FormTheme();
+  final colors = resolvedTheme.normalColorScheme ?? const FieldColorScheme();
 
+  return FieldBuilderContext(
+    controller: controller,
+    field: field,
+    theme: resolvedTheme,
+    state: FieldState.normal,
+    colors: colors,
+  );
+}
 
 void main() {
   group('AutocompleteWrapper Positioning Tests', () {
     testWidgets('Overlay positions below field when sufficient space available',
         (WidgetTester tester) async {
       // Arrange - Position field at top of screen where there's plenty of space below
-      final controller = form.FormController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
@@ -30,9 +44,8 @@ void main() {
         maxHeight: 300,
         dropdownBoxMargin: 8,
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
 
       await tester.pumpWidget(
         MaterialApp(
@@ -42,12 +55,13 @@ void main() {
               child: SizedBox(
                 width: 200,
                 child: AutocompleteWrapper(
-              child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
-              ),
-              autoComplete: autoComplete,
-              context: ctx,
+                  child: TextField(
+                    controller: textController,
+                    focusNode: focusNode,
+                  ),
+                  autoComplete: autoComplete,
+                  focusNode: focusNode,
+                  textEditingController: textController,
                 ),
               ),
             ),
@@ -71,7 +85,6 @@ void main() {
     testWidgets('Overlay positions above field when insufficient space below',
         (WidgetTester tester) async {
       // Arrange - Position field at bottom of screen
-      final controller = form.FormController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
@@ -82,9 +95,8 @@ void main() {
         maxHeight: 300,
         dropdownBoxMargin: 8,
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
 
       await tester.pumpWidget(
         MaterialApp(
@@ -94,12 +106,13 @@ void main() {
               child: SizedBox(
                 width: 200,
                 child: AutocompleteWrapper(
-              child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
-              ),
-              autoComplete: autoComplete,
-              context: ctx,
+                  child: TextField(
+                    controller: textController,
+                    focusNode: focusNode,
+                  ),
+                  autoComplete: autoComplete,
+                  focusNode: focusNode,
+                  textEditingController: textController,
                 ),
               ),
             ),
@@ -123,7 +136,6 @@ void main() {
         (WidgetTester tester) async {
       // Arrange
       const testMinHeight = 150;
-      final controller = form.FormController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
@@ -132,20 +144,20 @@ void main() {
         minHeight: testMinHeight,
         maxHeight: 300,
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
@@ -167,7 +179,6 @@ void main() {
         (WidgetTester tester) async {
       // Arrange
       const testMaxHeight = 200;
-      final controller = form.FormController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: List.generate(
@@ -177,20 +188,20 @@ void main() {
         minHeight: 100,
         maxHeight: testMaxHeight,
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
@@ -211,34 +222,33 @@ void main() {
     testWidgets('Overlay uses Material widget with correct elevation',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
           CompleteOption(value: 'Test'),
         ],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
       );
 
       // Act - Focus field and enter text
-      ctx.getFocusNode().requestFocus();
+      focusNode.requestFocus();
       await tester.pump();
       await tester.enterText(find.byType(TextField), 'test');
       await tester.pumpAndSettle();
@@ -256,7 +266,6 @@ void main() {
     testWidgets('Overlay accounts for safe area padding',
         (WidgetTester tester) async {
       // Arrange - Use MediaQuery to simulate safe areas
-      final controller = form.FormController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
@@ -265,9 +274,8 @@ void main() {
         minHeight: 100,
         maxHeight: 300,
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
 
       await tester.pumpWidget(
         MaterialApp(
@@ -278,11 +286,12 @@ void main() {
             child: Scaffold(
               body: AutocompleteWrapper(
                 child: TextField(
-                  controller: ctx.getTextController(),
-                  focusNode: ctx.getFocusNode(),
+                  controller: textController,
+                  focusNode: focusNode,
                 ),
                 autoComplete: autoComplete,
-                context: ctx,
+                focusNode: focusNode,
+                textEditingController: textController,
               ),
             ),
           ),
@@ -305,7 +314,6 @@ void main() {
         (WidgetTester tester) async {
       // Arrange
       const customMargin = 16;
-      final controller = form.FormController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
@@ -313,20 +321,20 @@ void main() {
         ],
         dropdownBoxMargin: customMargin,
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
@@ -346,16 +354,14 @@ void main() {
 
     testWidgets('Overlay width matches field width', (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
           CompleteOption(value: 'Test'),
         ],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
 
       await tester.pumpWidget(
         MaterialApp(
@@ -363,12 +369,13 @@ void main() {
             body: SizedBox(
               width: 250, // Specific width
               child: AutocompleteWrapper(
-              child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
-              ),
-              autoComplete: autoComplete,
-              context: ctx,
+                child: TextField(
+                  controller: textController,
+                  focusNode: focusNode,
+                ),
+                autoComplete: autoComplete,
+                focusNode: focusNode,
+                textEditingController: textController,
               ),
             ),
           ),

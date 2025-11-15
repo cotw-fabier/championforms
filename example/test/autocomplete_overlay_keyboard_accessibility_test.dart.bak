@@ -10,16 +10,30 @@ import 'package:championforms/championforms.dart' as form;
 import 'package:championforms/championforms_themes.dart';
 import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/fieldstate.dart';
-import '../../test/test_helpers.dart';
 
+/// Helper to create FieldBuilderContext for tests
+FieldBuilderContext createTestContext({
+  required form.FormController controller,
+  required form.Field field,
+  FormTheme? theme,
+}) {
+  final resolvedTheme = theme ?? const FormTheme();
+  final colors = resolvedTheme.normalColorScheme ?? const FieldColorScheme();
 
+  return FieldBuilderContext(
+    controller: controller,
+    field: field,
+    theme: resolvedTheme,
+    state: FieldState.normal,
+    colors: colors,
+  );
+}
 
 void main() {
   group('AutocompleteWrapper Keyboard and Accessibility Tests', () {
     testWidgets('Tab key moves focus to first option',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
@@ -28,27 +42,27 @@ void main() {
           CompleteOption(value: 'Option 3', title: 'Option 3'),
         ],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
       );
 
       // Act - Focus field, enter text to show overlay
-      ctx.getFocusNode().requestFocus();
+      focusNode.requestFocus();
       await tester.pump();
       await tester.enterText(find.byType(TextField), 'Opt');
       await tester.pumpAndSettle();
@@ -64,7 +78,6 @@ void main() {
     testWidgets('Arrow Down navigates to next option',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
@@ -73,27 +86,27 @@ void main() {
           CompleteOption(value: 'Option 3', title: 'Option 3'),
         ],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
       );
 
       // Act - Focus field, enter text to show overlay
-      ctx.getFocusNode().requestFocus();
+      focusNode.requestFocus();
       await tester.pump();
       await tester.enterText(find.byType(TextField), 'Opt');
       await tester.pumpAndSettle();
@@ -110,7 +123,6 @@ void main() {
     testWidgets('Arrow Up navigates to previous option',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
@@ -119,27 +131,27 @@ void main() {
           CompleteOption(value: 'Option 3', title: 'Option 3'),
         ],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
       );
 
       // Act - Focus field, enter text to show overlay
-      ctx.getFocusNode().requestFocus();
+      focusNode.requestFocus();
       await tester.pump();
       await tester.enterText(find.byType(TextField), 'Opt');
       await tester.pumpAndSettle();
@@ -155,7 +167,6 @@ void main() {
     testWidgets('Enter key selects focused option',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
@@ -163,27 +174,27 @@ void main() {
           CompleteOption(value: 'Option 2', title: 'Option 2'),
         ],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
       );
 
       // Act - Focus field, enter text, then tap on first option
-      ctx.getFocusNode().requestFocus();
+      focusNode.requestFocus();
       await tester.pump();
       await tester.enterText(find.byType(TextField), 'Opt');
       await tester.pumpAndSettle();
@@ -193,7 +204,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert - Text controller should have the selected value
-      expect(ctx.getTextController().text, equals('Option 1'));
+      expect(textController.text, equals('Option 1'));
 
       // Cleanup
       controller.dispose();
@@ -202,34 +213,33 @@ void main() {
 
     testWidgets('Escape key dismisses overlay', (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
           CompleteOption(value: 'Option 1', title: 'Option 1'),
         ],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
       );
 
       // Act - Focus field, enter text to show overlay
-      ctx.getFocusNode().requestFocus();
+      focusNode.requestFocus();
       await tester.pump();
       await tester.enterText(find.byType(TextField), 'Opt');
       await tester.pumpAndSettle();
@@ -245,7 +255,6 @@ void main() {
     testWidgets('Semantics widget is present for accessibility',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
@@ -254,27 +263,27 @@ void main() {
           CompleteOption(value: 'Option 3', title: 'Option 3'),
         ],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
       );
 
       // Act - Focus field and enter text to show overlay
-      ctx.getFocusNode().requestFocus();
+      focusNode.requestFocus();
       await tester.pump();
       await tester.enterText(find.byType(TextField), 'Opt');
       await tester.pumpAndSettle();
@@ -293,7 +302,6 @@ void main() {
     testWidgets('FocusTraversalGroup ensures logical navigation order',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
         initialOptions: [
@@ -302,27 +310,27 @@ void main() {
           CompleteOption(value: 'Option 3', title: 'Option 3'),
         ],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
       );
 
       // Act - Focus field, enter text to show overlay
-      ctx.getFocusNode().requestFocus();
+      focusNode.requestFocus();
       await tester.pump();
       await tester.enterText(find.byType(TextField), 'Opt');
       await tester.pumpAndSettle();

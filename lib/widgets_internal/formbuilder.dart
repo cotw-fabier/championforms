@@ -195,7 +195,7 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
         password: subField.password,
         maxLines: subField.maxLines,
         autoComplete: subField.autoComplete,
-        fieldOverride: subField.fieldOverride,
+        fieldBuilder: subField.fieldBuilder,
         defaultValue: subField.defaultValue,
       );
     }

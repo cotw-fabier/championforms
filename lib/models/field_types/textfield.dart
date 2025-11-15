@@ -1,5 +1,6 @@
 import 'package:championforms/models/autocomplete/autocomplete_class.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
+import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:flutter/material.dart' as flutter;
 import 'package:flutter/services.dart';
@@ -7,8 +8,24 @@ import 'package:flutter/services.dart';
 class TextField extends Field {
   // Define the type of field type
 
-  // Add a TextField override so we could write our own widget if we prefer. This will override the default field.
-  final flutter.TextField? fieldOverride;
+  /// Custom field builder for overriding the default TextField rendering.
+  ///
+  /// When provided, this builder will be used instead of the default TextField widget.
+  /// The builder receives a [FieldBuilderContext] with access to:
+  /// - Field value via `ctx.getValue<String>()`
+  /// - TextEditingController via `ctx.getTextController()`
+  /// - FocusNode via `ctx.getFocusNode()`
+  /// - Theme colors via `ctx.colors`
+  /// - Value updates via `ctx.setValue(value)`
+  ///
+  /// Example:
+  /// ```dart
+  /// TextField(
+  ///   id: 'phone',
+  ///   fieldBuilder: (ctx) => CustomPhoneWidget(context: ctx),
+  /// )
+  /// ```
+  final flutter.Widget Function(FieldBuilderContext)? fieldBuilder;
 
   final int? maxLines;
 
@@ -66,7 +83,7 @@ class TextField extends Field {
 
   TextField({
     required super.id,
-    this.fieldOverride,
+    this.fieldBuilder,
     this.maxLines,
     this.autoComplete,
     this.textFieldTitle,

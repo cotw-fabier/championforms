@@ -4,13 +4,28 @@ import 'package:championforms/championforms.dart' as form;
 import 'package:championforms/championforms_themes.dart';
 import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/fieldstate.dart';
-import '../../test/test_helpers.dart';
 import 'package:championforms/widgets_internal/autocomplete_overlay_widget.dart';
 import 'package:championforms/models/autocomplete/autocomplete_class.dart';
 import 'package:championforms/models/autocomplete/autocomplete_option_class.dart';
 import 'package:championforms/models/autocomplete/autocomplete_type.dart';
 
+/// Helper to create FieldBuilderContext for tests
+FieldBuilderContext createTestContext({
+  required form.FormController controller,
+  required form.Field field,
+  FormTheme? theme,
+}) {
+  final resolvedTheme = theme ?? const FormTheme();
+  final colors = resolvedTheme.normalColorScheme ?? const FieldColorScheme();
 
+  return FieldBuilderContext(
+    controller: controller,
+    field: field,
+    theme: resolvedTheme,
+    state: FieldState.normal,
+    colors: colors,
+  );
+}
 
 void main() {
   group('AutocompleteWrapper Integration Tests', () {
@@ -174,7 +189,7 @@ void main() {
 
       controller.addFields([textField]);
 
-      final theme = const FormTheme(colorScheme: colorScheme);
+      final theme = const FormTheme(normalColorScheme: colorScheme);
       final testContext = createTestContext(
         controller: controller,
         field: textField,
@@ -275,15 +290,15 @@ void main() {
 
       // Type rapidly (should debounce)
       final textController = testContext.getTextController();
-      testContext.getTextController().text = 'a';
+      textController.text = 'a';
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 10));
 
-      testContext.getTextController().text = 'ab';
+      textController.text = 'ab';
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 10));
 
-      testContext.getTextController().text = 'abc';
+      textController.text = 'abc';
       await tester.pump();
 
       // Wait for debounce to complete
@@ -301,7 +316,7 @@ void main() {
     testWidgets('Overlay shows only dropdown type autocomplete',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
+      final focusNode = FocusNode();
       final textController = TextEditingController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.none, // Non-dropdown type
@@ -309,20 +324,18 @@ void main() {
           CompleteOption(value: 'Should Not Show', title: 'Should Not Show'),
         ],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
@@ -347,7 +360,7 @@ void main() {
     testWidgets('Empty text clears overlay options',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
+      final focusNode = FocusNode();
       final textController = TextEditingController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
@@ -355,20 +368,18 @@ void main() {
           CompleteOption(value: 'Test', title: 'Test'),
         ],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
@@ -400,7 +411,7 @@ void main() {
     testWidgets('Accessibility: Semantics widgets are present',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
+      final focusNode = FocusNode();
       final textController = TextEditingController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
@@ -409,20 +420,18 @@ void main() {
           CompleteOption(value: 'Option 2', title: 'Option 2'),
         ],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
@@ -446,7 +455,7 @@ void main() {
     testWidgets('CompositedTransformFollower maintains overlay connection',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
+      final focusNode = FocusNode();
       final textController = TextEditingController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
@@ -454,20 +463,18 @@ void main() {
           CompleteOption(value: 'Test', title: 'Test'),
         ],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),

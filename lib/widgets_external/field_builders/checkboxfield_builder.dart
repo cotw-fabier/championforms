@@ -1,5 +1,4 @@
-import 'package:championforms/controllers/form_controller.dart';
-import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/field_types/optionselect.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_internal/field_widgets/multiselect_widget.dart';
@@ -7,16 +6,12 @@ import 'package:flutter/material.dart';
 
 /// Checkbox field builder for OptionSelect fields.
 ///
-/// Updated in v0.5.4 to remove updateFocus parameter.
-/// Focus management is now handled automatically by StatefulFieldWidget.
-Widget checkboxFieldBuilder(
-  BuildContext context,
-  FormController controller,
-  OptionSelect field,
-  FieldColorScheme currentColors,
-  // updateSelectedOption is no longer directly needed here as we use toggleMultiSelectValue
-  Function(FieldOption? selectedOption) updateSelectedOption,
-) {
+/// Updated in v0.6.0+ to use FieldBuilderContext signature.
+/// The context provides access to controller, field, theme, colors, and convenience methods.
+Widget checkboxFieldBuilder(FieldBuilderContext ctx) {
+  final field = ctx.field as OptionSelect;
+  final currentColors = ctx.colors;
+  final controller = ctx.controller;
   // Listen to the controller to rebuild when the value changes
   // Use ListenableBuilder or Selector for more targeted rebuilds if needed,
   // but here we rely on the parent FormBuilder rebuilding.

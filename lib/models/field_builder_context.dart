@@ -4,6 +4,7 @@ import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/themes.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
+import 'package:championforms/models/multiselect_option.dart';
 import 'package:flutter/widgets.dart';
 
 /// Context object that bundles all parameters needed by custom field builders.
@@ -309,6 +310,303 @@ class FieldBuilderContext {
   /// - [FormController.clearErrors] for the underlying implementation
   void clearErrors() {
     controller.clearErrors(field.id);
+  }
+
+  // ===========================================================================
+  // CONVENIENCE METHODS: Multiselect & Option Select Management
+  // ===========================================================================
+
+  /// Toggles a field option on or off for multiselect/option select fields.
+  ///
+  /// If the option is currently selected, it will be deselected.
+  /// If the option is not selected, it will be selected.
+  ///
+  /// For single-select fields ([OptionSelect] with `multiselect: false`),
+  /// selecting a new option will deselect the currently selected option
+  /// (radio button behavior).
+  ///
+  /// **Parameters:**
+  /// - [option]: The option to toggle
+  ///
+  /// **Example:**
+  /// ```dart
+  /// // Toggle a skill option
+  /// context.toggleValue(FieldOption(value: 'dart', label: 'Dart'));
+  ///
+  /// // Use in checkbox callback
+  /// onChanged: (value) {
+  ///   context.toggleValue(option);
+  /// }
+  /// ```
+  ///
+  /// See also:
+  /// - [selectOption] to ensure an option is selected
+  /// - [deselectOption] to ensure an option is deselected
+  /// - [isOptionSelected] to check if option is selected
+  void toggleValue(FieldOption option) {
+    final currentlySelected = getValue<List<FieldOption>>() ?? [];
+    final isSelected = currentlySelected.any((o) => o.value == option.value);
+
+    controller.toggleMultiSelectValue(
+      field.id,
+      toggleOn: isSelected ? [] : [option.value],
+      toggleOff: isSelected ? [option.value] : [],
+    );
+  }
+
+  /// Ensures an option is selected for multiselect/option select fields.
+  ///
+  /// If the option is already selected, no change occurs. If not selected,
+  /// it will be added to the current selections.
+  ///
+  /// For single-select fields, this will replace the current selection.
+  ///
+  /// **Parameters:**
+  /// - [option]: The option to select
+  ///
+  /// **Example:**
+  /// ```dart
+  /// // Programmatically select an option
+  /// context.selectOption(FieldOption(value: 'flutter', label: 'Flutter'));
+  ///
+  /// // Select default option on initialization
+  /// if (shouldSelectDefault) {
+  ///   context.selectOption(defaultOption);
+  /// }
+  /// ```
+  ///
+  /// See also:
+  /// - [deselectOption] to remove a selection
+  /// - [selectOptions] to select multiple options at once
+  void selectOption(FieldOption option) {
+    controller.toggleMultiSelectValue(
+      field.id,
+      toggleOn: [option.value],
+    );
+  }
+
+  /// Ensures an option is deselected for multiselect/option select fields.
+  ///
+  /// If the option is currently selected, it will be removed from the
+  /// selections. If not selected, no change occurs.
+  ///
+  /// **Parameters:**
+  /// - [option]: The option to deselect
+  ///
+  /// **Example:**
+  /// ```dart
+  /// // Programmatically deselect an option
+  /// context.deselectOption(FieldOption(value: 'java', label: 'Java'));
+  ///
+  /// // Deselect option based on condition
+  /// if (shouldRemove) {
+  ///   context.deselectOption(option);
+  /// }
+  /// ```
+  ///
+  /// See also:
+  /// - [selectOption] to add a selection
+  /// - [clearSelections] to remove all selections
+  void deselectOption(FieldOption option) {
+    controller.toggleMultiSelectValue(
+      field.id,
+      toggleOff: [option.value],
+    );
+  }
+
+  /// Selects multiple options at once for multiselect fields.
+  ///
+  /// Adds all provided options to the current selections. For single-select
+  /// fields, only the first option will be selected.
+  ///
+  /// **Parameters:**
+  /// - [options]: The list of options to select
+  ///
+  /// **Example:**
+  /// ```dart
+  /// // Select multiple skills
+  /// context.selectOptions([
+  ///   FieldOption(value: 'dart', label: 'Dart'),
+  ///   FieldOption(value: 'flutter', label: 'Flutter'),
+  ///   FieldOption(value: 'firebase', label: 'Firebase'),
+  /// ]);
+  ///
+  /// // Programmatically select from filtered list
+  /// final recommendedSkills = allSkills.where((s) => s.recommended).toList();
+  /// context.selectOptions(recommendedSkills);
+  /// ```
+  ///
+  /// See also:
+  /// - [selectOption] to select a single option
+  /// - [setSelectedOptions] to replace all selections
+  void selectOptions(List<FieldOption> options) {
+    controller.toggleMultiSelectValue(
+      field.id,
+      toggleOn: options.map((o) => o.value).toList(),
+    );
+  }
+
+  /// Deselects multiple options at once for multiselect fields.
+  ///
+  /// Removes all provided options from the current selections.
+  ///
+  /// **Parameters:**
+  /// - [options]: The list of options to deselect
+  ///
+  /// **Example:**
+  /// ```dart
+  /// // Deselect multiple options
+  /// context.deselectOptions([
+  ///   FieldOption(value: 'java', label: 'Java'),
+  ///   FieldOption(value: 'kotlin', label: 'Kotlin'),
+  /// ]);
+  ///
+  /// // Deselect all outdated options
+  /// final outdatedOptions = current.where((o) => o.deprecated).toList();
+  /// context.deselectOptions(outdatedOptions);
+  /// ```
+  ///
+  /// See also:
+  /// - [deselectOption] to deselect a single option
+  /// - [clearSelections] to remove all selections
+  void deselectOptions(List<FieldOption> options) {
+    controller.toggleMultiSelectValue(
+      field.id,
+      toggleOff: options.map((o) => o.value).toList(),
+    );
+  }
+
+  /// Replaces all current selections with the provided options.
+  ///
+  /// Overwrites the current value with the specified list of options.
+  /// For single-select fields, only the first option will be kept.
+  ///
+  /// **Parameters:**
+  /// - [options]: The new list of selected options
+  /// - [overwrite]: If true, replaces all selections. Defaults to true.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// // Set specific selections
+  /// context.setSelectedOptions([
+  ///   FieldOption(value: 'dart', label: 'Dart'),
+  ///   FieldOption(value: 'flutter', label: 'Flutter'),
+  /// ]);
+  ///
+  /// // Replace with user's saved preferences
+  /// context.setSelectedOptions(userPreferences);
+  ///
+  /// // Clear by passing empty list
+  /// context.setSelectedOptions([]);
+  /// ```
+  ///
+  /// See also:
+  /// - [selectOptions] to add to current selections
+  /// - [clearSelections] to remove all selections
+  /// - [FormController.updateMultiselectValues] for the underlying implementation
+  void setSelectedOptions(
+    List<FieldOption> options, {
+    bool overwrite = true,
+  }) {
+    controller.updateMultiselectValues(
+      field.id,
+      options,
+      overwrite: overwrite,
+    );
+  }
+
+  /// Gets the currently selected options for multiselect/option select fields.
+  ///
+  /// Returns the list of [FieldOption] objects currently selected for this
+  /// field. Returns null if the field hasn't been interacted with. Returns
+  /// an empty list if the field has been set but has no options selected.
+  ///
+  /// **Returns:**
+  /// List of selected options, empty list if none selected, or null if field
+  /// has no value set.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// // Get selected options
+  /// final selected = context.getSelectedOptions();
+  /// if (selected != null && selected.isNotEmpty) {
+  ///   print('Selected: ${selected.map((o) => o.label).join(", ")}');
+  /// }
+  ///
+  /// // Check selection count
+  /// final count = context.getSelectedOptions()?.length ?? 0;
+  /// if (count > 3) {
+  ///   context.addError('Please select at most 3 options');
+  /// }
+  /// ```
+  ///
+  /// See also:
+  /// - [isOptionSelected] to check if a specific option is selected
+  /// - [getValue] for generic value access
+  List<FieldOption>? getSelectedOptions() {
+    return getValue<List<FieldOption>>();
+  }
+
+  /// Checks if a specific option value is currently selected.
+  ///
+  /// **Parameters:**
+  /// - [value]: The value of the option to check
+  ///
+  /// **Returns:**
+  /// True if the option is selected, false otherwise.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// // Conditional rendering based on selection
+  /// if (context.isOptionSelected('premium')) {
+  ///   // Show premium features
+  /// }
+  ///
+  /// // Disable dependent options
+  /// final disableAdvanced = !context.isOptionSelected('basic');
+  ///
+  /// // Custom validation
+  /// if (context.isOptionSelected('other')) {
+  ///   // Require additional field
+  /// }
+  /// ```
+  ///
+  /// See also:
+  /// - [getSelectedOptions] to get all selected options
+  /// - [toggleValue] to toggle an option's selection
+  bool isOptionSelected(String value) {
+    final selected = getValue<List<FieldOption>>();
+    if (selected == null) return false;
+    return selected.any((option) => option.value == value);
+  }
+
+  /// Clears all selected options for multiselect/option select fields.
+  ///
+  /// Removes all selections by setting the field's value to an empty list.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// // Reset selections
+  /// context.clearSelections();
+  ///
+  /// // Clear on reset button
+  /// onPressed: () {
+  ///   context.clearSelections();
+  ///   context.clearErrors();
+  /// }
+  ///
+  /// // Conditional clear
+  /// if (shouldReset) {
+  ///   context.clearSelections();
+  /// }
+  /// ```
+  ///
+  /// See also:
+  /// - [setSelectedOptions] to replace with specific options
+  /// - [deselectOptions] to remove specific options
+  /// - [FormController.removeMultiSelectOptions] for the underlying implementation
+  void clearSelections() {
+    controller.removeMultiSelectOptions(field.id);
   }
 
   // ===========================================================================

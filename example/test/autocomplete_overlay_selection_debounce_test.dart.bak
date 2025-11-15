@@ -9,16 +9,31 @@ import 'package:championforms/championforms.dart' as form;
 import 'package:championforms/championforms_themes.dart';
 import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/fieldstate.dart';
-import '../../test/test_helpers.dart';
 
+/// Helper to create FieldBuilderContext for tests
+FieldBuilderContext createTestContext({
+  required form.FormController controller,
+  required form.Field field,
+  FormTheme? theme,
+}) {
+  final resolvedTheme = theme ?? const FormTheme();
+  final colors = resolvedTheme.normalColorScheme ?? const FieldColorScheme();
 
+  return FieldBuilderContext(
+    controller: controller,
+    field: field,
+    theme: resolvedTheme,
+    state: FieldState.normal,
+    colors: colors,
+  );
+}
 
 void main() {
   group('AutocompleteWrapper Selection and Debounce Tests', () {
     testWidgets('Default selection callback updates TextEditingController',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
+      final focusNode = FocusNode();
       final textController = TextEditingController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
@@ -28,20 +43,18 @@ void main() {
           CompleteOption(value: 'Cherry', title: 'Cherry'),
         ],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
@@ -51,7 +64,7 @@ void main() {
       await tester.tap(find.byType(TextField));
       await tester.pump();
 
-      ctx.getTextController().text = 'a';
+      textController.text = 'a';
       await tester.pump(); // Trigger controller listener
       await tester.pump(); // Allow postFrameCallback to run
       await tester.pump(); // Build overlay
@@ -63,7 +76,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert - Controller should be updated with selected value
-      expect(ctx.getTextController().text, equals('Apple'));
+      expect(textController.text, equals('Apple'));
 
       // Cleanup
       controller.dispose();
@@ -73,7 +86,8 @@ void main() {
     testWidgets('Custom onOptionSelected callback overrides default behavior',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
       CompleteOption? selectedOption;
 
       final autoComplete = AutoCompleteBuilder(
@@ -84,20 +98,17 @@ void main() {
         ],
       );
 
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
-
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
               onOptionSelected: (option) {
                 selectedOption = option;
               },
@@ -110,7 +121,7 @@ void main() {
       await tester.tap(find.byType(TextField));
       await tester.pump();
 
-      ctx.getTextController().text = 'a';
+      textController.text = 'a';
       await tester.pump(); // Trigger controller listener
       await tester.pump(); // Allow postFrameCallback to run
       await tester.pump(); // Build overlay
@@ -124,7 +135,7 @@ void main() {
       expect(selectedOption!.value, equals('Apple'));
 
       // Controller should NOT be updated (custom callback overrides default)
-      expect(ctx.getTextController().text, equals('a'));
+      expect(textController.text, equals('a'));
 
       // Cleanup
       controller.dispose();
@@ -134,7 +145,7 @@ void main() {
     testWidgets('Overlay dismisses after selection',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
+      final focusNode = FocusNode();
       final textController = TextEditingController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
@@ -143,20 +154,18 @@ void main() {
           CompleteOption(value: 'Banana', title: 'Banana'),
         ],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
@@ -166,7 +175,7 @@ void main() {
       await tester.tap(find.byType(TextField));
       await tester.pump();
 
-      ctx.getTextController().text = 'a';
+      textController.text = 'a';
       await tester.pump(); // Trigger controller listener
       await tester.pump(); // Allow postFrameCallback to run
       await tester.pump(); // Build overlay
@@ -193,7 +202,8 @@ void main() {
     testWidgets('Option callback is invoked when provided',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
       var callbackInvoked = false;
 
       final autoComplete = AutoCompleteBuilder(
@@ -209,20 +219,17 @@ void main() {
         ],
       );
 
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
-
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
@@ -232,7 +239,7 @@ void main() {
       await tester.tap(find.byType(TextField));
       await tester.pump();
 
-      ctx.getTextController().text = 'a';
+      textController.text = 'a';
       await tester.pump(); // Trigger controller listener
       await tester.pump(); // Allow postFrameCallback to run
       await tester.pump(); // Build overlay
@@ -252,7 +259,7 @@ void main() {
     testWidgets('Focus returns to field after selection',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
+      final focusNode = FocusNode();
       final textController = TextEditingController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
@@ -260,20 +267,18 @@ void main() {
           CompleteOption(value: 'Apple', title: 'Apple'),
         ],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
@@ -283,7 +288,7 @@ void main() {
       await tester.tap(find.byType(TextField));
       await tester.pump();
 
-      ctx.getTextController().text = 'a';
+      textController.text = 'a';
       await tester.pump(); // Trigger controller listener
       await tester.pump(); // Allow postFrameCallback to run
       await tester.pump(); // Build overlay
@@ -293,7 +298,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert - Focus should return to field
-      expect(ctx.getFocusNode().hasFocus, isTrue);
+      expect(focusNode.hasFocus, isTrue);
 
       // Cleanup
       controller.dispose();
@@ -303,7 +308,7 @@ void main() {
     testWidgets('Cursor positioned at end after selection',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
+      final focusNode = FocusNode();
       final textController = TextEditingController();
       final autoComplete = AutoCompleteBuilder(
         type: AutoCompleteType.dropdown,
@@ -311,20 +316,18 @@ void main() {
           CompleteOption(value: 'Apple Fruit', title: 'Apple Fruit'),
         ],
       );
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
@@ -334,7 +337,7 @@ void main() {
       await tester.tap(find.byType(TextField));
       await tester.pump();
 
-      ctx.getTextController().text = 'a';
+      textController.text = 'a';
       await tester.pump(); // Trigger controller listener
       await tester.pump(); // Allow postFrameCallback to run
       await tester.pump(); // Build overlay
@@ -344,10 +347,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert - Cursor should be at end of text
-      expect(ctx.getTextController().selection.baseOffset,
-          equals(ctx.getTextController().text.length));
-      expect(ctx.getTextController().selection.extentOffset,
-          equals(ctx.getTextController().text.length));
+      expect(textController.selection.baseOffset,
+          equals(textController.text.length));
+      expect(textController.selection.extentOffset,
+          equals(textController.text.length));
 
       // Cleanup
       controller.dispose();
@@ -357,7 +360,8 @@ void main() {
     testWidgets('Debounce timing works with updateOptions callback',
         (WidgetTester tester) async {
       // Arrange
-      final controller = form.FormController();
+      final focusNode = FocusNode();
+      final textController = TextEditingController();
       var updateOptionsCallCount = 0;
 
       final autoComplete = AutoCompleteBuilder(
@@ -374,20 +378,17 @@ void main() {
         },
       );
 
-      final field = form.TextField(id: 'test', autoComplete: autoComplete);
-      controller.addFields([field]);
-      final ctx = createTestContext(controller: controller, field: field);
-
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AutocompleteWrapper(
               child: TextField(
-                controller: ctx.getTextController(),
-                focusNode: ctx.getFocusNode(),
+                controller: textController,
+                focusNode: focusNode,
               ),
               autoComplete: autoComplete,
-              context: ctx,
+              focusNode: focusNode,
+              textEditingController: textController,
             ),
           ),
         ),
@@ -398,7 +399,7 @@ void main() {
       await tester.pump();
 
       // Type first character - should use debounceWait (50ms)
-      ctx.getTextController().text = 'a';
+      textController.text = 'a';
       await tester.pump();
 
       // Wait for first debounce to complete
@@ -409,7 +410,7 @@ void main() {
       expect(updateOptionsCallCount, equals(1));
 
       // Type second character - should use debounceDuration (200ms)
-      ctx.getTextController().text = 'ab';
+      textController.text = 'ab';
       await tester.pump();
 
       // Wait shorter than debounce duration
