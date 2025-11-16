@@ -23,6 +23,7 @@ Complete API documentation for the `FieldBuilderContext` class introduced in Cha
    - [Error Management](#error-management)
    - [Focus Management](#focus-management)
    - [Resource Management](#resource-management)
+   - [OptionSelect-Specific Methods](#optionselect-specific-methods)
 4. [Usage Patterns](#usage-patterns)
 5. [Best Practices](#best-practices)
 6. [Advanced Use Cases](#advanced-use-cases)
@@ -477,6 +478,24 @@ return TextField(
 );
 ```
 
+**Value Synchronization Pattern:**
+
+When fields can be updated programmatically (via `controller.updateTextFieldValue()` or `setValue()`), ensure the TextEditingController stays synchronized:
+
+```dart
+final textController = ctx.getTextController();
+final value = ctx.getValue<String>() ?? '';
+
+// Ensure controller has current value (prevents stale values)
+if (textController.text != value) {
+  textController.text = value;
+}
+
+return TextField(controller: textController);
+```
+
+**Why This Matters:** Without synchronization, external updates (e.g., programmatic field updates, form resets) won't reflect in the TextField until the user types. This pattern ensures the visual state matches the controller state.
+
 **Performance Note:** Only allocated when actually needed - don't call unless you need text editing.
 
 **See Also:** [getFocusNode](#getfocusnode)
@@ -520,6 +539,110 @@ return TextField(
 **Performance Note:** Only allocated when actually needed - don't call unless you need focus management.
 
 **See Also:** [getTextController](#gettextcontroller), [hasFocus](#hasfocus)
+
+---
+
+### OptionSelect-Specific Methods
+
+When working with `OptionSelect` fields (checkboxes, switches, chip selects, radio buttons), the context provides additional helper methods for managing selected options.
+
+#### isOptionSelected()
+```dart
+bool isOptionSelected(String optionValue)
+```
+
+**Description:** Checks if a specific option is currently selected in a multiselect field.
+
+**Parameters:**
+- `optionValue` - The value of the option to check (matches `FieldOption.value`)
+
+**Returns:** `true` if the option is selected, `false` otherwise.
+
+**Use Case:** Determining visual state for checkboxes, switches, and chip selects.
+
+**Example:**
+```dart
+class SwitchFieldWidget extends form.StatefulFieldWidget<form.OptionSelect> {
+  const SwitchFieldWidget({required super.context});
+
+  @override
+  Widget buildWithTheme(BuildContext buildContext, FormTheme theme, form.FieldBuilderContext ctx) {
+    final field = ctx.field as form.OptionSelect;
+    final option = field.options.first;
+
+    return Switch(
+      value: ctx.isOptionSelected(option.value),
+      onChanged: (bool value) {
+        ctx.toggleValue(option);
+      },
+    );
+  }
+}
+```
+
+**Implementation Detail:** This method queries the current field value (which is a `List<FieldOption>` for multiselect fields) and checks if any option has a matching `value` property.
+
+---
+
+#### toggleValue()
+```dart
+void toggleValue(FieldOption option)
+```
+
+**Description:** Toggles the selection state of an option in a multiselect field.
+
+**Parameters:**
+- `option` - The `FieldOption` to toggle
+
+**Behavior:**
+- If option is selected: Removes it from the selection
+- If option is not selected: Adds it to the selection
+- Triggers onChange callback
+- Notifies controller listeners
+- Validates field if `validateLive` is enabled
+
+**Use Case:** Handling user interactions with checkboxes, switches, and chip selects.
+
+**Example:**
+```dart
+class CheckboxFieldWidget extends form.StatefulFieldWidget<form.OptionSelect> {
+  const CheckboxFieldWidget({required super.context});
+
+  @override
+  Widget buildWithTheme(BuildContext buildContext, FormTheme theme, form.FieldBuilderContext ctx) {
+    final field = ctx.field as form.OptionSelect;
+
+    return Column(
+      children: field.options.map((option) {
+        return CheckboxListTile(
+          title: Text(option.label),
+          value: ctx.isOptionSelected(option.value),
+          onChanged: (bool? checked) {
+            ctx.toggleValue(option);
+          },
+        );
+      }).toList(),
+    );
+  }
+}
+```
+
+**Alternative Pattern:** For more control, you can manually manage the selected options list:
+
+```dart
+// Get current selections
+final selectedOptions = ctx.getValue<List<form.FieldOption>>() ?? [];
+
+// Add option
+final updated = [...selectedOptions, newOption];
+ctx.setValue(updated);
+
+// Remove option
+final updated = selectedOptions.where((o) => o.value != optionToRemove.value).toList();
+ctx.setValue(updated);
+```
+
+**See Also:** [isOptionSelected](#isoptionselected), [setValue](#setvaluet)
 
 ---
 

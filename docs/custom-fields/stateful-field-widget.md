@@ -23,6 +23,7 @@ Complete guide to building custom fields with the `StatefulFieldWidget` base cla
 5. [Advanced Patterns](#advanced-patterns)
 6. [Best Practices](#best-practices)
 7. [Performance Tips](#performance-tips)
+8. [When NOT to Use StatefulFieldWidget](#when-not-to-use-statefulfieldwidget)
 
 ---
 
@@ -660,6 +661,234 @@ It does NOT rebuild when:
 - Unrelated controller state changes
 
 This is handled automatically - no configuration needed!
+
+---
+
+## When NOT to Use StatefulFieldWidget
+
+While `StatefulFieldWidget` is recommended for most custom fields, there are scenarios where using a standard `StatefulWidget` is more appropriate.
+
+### Scenario: Integrating Third-Party Widget Controllers
+
+When integrating third-party widgets that manage their own state via custom controllers (e.g., shadcn_ui's `ChipEditingController`, rich text editors, code editors), you may need manual control over listener lifecycle.
+
+**Problem with StatefulFieldWidget:**
+- StatefulFieldWidget automatically manages FormController listeners
+- Third-party widget controllers need their own listener setup
+- You need to synchronize between two different controller systems
+- Listener lifecycle may conflict with the third-party widget's lifecycle
+
+**Solution: Use StatefulWidget directly**
+
+### Example: Chip Input Field with Third-Party Controller
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:shadcn_ui/shadcn_ui.dart' as shadcn;
+import 'package:championforms/championforms.dart' as form;
+
+class ChipInputField extends form.Field {
+  final String? placeholder;
+  final bool allowDuplicates;
+
+  ChipInputField({
+    required super.id,
+    super.title,
+    super.validators,
+    this.placeholder,
+    this.allowDuplicates = false,
+  });
+}
+
+/// Widget using StatefulWidget (NOT StatefulFieldWidget)
+class ChipInputWidget extends StatefulWidget {
+  final form.FieldBuilderContext context;
+
+  const ChipInputWidget({required this.context, super.key});
+
+  @override
+  State<ChipInputWidget> createState() => _ChipInputWidgetState();
+}
+
+class _ChipInputWidgetState extends State<ChipInputWidget> {
+  late shadcn.ChipEditingController _chipController;
+  late form.FieldBuilderContext ctx;
+
+  @override
+  void initState() {
+    super.initState();
+    ctx = widget.context;
+
+    // Initialize third-party controller
+    final currentValue = ctx.getValue<List<form.FieldOption>>() ?? [];
+    _chipController = shadcn.ChipEditingController(
+      chips: currentValue.map((opt) => shadcn.ChipData(opt.value)).toList(),
+    );
+
+    // Manually add listener to third-party controller
+    _chipController.addListener(_onChipControllerChanged);
+
+    // Manually add listener to form controller
+    ctx.controller.addListener(_onFormControllerChanged);
+  }
+
+  @override
+  void dispose() {
+    // Manually remove listeners
+    _chipController.removeListener(_onChipControllerChanged);
+    ctx.controller.removeListener(_onFormControllerChanged);
+
+    // Dispose third-party controller
+    _chipController.dispose();
+
+    super.dispose();
+  }
+
+  /// Called when chips change via UI
+  void _onChipControllerChanged() {
+    // Sync from chip controller to form controller
+    final chips = _chipController.chips;
+    final options = chips.map((chip) {
+      return form.FieldOption(value: chip.value, label: chip.value);
+    }).toList();
+
+    // Update form state (silent to avoid circular updates)
+    ctx.setValue(options, noNotify: true);
+
+    // Trigger onChange callback
+    if (ctx.field.onChange != null) {
+      final results = form.FormResults.getResults(controller: ctx.controller);
+      ctx.field.onChange!(results);
+    }
+  }
+
+  /// Called when form value changes externally
+  void _onFormControllerChanged() {
+    final newValue = ctx.getValue<List<form.FieldOption>>() ?? [];
+    final currentChips = _chipController.chips.map((c) => c.value).toList();
+    final newChips = newValue.map((o) => o.value).toList();
+
+    // Only update if values actually changed (prevent circular updates)
+    if (!_listsEqual(currentChips, newChips)) {
+      _chipController.chips = newValue
+          .map((opt) => shadcn.ChipData(opt.value))
+          .toList();
+    }
+  }
+
+  bool _listsEqual(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final field = ctx.field as ChipInputField;
+    final theme = ctx.theme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (field.title != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(field.title!, style: theme.titleTextStyle),
+          ),
+        shadcn.ChipInput(
+          controller: _chipController,
+          placeholder: field.placeholder,
+          allowDuplicates: field.allowDuplicates,
+        ),
+      ],
+    );
+  }
+}
+```
+
+### When to Choose StatefulWidget Over StatefulFieldWidget
+
+Use `StatefulWidget` when:
+
+✅ **Integrating third-party widget controllers** - Custom controllers need manual listener management
+✅ **Complex multi-controller synchronization** - Multiple controllers need careful coordination
+✅ **Custom rebuild optimization** - You need fine-grained control over when widgets rebuild
+✅ **Non-standard state management** - Using riverpod, bloc, or other state management that conflicts with StatefulFieldWidget
+
+Use `StatefulFieldWidget` when:
+
+✅ **Standard form field behavior** - Simple value input/output
+✅ **Built-in widgets** - TextField, Checkbox, Switch, etc.
+✅ **Simple custom widgets** - Star rating, slider, color picker
+✅ **No external controllers** - All state managed by FormController
+
+### Decision Tree
+
+```
+Need to integrate a third-party widget with its own controller?
+├─ YES → Use StatefulWidget
+│        - Manually manage listeners
+│        - Manually sync between controllers
+│        - Full control over lifecycle
+│
+└─ NO → Use StatefulFieldWidget
+         - Automatic listener management
+         - Automatic value/focus detection
+         - Minimal boilerplate
+```
+
+### Key Differences
+
+| Aspect | StatefulFieldWidget | StatefulWidget |
+|--------|---------------------|----------------|
+| Listener Setup | Automatic | Manual |
+| Listener Cleanup | Automatic | Manual |
+| Value Change Detection | Automatic | Manual |
+| Focus Change Detection | Automatic | Manual |
+| Third-Party Controllers | ❌ Conflicts | ✅ Full control |
+| Boilerplate | ~30-50 lines | ~80-120 lines |
+| Use Case | Standard fields | Complex integrations |
+
+### Best Practices for StatefulWidget Custom Fields
+
+When you must use `StatefulWidget`:
+
+1. **Always remove listeners in dispose()**
+   ```dart
+   @override
+   void dispose() {
+     _thirdPartyController.removeListener(_listener);
+     ctx.controller.removeListener(_listener);
+     _thirdPartyController.dispose();
+     super.dispose();
+   }
+   ```
+
+2. **Prevent circular updates with noNotify**
+   ```dart
+   void _onThirdPartyChange() {
+     ctx.setValue(newValue, noNotify: true);  // ← Important!
+   }
+   ```
+
+3. **Check for actual changes before updating**
+   ```dart
+   void _onFormChange() {
+     if (formValue != thirdPartyValue) {
+       _thirdPartyController.value = formValue;
+     }
+   }
+   ```
+
+4. **Document why StatefulWidget is necessary**
+   ```dart
+   /// Uses StatefulWidget instead of StatefulFieldWidget because
+   /// we need to integrate shadcn_ui's ChipEditingController which
+   /// requires manual listener management.
+   class ChipInputWidget extends StatefulWidget { ... }
+   ```
 
 ---
 

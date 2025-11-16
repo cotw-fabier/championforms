@@ -11,6 +11,8 @@ This cookbook provides practical examples for creating custom form fields in Cha
 5. [Example 4: Date/Time Picker Field](#example-4-datetime-picker-field)
 6. [Example 5: Signature Pad Field](#example-5-signature-pad-field)
 7. [Example 6: File Upload with Preview Enhancement](#example-6-file-upload-with-preview-enhancement)
+8. [Example 7: Working with Complex Value Types](#example-7-working-with-complex-value-types)
+9. [Pattern: Central Registry for Custom Field Libraries](#pattern-central-registry-for-custom-field-libraries)
 
 ---
 
@@ -1517,6 +1519,287 @@ for (var doc in documents) {
 
 ---
 
+## Example 7: Working with Complex Value Types
+
+When building custom fields that work with complex data types (DateTime, custom objects, enums), you need a strategy for storing and retrieving these values. The `FieldOption.additionalData` pattern solves this elegantly.
+
+### Use Case
+- Store complex types (DateTime, enums, custom objects)
+- Maintain string serialization for persistence
+- Provide type-safe access to original values
+- Support converters that return complex types
+
+### The Pattern
+
+**Problem:** Forms typically store string values, but your custom field needs to work with complex types like DateTime, enums, or custom objects.
+
+**Solution:** Use `FieldOption` to store both a string representation (for serialization) and the original complex value (in `additionalData`).
+
+```dart
+form.FieldOption(
+  value: "2024-11-15",              // String for serialization/storage
+  label: "November 15, 2024",       // User-friendly display
+  additionalData: DateTime(...),    // Original complex type
+)
+```
+
+### Example: Star Rating Field
+
+```dart
+/// Create FieldOption from rating value
+static form.FieldOption fromRating(double rating) {
+  final label = _getRatingLabel(rating);
+  return form.FieldOption(
+    value: rating.toString(),           // String for storage
+    label: '$rating - $label',          // Display text
+    additionalData: rating,             // Original double value
+  );
+}
+
+/// Extract rating from FieldOption.additionalData
+static double extractRating(form.FieldResultAccessor accessor) {
+  final value = accessor.value;
+
+  if (value is List<form.FieldOption> && value.isNotEmpty) {
+    final option = value.first;
+
+    // Extract from additionalData (preferred)
+    if (option.additionalData is double) {
+      return option.additionalData as double;
+    }
+
+    // Fallback: parse from value string
+    return double.tryParse(option.value) ?? 0.0;
+  }
+
+  return 0.0;
+}
+```
+
+### Pattern: DateTime Storage
+
+The same pattern works brilliantly for date/time pickers:
+
+```dart
+/// Create FieldOption from DateTime
+static form.FieldOption fromDateTime(DateTime date) {
+  return form.FieldOption(
+    value: date.toIso8601String(),                    // ISO string for serialization
+    label: DateFormat('MMM dd, yyyy').format(date),   // "Nov 15, 2024"
+    additionalData: date,                             // Original DateTime object
+  );
+}
+
+/// Extract DateTime from FieldOption
+static DateTime? extractDateTime(form.FieldResultAccessor accessor) {
+  final value = accessor.value;
+
+  if (value is List<form.FieldOption> && value.isNotEmpty) {
+    final option = value.first;
+
+    // Prefer additionalData
+    if (option.additionalData is DateTime) {
+      return option.additionalData as DateTime;
+    }
+
+    // Fallback: parse ISO string
+    return DateTime.tryParse(option.value);
+  }
+
+  return null;
+}
+```
+
+### Pattern: Enum Storage
+
+For enum-based fields:
+
+```dart
+enum Priority { low, medium, high, critical }
+
+static form.FieldOption fromPriority(Priority priority) {
+  return form.FieldOption(
+    value: priority.name,                           // "low", "medium", etc.
+    label: _formatPriorityLabel(priority),          // "Low Priority", etc.
+    additionalData: priority,                       // Original enum value
+  );
+}
+
+static Priority? extractPriority(form.FieldResultAccessor accessor) {
+  final value = accessor.value;
+
+  if (value is List<form.FieldOption> && value.isNotEmpty) {
+    final option = value.first;
+
+    // Prefer additionalData
+    if (option.additionalData is Priority) {
+      return option.additionalData as Priority;
+    }
+
+    // Fallback: parse from string
+    return Priority.values.firstWhere(
+      (p) => p.name == option.value,
+      orElse: () => Priority.low,
+    );
+  }
+
+  return null;
+}
+```
+
+### Key Takeaways
+- Use `FieldOption.additionalData` to store complex types (DateTime, enums, custom objects)
+- Keep `FieldOption.value` as a string for serialization/persistence
+- Provide static helper methods (`fromX`, `extractX`) for easy usage
+- Implement converters that work with both additionalData and fallback parsing
+- This pattern enables type-safe access while maintaining string serialization
+
+---
+
+## Pattern: Central Registry for Custom Field Libraries
+
+When creating a library of custom fields (like championforms_shadcn_fields), use a central registry pattern to simplify initialization.
+
+### The Problem
+
+Without a central registry, users must register each field individually:
+
+```dart
+// ❌ Tedious for users
+FormFieldRegistry.register<TextInputField>('shadcn_text', ...);
+FormFieldRegistry.register<DatePickerField>('shadcn_date', ...);
+FormFieldRegistry.register<StarRatingField>('shadcn_rating', ...);
+// ... 20 more registrations
+```
+
+### The Solution
+
+Provide a single registration method:
+
+```dart
+// ✅ Simple one-liner
+ShadcnFieldRegistry.registerAll();
+```
+
+### Implementation
+
+**File:** `lib/registry.dart`
+
+```dart
+import 'package:championforms/championforms.dart' as form;
+import 'package:championforms/championforms_themes.dart';
+
+/// Central registry for all custom fields
+class MyFieldRegistry {
+  /// Register all custom fields with ChampionForms
+  ///
+  /// Call this once in main() before runApp():
+  /// ```dart
+  /// void main() {
+  ///   MyFieldRegistry.registerAll();
+  ///   runApp(MyApp());
+  /// }
+  /// ```
+  static void registerAll() {
+    FormFieldRegistry.register<TextInputField>(
+      'my_text_input',
+      (ctx) => TextInputWidget(context: ctx),
+      converters: TextInputFieldConverters(),
+    );
+
+    FormFieldRegistry.register<DatePickerField>(
+      'my_date_picker',
+      (ctx) => DatePickerWidget(context: ctx),
+      converters: DateTimeConverters(),
+    );
+
+    FormFieldRegistry.register<StarRatingField>(
+      'my_star_rating',
+      (ctx) => StarRatingWidget(context: ctx),
+      converters: StarRatingFieldConverters(),
+    );
+
+    // ... register all other custom fields
+  }
+
+  /// Unregister all fields (useful for testing)
+  static void unregisterAll() {
+    FormFieldRegistry.unregister<TextInputField>();
+    FormFieldRegistry.unregister<DatePickerField>();
+    FormFieldRegistry.unregister<StarRatingField>();
+    // ... unregister all fields
+  }
+}
+```
+
+### Library Export
+
+**File:** `lib/my_custom_fields.dart`
+
+```dart
+library my_custom_fields;
+
+// Export registry
+export 'registry.dart';
+
+// Export all custom field types
+export 'fields/text_input_field.dart';
+export 'fields/date_picker_field.dart';
+export 'fields/star_rating_field.dart';
+
+// Export converters
+export 'converters/date_time_converters.dart';
+export 'converters/star_rating_converters.dart';
+```
+
+### Usage by Consumers
+
+```dart
+import 'package:my_custom_fields/my_custom_fields.dart';
+
+void main() {
+  // One-line registration of all custom fields
+  MyFieldRegistry.registerAll();
+
+  runApp(MyApp());
+}
+```
+
+### Advanced: Conditional Registration
+
+Support conditional field registration for smaller bundle sizes:
+
+```dart
+class MyFieldRegistry {
+  /// Register only text-based fields
+  static void registerTextFields() {
+    FormFieldRegistry.register<TextInputField>(...);
+    FormFieldRegistry.register<TextAreaField>(...);
+  }
+
+  /// Register only selection fields
+  static void registerSelectionFields() {
+    FormFieldRegistry.register<SwitchField>(...);
+    FormFieldRegistry.register<CheckboxField>(...);
+  }
+
+  /// Register all fields (convenience)
+  static void registerAll() {
+    registerTextFields();
+    registerSelectionFields();
+  }
+}
+```
+
+### Key Takeaways
+- Provide a central registry class for custom field libraries
+- Export all fields and converters from a single library file
+- Support one-line registration via `registerAll()`
+- Consider conditional registration for advanced users
+- Provide `unregisterAll()` for testing scenarios
+
+---
+
 ## Best Practices
 
 ### 1. Choose the Right Approach
@@ -1537,6 +1820,27 @@ for (var doc in documents) {
 - Define how your custom data converts to string/list/bool
 - Register converters with FormFieldRegistry
 - Throw TypeError on invalid input for clear errors
+
+**Inline vs Separate Converter Classes:**
+- **Inline converters**: Simple 1:1 type conversions (asString, asInt, etc.)
+- **Separate converter class**: Complex data structures, helper methods needed, reusable across multiple fields
+- **Mixin vs Class**: Both work - use `mixin` for composition, plain `class` for simple implementations
+
+```dart
+// Simple field: Inline converters
+class TextInputField extends form.Field implements form.FieldConverters {
+  @override
+  String asString() => /* ... */;
+}
+
+// Complex field: Separate converter class
+class StarRatingConverters implements form.FieldConverters {
+  static double extractRating(...) { }
+  static form.FieldOption fromRating(...) { }
+  @override
+  String asString() => extractRating().toString();
+}
+```
 
 ### 5. Override Lifecycle Hooks When Needed
 - `onValueChanged`: For onChange callbacks, side effects
