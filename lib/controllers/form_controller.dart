@@ -442,6 +442,8 @@ class FormController extends ChangeNotifier {
       if (value == null) {
         final defaultValue = _fieldDefinitions[fieldId]?.defaultValue;
         if (defaultValue is T) {
+          // Persist to the controller.
+          updateFieldValue(fieldId, defaultValue, noNotify: true);
           return defaultValue;
         }
       }
