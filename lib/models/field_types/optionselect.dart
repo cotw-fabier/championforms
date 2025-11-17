@@ -24,6 +24,7 @@ class OptionSelect extends Field {
   final bool multiselect;
 
   // These are the default values for the field. Use the specific one you need depending on the input required.
+  @override
   final List<FieldOption> defaultValue;
 
   // match default value case sensitive?
@@ -123,7 +124,8 @@ class OptionSelect extends Field {
       hideField: hideField ?? this.hideField,
       requestFocus: requestFocus ?? this.requestFocus,
       defaultValue: defaultValue ?? this.defaultValue,
-      caseSensitiveDefaultValue: caseSensitiveDefaultValue ?? this.caseSensitiveDefaultValue,
+      caseSensitiveDefaultValue:
+          caseSensitiveDefaultValue ?? this.caseSensitiveDefaultValue,
       validators: validators ?? this.validators,
       validateLive: validateLive ?? this.validateLive,
       onSubmit: onSubmit ?? this.onSubmit,

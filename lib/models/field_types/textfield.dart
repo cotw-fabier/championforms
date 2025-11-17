@@ -56,6 +56,7 @@ class TextField extends Field {
   final bool password;
 
   // These are the default values for the field. Use the specific one you need depending on the input required.
+  @override
   final String? defaultValue;
 
   /// Text Input type. Defaults to normal input.

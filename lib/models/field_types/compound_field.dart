@@ -98,29 +98,18 @@ abstract class CompoundField extends Field with TextFieldConverters {
   final bool rollUpErrors;
 
   CompoundField({
-    required String id,
-    String? title,
-    String? description,
-    bool disabled = false,
-    bool hideField = false,
+    required super.id,
+    super.title,
+    super.description,
+    super.disabled,
+    super.hideField,
     this.rollUpErrors = false,
-    FormTheme? theme,
-    List<Validator>? validators,
-    bool validateLive = false,
-    Function(FormResults results)? onSubmit,
-    Function(FormResults results)? onChange,
-  }) : super(
-          id: id,
-          title: title,
-          description: description,
-          disabled: disabled,
-          hideField: hideField,
-          theme: theme,
-          validators: validators,
-          validateLive: validateLive,
-          onSubmit: onSubmit,
-          onChange: onChange,
-        );
+    super.theme,
+    super.validators,
+    super.validateLive,
+    super.onSubmit,
+    super.onChange,
+  });
 
   /// Builds and returns the list of sub-fields for this compound field.
   ///
