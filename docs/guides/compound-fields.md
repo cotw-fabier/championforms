@@ -307,7 +307,9 @@ Create your own reusable compound fields in three steps.
 
 ### Step 1: Create the CompoundField Class
 
-Extend `CompoundField` and implement the `buildSubFields()` method.
+Extend `CompoundField` and implement two required methods:
+1. `buildSubFields()` - Returns the list of sub-fields
+2. `copyWith()` - Enables proper field copying (required for all Field subclasses)
 
 **Example: Phone Number Field**
 ```dart
@@ -387,8 +389,52 @@ class PhoneField extends form.CompoundField {
 
     return fields;
   }
+
+  @override
+  PhoneField copyWith({
+    String? id,
+    bool? includeExtension,
+    String? title,
+    String? description,
+    List<form.Validator>? validators,
+    bool? disabled,
+    FormTheme? theme,
+    bool? hideField,
+    bool? rollUpErrors,
+    bool? validateLive,
+    Function(form.FormResults results)? onSubmit,
+    Function(form.FormResults results)? onChange,
+    Widget? icon,
+    Widget Function(
+      BuildContext context,
+      form.Field fieldDetails,
+      form.FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldLayout,
+    Widget Function(
+      BuildContext context,
+      form.Field fieldDetails,
+      form.FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldBackground,
+    bool? requestFocus,
+  }) {
+    return PhoneField(
+      id: id ?? this.id,
+      includeExtension: includeExtension ?? this.includeExtension,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      validators: validators ?? this.validators,
+      disabled: disabled ?? this.disabled,
+      theme: theme ?? this.theme,
+    );
+  }
 }
 ```
+
+> **Note:** The `copyWith` method is required for all CompoundField subclasses. It must include all properties from both the parent `CompoundField` class and your custom properties. This enables proper field copying and state propagation.
 
 ### Step 2: Register the Compound Field
 

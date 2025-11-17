@@ -128,6 +128,14 @@ All field types share common properties defined in `FieldBase`:
 - `defaultValue`
 - `validateLive` (validate on blur)
 - `onChange`/`onSubmit` callbacks
+- `copyWith` method (required for all Field subclasses)
+
+**IMPORTANT:** All custom field classes that extend `Field` or its subclasses (TextField, OptionSelect, FileUpload, etc.) **must** implement the `copyWith` method. This requirement was introduced to enable:
+- Proper field copying for compound fields (e.g., AddressField, NameField)
+- State propagation (themes, disabled state) from parent to child fields
+- Field cloning with modified properties
+
+The `copyWith` method must accept nullable parameters for ALL properties (both from the parent class and custom properties) and return a new instance with updated values using the `?? this.property` pattern. See [Custom Field Cookbook](docs/custom-fields/custom-field-cookbook.md#required-implementing-copywith-for-custom-field-classes) for implementation examples.
 
 #### 3. Validation System
 

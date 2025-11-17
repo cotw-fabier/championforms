@@ -287,6 +287,8 @@ class RatingFieldWidget extends form.StatefulFieldWidget {
 
 **That's it!** ~30 lines vs ~120 lines in the old API.
 
+> **Note:** If you create a custom field class that extends `form.Field` (not just `StatefulFieldWidget`), you **must** implement the `copyWith` method. This is required for proper field copying in compound fields and state propagation. See the [Custom Field Cookbook](docs/custom-fields/custom-field-cookbook.md#required-implementing-copywith-for-custom-field-classes) for details.
+
 For more examples, see the **[Custom Field Cookbook](docs/custom-fields/custom-field-cookbook.md)** with 6 complete, working examples:
 1. Phone number field with formatting
 2. Tag selector with autocomplete

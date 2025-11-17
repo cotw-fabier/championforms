@@ -5,14 +5,15 @@ This cookbook provides practical examples for creating custom form fields in Cha
 ## Table of Contents
 
 1. [Overview: File-Based vs Inline Builders](#overview-file-based-vs-inline-builders)
-2. [Example 1: Phone Number Field with Formatting](#example-1-phone-number-field-with-formatting)
-3. [Example 2: Tag Selector with Autocomplete](#example-2-tag-selector-with-autocomplete)
-4. [Example 3: Rich Text Editor Field](#example-3-rich-text-editor-field)
-5. [Example 4: Date/Time Picker Field](#example-4-datetime-picker-field)
-6. [Example 5: Signature Pad Field](#example-5-signature-pad-field)
-7. [Example 6: File Upload with Preview Enhancement](#example-6-file-upload-with-preview-enhancement)
-8. [Example 7: Working with Complex Value Types](#example-7-working-with-complex-value-types)
-9. [Pattern: Central Registry for Custom Field Libraries](#pattern-central-registry-for-custom-field-libraries)
+2. [Required: Implementing copyWith for Custom Field Classes](#required-implementing-copywith-for-custom-field-classes)
+3. [Example 1: Phone Number Field with Formatting](#example-1-phone-number-field-with-formatting)
+4. [Example 2: Tag Selector with Autocomplete](#example-2-tag-selector-with-autocomplete)
+5. [Example 3: Rich Text Editor Field](#example-3-rich-text-editor-field)
+6. [Example 4: Date/Time Picker Field](#example-4-datetime-picker-field)
+7. [Example 5: Signature Pad Field](#example-5-signature-pad-field)
+8. [Example 6: File Upload with Preview Enhancement](#example-6-file-upload-with-preview-enhancement)
+9. [Example 7: Working with Complex Value Types](#example-7-working-with-complex-value-types)
+10. [Pattern: Central Registry for Custom Field Libraries](#pattern-central-registry-for-custom-field-libraries)
 
 ---
 
@@ -71,6 +72,146 @@ form.TextField(
 ```
 
 **Rule of Thumb:** If you're creating a new **behavior**, use file-based. If you're customizing **appearance**, use inline.
+
+---
+
+## Required: Implementing copyWith for Custom Field Classes
+
+**IMPORTANT:** If you create a custom field class that extends `Field` (not just `StatefulFieldWidget`), you **must** implement the `copyWith` method. This requirement was introduced in v0.6.0 to enable proper field copying for compound fields and state propagation.
+
+### Why copyWith is Required
+
+The `copyWith` method is essential for:
+- **Compound fields**: When compound fields (like `AddressField` or `NameField`) create sub-fields, they need to prefix the sub-field IDs while preserving all other properties
+- **State propagation**: Themes and disabled states from parent fields must be copied to child fields
+- **Field cloning**: Forms may need to create field copies with modified properties
+
+### Implementation Pattern
+
+When creating a custom `Field` subclass, implement `copyWith` with nullable parameters for all properties:
+
+```dart
+import 'package:championforms/championforms.dart' as form;
+import 'package:championforms/championforms_themes.dart';
+
+class CustomField extends form.Field {
+  final String customProperty;
+
+  @override
+  final String? defaultValue;
+
+  CustomField({
+    required super.id,
+    super.title,
+    super.description,
+    super.disabled,
+    super.hideField,
+    super.validators,
+    super.validateLive,
+    super.onSubmit,
+    super.onChange,
+    super.theme,
+    super.fieldLayout,
+    super.fieldBackground,
+    super.icon,
+    super.requestFocus,
+    this.customProperty = '',
+    this.defaultValue,
+  });
+
+  @override
+  CustomField copyWith({
+    String? id,
+    String? title,
+    String? description,
+    bool? disabled,
+    bool? hideField,
+    bool? requestFocus,
+    List<form.Validator>? validators,
+    bool? validateLive,
+    Function(form.FormResults results)? onSubmit,
+    Function(form.FormResults results)? onChange,
+    FormTheme? theme,
+    Widget Function(
+      BuildContext context,
+      form.Field fieldDetails,
+      form.FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldLayout,
+    Widget Function(
+      BuildContext context,
+      form.Field fieldDetails,
+      form.FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldBackground,
+    Widget? icon,
+    String? customProperty,
+    String? defaultValue,
+  }) {
+    return CustomField(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      disabled: disabled ?? this.disabled,
+      hideField: hideField ?? this.hideField,
+      requestFocus: requestFocus ?? this.requestFocus,
+      validators: validators ?? this.validators,
+      validateLive: validateLive ?? this.validateLive,
+      onSubmit: onSubmit ?? this.onSubmit,
+      onChange: onChange ?? this.onChange,
+      theme: theme ?? this.theme,
+      fieldLayout: fieldLayout ?? this.fieldLayout,
+      fieldBackground: fieldBackground ?? this.fieldBackground,
+      icon: icon ?? this.icon,
+      customProperty: customProperty ?? this.customProperty,
+      defaultValue: defaultValue ?? this.defaultValue,
+    );
+  }
+
+  // ... converter implementations ...
+}
+```
+
+### Common Mistakes
+
+❌ **Forgetting to implement copyWith**
+```dart
+class MyField extends form.Field {
+  // Missing copyWith - will cause compilation error!
+}
+```
+
+❌ **Missing properties in copyWith**
+```dart
+@override
+MyField copyWith({String? id}) {
+  // Only copying id - other properties will be lost!
+  return MyField(id: id ?? this.id);
+}
+```
+
+✅ **Correct implementation**
+```dart
+@override
+MyField copyWith({
+  String? id,
+  // Include ALL properties as nullable parameters
+  String? customProperty,
+  // ...
+}) {
+  return MyField(
+    id: id ?? this.id,
+    customProperty: customProperty ?? this.customProperty,
+    // Copy ALL properties using ?? operator
+  );
+}
+```
+
+### Note for StatefulFieldWidget Users
+
+If you're only creating custom widgets using `StatefulFieldWidget` (as shown in the examples below), you **don't need** to implement `copyWith`. The requirement only applies when extending the `Field` class directly.
 
 ---
 

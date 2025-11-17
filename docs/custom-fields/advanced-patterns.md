@@ -5,6 +5,7 @@ Advanced patterns and techniques for creating sophisticated custom fields in Cha
 ## Table of Contents
 
 1. [Field Subclassing: Extending Existing Field Types](#field-subclassing-extending-existing-field-types)
+   - [Required: Implementing copyWith](#required-implementing-copywith)
 2. [Visual Error Indication Patterns](#visual-error-indication-patterns)
 3. [Complex Value Storage Strategies](#complex-value-storage-strategies)
 4. [Multi-Field Coordination](#multi-field-coordination)
@@ -24,6 +25,63 @@ Extend an existing field type when:
 ✅ **Adding visual variants** - Same data model, different UI (e.g., Switch extends OptionSelect)
 ✅ **Customizing behavior** - Slight modifications to existing field types
 ✅ **Reducing boilerplate** - Leverage existing infrastructure
+
+### Required: Implementing copyWith
+
+**CRITICAL:** All custom field subclasses **must** implement the `copyWith` method, regardless of whether they extend `Field`, `OptionSelect`, `TextField`, or any other field type. This requirement applies to:
+
+- Custom fields extending `form.Field`
+- Custom fields extending `form.OptionSelect`
+- Custom fields extending `form.TextField`
+- Custom fields extending `form.FileUpload`
+- Any other Field subclass
+
+The `copyWith` method enables proper field copying for compound fields and state propagation. Without it, your custom field will fail to compile.
+
+#### Implementation Pattern for Field Subclasses
+
+When extending a field type, include all properties from both the parent class and your custom class:
+
+```dart
+class MyCustomSelect extends form.OptionSelect {
+  final String customProperty;
+
+  MyCustomSelect({
+    required super.id,
+    required super.options,
+    super.multiselect,
+    // ... all parent properties
+    this.customProperty = '',
+  });
+
+  @override
+  MyCustomSelect copyWith({
+    // All parent properties as nullable parameters
+    String? id,
+    List<form.FieldOption>? options,
+    bool? multiselect,
+    // ... include ALL OptionSelect properties
+
+    // Your custom properties
+    String? customProperty,
+  }) {
+    return MyCustomSelect(
+      id: id ?? this.id,
+      options: options ?? this.options,
+      multiselect: multiselect ?? this.multiselect,
+      // ... copy ALL parent properties
+      customProperty: customProperty ?? this.customProperty,
+    );
+  }
+}
+```
+
+**Important:** When extending a field type, you must include ALL properties from the parent class in your `copyWith` method. Forgetting parent properties will cause them to be lost during field copying.
+
+For a complete list of parent class properties to include:
+- `Field` properties: See [API documentation](../api/field-types.md)
+- `OptionSelect` properties: See [OptionSelect API](../api/field-types.md#optionselect)
+- `TextField` properties: See [TextField API](../api/field-types.md#textfield)
 
 ### Pattern: Extending OptionSelect
 
@@ -59,6 +117,60 @@ class SwitchField extends form.OptionSelect {
     this.inactiveColor,
     this.trackHeight,
   }) : assert(options.length == 1, 'SwitchField must have exactly 1 option');
+
+  @override
+  SwitchField copyWith({
+    String? id,
+    List<form.FieldOption>? options,
+    bool? multiselect,
+    Widget? icon,
+    Widget? leading,
+    Widget? trailing,
+    FormTheme? theme,
+    String? title,
+    String? description,
+    bool? disabled,
+    bool? hideField,
+    bool? requestFocus,
+    List<form.FieldOption>? defaultValue,
+    bool? caseSensitiveDefaultValue,
+    List<form.Validator>? validators,
+    bool? validateLive,
+    Function(form.FormResults results)? onSubmit,
+    Function(form.FormResults results)? onChange,
+    Widget Function(
+      BuildContext context,
+      form.Field fieldDetails,
+      form.FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldLayout,
+    Widget Function(
+      BuildContext context,
+      form.Field fieldDetails,
+      form.FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldBackground,
+    Widget Function(form.FieldBuilderContext)? fieldBuilder,
+    bool? labelOnLeft,
+    Color? activeColor,
+    Color? inactiveColor,
+    double? trackHeight,
+  }) {
+    return SwitchField(
+      id: id ?? this.id,
+      options: options ?? this.options,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      validators: validators ?? this.validators,
+      defaultValue: defaultValue ?? this.defaultValue,
+      labelOnLeft: labelOnLeft ?? this.labelOnLeft,
+      activeColor: activeColor ?? this.activeColor,
+      inactiveColor: inactiveColor ?? this.inactiveColor,
+      trackHeight: trackHeight ?? this.trackHeight,
+    );
+  }
 }
 
 /// Switch widget
