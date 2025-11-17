@@ -3,6 +3,7 @@ import 'package:championforms/models/field_types/compound_field.dart';
 import 'package:championforms/models/field_types/compound_field_registration.dart';
 import 'package:championforms/core/field_builder_registry.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
+import 'package:championforms/models/colorscheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -25,6 +26,45 @@ class TestCompoundField extends CompoundField {
   List<form.Field> buildSubFields() {
     return subFields;
   }
+
+  @override
+  TestCompoundField copyWith({
+    String? id,
+    List<form.Field>? subFields,
+    String? title,
+    String? description,
+    bool? disabled,
+    bool? hideField,
+    bool? rollUpErrors,
+    form.FormTheme? theme,
+    List<form.Validator>? validators,
+    bool? validateLive,
+    Function(form.FormResults results)? onSubmit,
+    Function(form.FormResults results)? onChange,
+    Widget? icon,
+    Widget Function(
+      BuildContext context,
+      form.Field fieldDetails,
+      form.FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldLayout,
+    Widget Function(
+      BuildContext context,
+      form.Field fieldDetails,
+      form.FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldBackground,
+    bool? requestFocus,
+  }) {
+    return TestCompoundField(
+      id: id ?? this.id,
+      subFields: subFields ?? this.subFields,
+      title: title ?? this.title,
+      description: description ?? this.description,
+    );
+  }
 }
 
 /// Another test compound field type for multi-registration tests
@@ -33,6 +73,41 @@ class AnotherCompoundField extends CompoundField {
 
   @override
   List<form.Field> buildSubFields() => [];
+
+  @override
+  AnotherCompoundField copyWith({
+    String? id,
+    String? title,
+    String? description,
+    bool? disabled,
+    bool? hideField,
+    bool? rollUpErrors,
+    form.FormTheme? theme,
+    List<form.Validator>? validators,
+    bool? validateLive,
+    Function(form.FormResults results)? onSubmit,
+    Function(form.FormResults results)? onChange,
+    Widget? icon,
+    Widget Function(
+      BuildContext context,
+      form.Field fieldDetails,
+      form.FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldLayout,
+    Widget Function(
+      BuildContext context,
+      form.Field fieldDetails,
+      form.FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldBackground,
+    bool? requestFocus,
+  }) {
+    return AnotherCompoundField(
+      id: id ?? this.id,
+    );
+  }
 }
 
 void main() {

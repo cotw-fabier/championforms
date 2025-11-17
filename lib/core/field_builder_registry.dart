@@ -4,17 +4,10 @@ import 'package:championforms/default_fields/chipselect.dart';
 import 'package:championforms/default_fields/fileupload.dart';
 import 'package:championforms/default_fields/optionselect.dart';
 import 'package:championforms/default_fields/textfield.dart';
-import 'package:championforms/default_fields/name_field.dart';
-import 'package:championforms/default_fields/address_field.dart';
-import 'package:championforms/models/field_types/convienence_classes/chipselect.dart';
-import 'package:championforms/models/field_types/compound_field.dart';
 import 'package:championforms/models/field_types/compound_field_registration.dart';
-import 'package:championforms/models/field_builder_context.dart';
-import 'package:championforms/models/field_converters.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:flutter/material.dart' as flutter;
 import 'package:championforms/models/fieldstate.dart';
-import 'package:championforms/models/themes.dart';
 import 'package:championforms/models/colorscheme.dart';
 
 // ===========================================================================
@@ -502,9 +495,11 @@ class FormFieldRegistry {
   ///
   /// **Returns:**
   /// The [CompoundFieldRegistration] for type `T`, or null if not registered.
-  CompoundFieldRegistration? getCompoundRegistration<T extends CompoundField>() {
+  CompoundFieldRegistration?
+      getCompoundRegistration<T extends CompoundField>() {
     return _compoundRegistrations[T];
   }
+
   ///
   /// Retrieves the compound field registration by runtime type.
   ///
@@ -682,7 +677,8 @@ class FormFieldRegistry {
     // Register standard fields with new StatefulFieldWidget API
     FormFieldRegistry.register<TextField>('textField', buildTextField);
     FormFieldRegistry.register<OptionSelect>('optionSelect', buildOptionSelect);
-    FormFieldRegistry.register<CheckboxSelect>('checkboxSelect', buildCheckboxSelect);
+    FormFieldRegistry.register<CheckboxSelect>(
+        'checkboxSelect', buildCheckboxSelect);
     FormFieldRegistry.register<ChipSelect>('chipSelect', buildChipSelect);
     FormFieldRegistry.register<FileUpload>('fileUpload', buildFileUpload);
 
@@ -770,7 +766,8 @@ class FormFieldRegistry {
         // Determine which optional fields are present
         // Sub-fields are in order: street, [street2], city, state, zip, [country]
         final hasStreet2 = subFields.length > 4;
-        final hasCountry = subFields.length == 6 || (subFields.length == 5 && !hasStreet2);
+        final hasCountry =
+            subFields.length == 6 || (subFields.length == 5 && !hasStreet2);
 
         int idx = 0;
         final street = subFields[idx++];

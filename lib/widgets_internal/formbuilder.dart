@@ -166,51 +166,18 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
   /// - Compound field's theme (if sub-field doesn't have its own)
   /// - Compound field's disabled state (if compound is disabled)
   ///
-  /// **Note:** This is a workaround since Field classes don't have copyWith
-  /// methods. We create a new instance of the same type with updated properties.
+  /// Uses the copyWith pattern implemented by all Field subclasses.
   Field _applyStateToSubField(
     Field subField,
     String prefixedId,
     FormTheme? compoundTheme,
     bool compoundDisabled,
   ) {
-    // For TextField, we can create a new instance with updated properties
-    if (subField is TextField) {
-      return TextField(
-        id: prefixedId,
-        title: subField.title,
-        description: subField.description,
-        disabled: compoundDisabled || subField.disabled,
-        hideField: subField.hideField,
-        requestFocus: subField.requestFocus,
-        theme: subField.theme ?? compoundTheme,
-        validators: subField.validators,
-        validateLive: subField.validateLive,
-        onSubmit: subField.onSubmit,
-        onChange: subField.onChange,
-        fieldLayout: subField.fieldLayout,
-        fieldBackground: subField.fieldBackground,
-        icon: subField.icon,
-        keyboardType: subField.keyboardType,
-        password: subField.password,
-        maxLines: subField.maxLines,
-        autoComplete: subField.autoComplete,
-        fieldBuilder: subField.fieldBuilder,
-        defaultValue: subField.defaultValue,
-      );
-    }
-
-    // For other field types, we do our best to propagate state
-    // This is a limitation of the current architecture - ideally all Field
-    // subclasses would implement copyWith
-    flutter.debugPrint(
-      'Warning: Cannot fully propagate state to sub-field of type ${subField.runtimeType}. '
-      'Consider implementing copyWith method.',
+    return subField.copyWith(
+      id: prefixedId,
+      theme: subField.theme ?? compoundTheme,
+      disabled: compoundDisabled || subField.disabled,
     );
-
-    // Return the sub-field as-is, but we'll still handle it correctly
-    // because we're storing it with the prefixed ID in the controller
-    return subField;
   }
 
   void _rebuildOnControllerUpdate() {

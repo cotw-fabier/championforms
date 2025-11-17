@@ -5,6 +5,7 @@ import 'package:championforms/default_fields/address_field.dart';
 import 'package:championforms/models/field_types/compound_field.dart';
 import 'package:championforms/models/field_types/textfield.dart' as cf_field;
 import 'package:championforms/models/formbuildererrorclass.dart';
+import 'package:championforms/models/colorscheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -18,6 +19,41 @@ class CustomLayoutField extends CompoundField {
       cf_field.TextField(id: 'part1', title: 'Part 1'),
       cf_field.TextField(id: 'part2', title: 'Part 2'),
     ];
+  }
+
+  @override
+  CustomLayoutField copyWith({
+    String? id,
+    String? title,
+    String? description,
+    bool? disabled,
+    bool? hideField,
+    bool? rollUpErrors,
+    FormTheme? theme,
+    List<form.Validator>? validators,
+    bool? validateLive,
+    Function(form.FormResults results)? onSubmit,
+    Function(form.FormResults results)? onChange,
+    Widget? icon,
+    Widget Function(
+      BuildContext context,
+      form.Field fieldDetails,
+      form.FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldLayout,
+    Widget Function(
+      BuildContext context,
+      form.Field fieldDetails,
+      form.FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldBackground,
+    bool? requestFocus,
+  }) {
+    return CustomLayoutField(
+      id: id ?? this.id,
+    );
   }
 }
 

@@ -1,5 +1,11 @@
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/file_model.dart';
+import 'package:championforms/models/themes.dart';
+import 'package:championforms/models/validatorclass.dart';
+import 'package:championforms/models/formresults.dart';
+import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/controllers/form_controller.dart';
+import 'package:flutter/widgets.dart';
 
 class NullField extends Field {
   // Define the type of field type
@@ -24,6 +30,55 @@ class NullField extends Field {
     super.fieldBackground,
     this.defaultValue,
   });
+
+  @override
+  NullField copyWith({
+    String? id,
+    Widget? icon,
+    FormTheme? theme,
+    String? title,
+    String? description,
+    bool? disabled,
+    bool? hideField,
+    bool? requestFocus,
+    List<Validator>? validators,
+    bool? validateLive,
+    Function(FormResults results)? onSubmit,
+    Function(FormResults results)? onChange,
+    Widget Function(
+      BuildContext context,
+      Field fieldDetails,
+      FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldLayout,
+    Widget Function(
+      BuildContext context,
+      Field fieldDetails,
+      FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldBackground,
+    String? defaultValue,
+  }) {
+    return NullField(
+      id: id ?? this.id,
+      icon: icon ?? this.icon,
+      theme: theme ?? this.theme,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      disabled: disabled ?? this.disabled,
+      hideField: hideField ?? this.hideField,
+      requestFocus: requestFocus ?? this.requestFocus,
+      validators: validators ?? this.validators,
+      validateLive: validateLive ?? this.validateLive,
+      onSubmit: onSubmit ?? this.onSubmit,
+      onChange: onChange ?? this.onChange,
+      fieldLayout: fieldLayout ?? this.fieldLayout,
+      fieldBackground: fieldBackground ?? this.fieldBackground,
+      defaultValue: defaultValue ?? this.defaultValue,
+    );
+  }
 
   // --- Implementation of Field<String> Converters ---
 

@@ -1,6 +1,5 @@
 import 'package:championforms/championforms.dart' as form;
 import 'package:championforms/championforms_themes.dart';
-import 'package:championforms/core/field_builder_registry.dart';
 import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/file_model.dart';
@@ -67,6 +66,58 @@ class RatingField extends Field {
     this.allowHalfStars = false,
     this.defaultValue,
   });
+
+  @override
+  RatingField copyWith({
+    String? id,
+    String? title,
+    String? description,
+    bool? disabled,
+    bool? hideField,
+    bool? requestFocus,
+    List<form.Validator>? validators,
+    bool? validateLive,
+    Function(form.FormResults results)? onSubmit,
+    Function(form.FormResults results)? onChange,
+    FormTheme? theme,
+    Widget Function(
+      BuildContext context,
+      Field fieldDetails,
+      form.FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldLayout,
+    Widget Function(
+      BuildContext context,
+      Field fieldDetails,
+      form.FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldBackground,
+    Widget? icon,
+    int? maxStars,
+    bool? allowHalfStars,
+    int? defaultValue,
+  }) {
+    return RatingField(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      disabled: disabled ?? this.disabled,
+      hideField: hideField ?? this.hideField,
+      requestFocus: requestFocus ?? this.requestFocus,
+      validators: validators ?? this.validators,
+      validateLive: validateLive ?? this.validateLive,
+      onSubmit: onSubmit ?? this.onSubmit,
+      onChange: onChange ?? this.onChange,
+      theme: theme ?? this.theme,
+      fieldLayout: fieldLayout ?? this.fieldLayout,
+      fieldBackground: fieldBackground ?? this.fieldBackground,
+      maxStars: maxStars ?? this.maxStars,
+      allowHalfStars: allowHalfStars ?? this.allowHalfStars,
+      defaultValue: defaultValue ?? this.defaultValue,
+    );
+  }
 
   // --- Converter Implementations ---
   // These converters handle type conversion for FormResults

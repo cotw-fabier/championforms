@@ -2,6 +2,12 @@ import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/field_types/optionselect.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/multiselect_option.dart';
+import 'package:championforms/models/field_builder_context.dart';
+import 'package:championforms/models/themes.dart';
+import 'package:championforms/models/validatorclass.dart';
+import 'package:championforms/models/formresults.dart';
+import 'package:championforms/models/field_types/formfieldclass.dart';
+import 'package:championforms/controllers/form_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
@@ -68,6 +74,79 @@ class FileUpload extends OptionSelect {
   }) : super(
           options: [],
         );
+
+  @override
+  FileUpload copyWith({
+    String? id,
+    Widget? icon,
+    List<FieldOption>? options, // Added to match parent signature
+    bool? multiselect,
+    Widget? leading,
+    Widget? trailing,
+    FormTheme? theme,
+    String? title,
+    String? description,
+    bool? disabled,
+    bool? hideField,
+    bool? requestFocus,
+    List<FieldOption>? defaultValue,
+    bool? caseSensitiveDefaultValue,
+    List<Validator>? validators,
+    bool? validateLive,
+    Function(FormResults results)? onSubmit,
+    Function(FormResults results)? onChange,
+    Widget Function(
+      BuildContext context,
+      Field fieldDetails,
+      FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldLayout,
+    Widget Function(
+      BuildContext context,
+      Field fieldDetails,
+      FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldBackground,
+    Widget Function(FieldBuilderContext)? fieldBuilder,
+    List<String>? allowedExtensions,
+    int? maxFileSize,
+    bool? displayUploadedFiles,
+    bool? clearOnUpload,
+    Widget Function(List<FieldOption>)? fileUploadBuilder,
+    Widget Function(FieldColorScheme, FileUpload)? dropDisplayWidget,
+  }) {
+    // Note: options parameter is ignored for FileUpload since options are managed internally
+    return FileUpload(
+      id: id ?? this.id,
+      icon: icon ?? this.icon,
+      multiselect: multiselect ?? this.multiselect,
+      leading: leading ?? this.leading,
+      trailing: trailing ?? this.trailing,
+      theme: theme ?? this.theme,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      disabled: disabled ?? this.disabled,
+      hideField: hideField ?? this.hideField,
+      requestFocus: requestFocus ?? this.requestFocus,
+      defaultValue: defaultValue ?? this.defaultValue,
+      caseSensitiveDefaultValue: caseSensitiveDefaultValue ?? this.caseSensitiveDefaultValue,
+      validators: validators ?? this.validators,
+      validateLive: validateLive ?? this.validateLive,
+      onSubmit: onSubmit ?? this.onSubmit,
+      onChange: onChange ?? this.onChange,
+      fieldLayout: fieldLayout ?? this.fieldLayout,
+      fieldBackground: fieldBackground ?? this.fieldBackground,
+      fieldBuilder: fieldBuilder ?? this.fieldBuilder,
+      allowedExtensions: allowedExtensions ?? this.allowedExtensions,
+      maxFileSize: maxFileSize ?? this.maxFileSize,
+      displayUploadedFiles: displayUploadedFiles ?? this.displayUploadedFiles,
+      clearOnUpload: clearOnUpload ?? this.clearOnUpload,
+      fileUploadBuilder: fileUploadBuilder ?? this.fileUploadBuilder,
+      dropDisplayWidget: dropDisplayWidget ?? this.dropDisplayWidget,
+    );
+  }
 
   // --- Override asFileListConverter ---
 

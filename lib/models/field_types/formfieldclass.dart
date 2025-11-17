@@ -108,6 +108,63 @@ abstract class Field implements FieldBase {
   /// Throws a TypeError if the input value cannot be cast to T and conversion is attempted.
   List<FileModel>? Function(dynamic value)? get asFileListConverter;
 
+  /// Creates a copy of this field with the given fields replaced with new values.
+  ///
+  /// This method must be implemented by all Field subclasses to support
+  /// proper field copying, especially for compound fields where sub-fields
+  /// need to have their IDs prefixed while preserving all other properties.
+  ///
+  /// Each subclass should accept nullable parameters for all its properties
+  /// and return a new instance with updated values.
+  ///
+  /// Example implementation:
+  /// ```dart
+  /// @override
+  /// TextField copyWith({
+  ///   String? id,
+  ///   String? title,
+  ///   bool? disabled,
+  ///   String? hintText,
+  ///   // ... all other properties
+  /// }) {
+  ///   return TextField(
+  ///     id: id ?? this.id,
+  ///     title: title ?? this.title,
+  ///     disabled: disabled ?? this.disabled,
+  ///     hintText: hintText ?? this.hintText,
+  ///     // ... all other properties
+  ///   );
+  /// }
+  /// ```
+  Field copyWith({
+    String? id,
+    Widget? icon,
+    FormTheme? theme,
+    String? title,
+    String? description,
+    bool? disabled,
+    bool? hideField,
+    bool? requestFocus,
+    List<Validator>? validators,
+    bool? validateLive,
+    Function(FormResults results)? onSubmit,
+    Function(FormResults results)? onChange,
+    Widget Function(
+      BuildContext context,
+      Field fieldDetails,
+      FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldLayout,
+    Widget Function(
+      BuildContext context,
+      Field fieldDetails,
+      FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldBackground,
+  });
+
   Field({
     required this.id,
     this.icon,

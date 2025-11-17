@@ -3,6 +3,7 @@ import 'package:championforms/championforms_themes.dart';
 import 'package:championforms/models/field_types/compound_field.dart';
 import 'package:championforms/models/field_types/compound_field_registration.dart';
 import 'package:championforms/models/field_types/textfield.dart' as cf_field;
+import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/core/field_builder_registry.dart';
 import 'package:championforms/widgets_external/form.dart' as cf;
 import 'package:flutter/material.dart';
@@ -39,6 +40,47 @@ class TestCompoundField extends CompoundField {
     }
 
     return fields;
+  }
+
+  @override
+  TestCompoundField copyWith({
+    String? id,
+    bool? includeOptional,
+    String? title,
+    String? description,
+    bool? disabled,
+    bool? hideField,
+    bool? rollUpErrors,
+    FormTheme? theme,
+    List<Validator>? validators,
+    bool? validateLive,
+    Function(FormResults results)? onSubmit,
+    Function(FormResults results)? onChange,
+    Widget? icon,
+    Widget Function(
+      BuildContext context,
+      Field fieldDetails,
+      FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldLayout,
+    Widget Function(
+      BuildContext context,
+      Field fieldDetails,
+      FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldBackground,
+    bool? requestFocus,
+  }) {
+    return TestCompoundField(
+      id: id ?? this.id,
+      includeOptional: includeOptional ?? this.includeOptional,
+      title: title ?? this.title,
+      disabled: disabled ?? this.disabled,
+      theme: theme ?? this.theme,
+      validators: validators ?? this.validators,
+    );
   }
 }
 

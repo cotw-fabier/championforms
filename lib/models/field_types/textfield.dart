@@ -2,6 +2,11 @@ import 'package:championforms/models/autocomplete/autocomplete_class.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/file_model.dart';
+import 'package:championforms/models/themes.dart';
+import 'package:championforms/models/validatorclass.dart';
+import 'package:championforms/models/formresults.dart';
+import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/controllers/form_controller.dart';
 import 'package:flutter/material.dart' as flutter;
 import 'package:flutter/services.dart';
 
@@ -112,6 +117,91 @@ class TextField extends Field {
     super.fieldLayout,
     super.fieldBackground,
   });
+
+  @override
+  TextField copyWith({
+    String? id,
+    flutter.Widget Function(FieldBuilderContext)? fieldBuilder,
+    int? maxLines,
+    AutoCompleteBuilder? autoComplete,
+    String? textFieldTitle,
+    String? hintText,
+    flutter.Widget? icon,
+    flutter.Widget? leading,
+    flutter.Widget? trailing,
+    FormTheme? theme,
+    String? title,
+    String? description,
+    int? maxLength,
+    bool? disabled,
+    bool? hideField,
+    bool? requestFocus,
+    bool? password,
+    String? defaultValue,
+    flutter.TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    List<Validator>? validators,
+    bool? validateLive,
+    Function(FormResults results)? onSubmit,
+    Function(FormResults results)? onChange,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onDrop,
+    bool? draggable,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onPaste,
+    flutter.Widget Function(
+      flutter.BuildContext context,
+      Field fieldDetails,
+      FormController controller,
+      FieldColorScheme currentColors,
+      flutter.Widget renderedField,
+    )? fieldLayout,
+    flutter.Widget Function(
+      flutter.BuildContext context,
+      Field fieldDetails,
+      FormController controller,
+      FieldColorScheme currentColors,
+      flutter.Widget renderedField,
+    )? fieldBackground,
+  }) {
+    return TextField(
+      id: id ?? this.id,
+      fieldBuilder: fieldBuilder ?? this.fieldBuilder,
+      maxLines: maxLines ?? this.maxLines,
+      autoComplete: autoComplete ?? this.autoComplete,
+      textFieldTitle: textFieldTitle ?? this.textFieldTitle,
+      hintText: hintText ?? this.hintText,
+      icon: icon ?? this.icon,
+      leading: leading ?? this.leading,
+      trailing: trailing ?? this.trailing,
+      theme: theme ?? this.theme,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      maxLength: maxLength ?? this.maxLength,
+      disabled: disabled ?? this.disabled,
+      hideField: hideField ?? this.hideField,
+      requestFocus: requestFocus ?? this.requestFocus,
+      password: password ?? this.password,
+      defaultValue: defaultValue ?? this.defaultValue,
+      keyboardType: keyboardType ?? this.keyboardType,
+      inputFormatters: inputFormatters ?? this.inputFormatters,
+      validators: validators ?? this.validators,
+      validateLive: validateLive ?? this.validateLive,
+      onSubmit: onSubmit ?? this.onSubmit,
+      onChange: onChange ?? this.onChange,
+      onDrop: onDrop ?? this.onDrop,
+      draggable: draggable ?? this.draggable,
+      onPaste: onPaste ?? this.onPaste,
+      fieldLayout: fieldLayout ?? this.fieldLayout,
+      fieldBackground: fieldBackground ?? this.fieldBackground,
+    );
+  }
 
   // --- Implementation of Field<String> Converters ---
 

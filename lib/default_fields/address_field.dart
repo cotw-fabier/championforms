@@ -4,6 +4,9 @@ import 'package:championforms/models/field_types/textfield.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/themes.dart';
 import 'package:championforms/models/validatorclass.dart';
+import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/controllers/form_controller.dart';
+import 'package:flutter/widgets.dart';
 
 /// Built-in compound field for collecting address information.
 ///
@@ -95,32 +98,69 @@ class AddressField extends CompoundField {
   /// - [onSubmit]: Callback when form is submitted
   /// - [onChange]: Callback when any sub-field value changes
   AddressField({
-    required String id,
+    required super.id,
     this.includeStreet2 = true,
     this.includeCountry = false,
+    super.title,
+    super.description,
+    super.disabled,
+    super.hideField,
+    super.rollUpErrors,
+    super.theme,
+    super.validators,
+    super.validateLive,
+    super.onSubmit,
+    super.onChange,
+  });
+
+  @override
+  AddressField copyWith({
+    String? id,
+    bool? includeStreet2,
+    bool? includeCountry,
     String? title,
     String? description,
-    bool disabled = false,
-    bool hideField = false,
-    bool rollUpErrors = false,
+    bool? disabled,
+    bool? hideField,
+    bool? rollUpErrors,
     FormTheme? theme,
     List<Validator>? validators,
-    bool validateLive = false,
+    bool? validateLive,
     Function(FormResults results)? onSubmit,
     Function(FormResults results)? onChange,
-  }) : super(
-          id: id,
-          title: title,
-          description: description,
-          disabled: disabled,
-          hideField: hideField,
-          rollUpErrors: rollUpErrors,
-          theme: theme,
-          validators: validators,
-          validateLive: validateLive,
-          onSubmit: onSubmit,
-          onChange: onChange,
-        );
+    Widget? icon,
+    Widget Function(
+      BuildContext context,
+      Field fieldDetails,
+      FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldLayout,
+    Widget Function(
+      BuildContext context,
+      Field fieldDetails,
+      FormController controller,
+      FieldColorScheme currentColors,
+      Widget renderedField,
+    )? fieldBackground,
+    bool? requestFocus,
+  }) {
+    return AddressField(
+      id: id ?? this.id,
+      includeStreet2: includeStreet2 ?? this.includeStreet2,
+      includeCountry: includeCountry ?? this.includeCountry,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      disabled: disabled ?? this.disabled,
+      hideField: hideField ?? this.hideField,
+      rollUpErrors: rollUpErrors ?? this.rollUpErrors,
+      theme: theme ?? this.theme,
+      validators: validators ?? this.validators,
+      validateLive: validateLive ?? this.validateLive,
+      onSubmit: onSubmit ?? this.onSubmit,
+      onChange: onChange ?? this.onChange,
+    );
+  }
 
   @override
   List<Field> buildSubFields() {
