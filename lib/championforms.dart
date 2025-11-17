@@ -85,6 +85,10 @@ export 'package:championforms/models/autocomplete/autocomplete_type.dart';
 
 // Export Field Layout Functions
 export 'package:championforms/widgets_external/field_layouts/simple_layout.dart';
+export 'package:championforms/widgets_external/field_layouts/simple_description_below_layout.dart';
+
+// Export Default Field Layouts Index
+export 'package:championforms/functions/defaultlayouts/defaultlayouts.dart';
 
 // Export Field Background Functions
 export 'package:championforms/widgets_external/field_backgrounds/simplewrapper.dart';
