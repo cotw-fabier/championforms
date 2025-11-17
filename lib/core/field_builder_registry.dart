@@ -390,7 +390,7 @@ class FormFieldRegistry {
     String typeName,
     List<Field> Function(T) subFieldsBuilder,
     flutter.Widget Function(
-      flutter.BuildContext context,
+      FieldBuilderContext ctx,
       List<flutter.Widget> subFields,
       List<FormBuilderError>? errors,
     )? layoutBuilder, {
@@ -457,7 +457,7 @@ class FormFieldRegistry {
     String typeName,
     List<Field> Function(T) subFieldsBuilder,
     flutter.Widget Function(
-      flutter.BuildContext context,
+      FieldBuilderContext ctx,
       List<flutter.Widget> subFields,
       List<FormBuilderError>? errors,
     )? layoutBuilder,

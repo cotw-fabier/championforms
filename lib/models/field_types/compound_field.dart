@@ -2,6 +2,7 @@ import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/field_types/formfieldbase.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/field_converters.dart';
+import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/themes.dart';
 import 'package:championforms/models/validatorclass.dart';
 import 'package:championforms/models/formresults.dart';
@@ -213,14 +214,21 @@ abstract class CompoundField extends Field with TextFieldConverters {
   /// at the bottom in red text.
   ///
   /// **Parameters:**
-  /// - [context]: Build context
+  /// - [ctx]: FieldBuilderContext with access to controller, field, colors, etc.
   /// - [subFields]: List of built sub-field widgets
   /// - [errors]: Optional list of errors to display (if rollUpErrors is true)
+  ///
+  /// The FieldBuilderContext provides access to:
+  /// - `ctx.controller` - FormController for programmatic updates
+  /// - `ctx.field` - The CompoundField instance
+  /// - `ctx.colors` - Theme colors (FieldColorScheme)
+  /// - `ctx.getValue<T>()` - Get the compound field value
+  /// - `ctx.setValue<T>()` - Set the compound field value
   ///
   /// **Returns:**
   /// A Column widget containing the sub-fields and optional errors
   static Widget buildDefaultCompoundLayout(
-    BuildContext context,
+    FieldBuilderContext ctx,
     List<Widget> subFields,
     List<FormBuilderError>? errors,
   ) {

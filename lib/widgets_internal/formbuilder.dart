@@ -2,6 +2,7 @@ import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/core/field_builder_registry.dart';
 import 'package:championforms/functions/gather_child_errors.dart';
 import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/field_types/column.dart';
 import 'package:championforms/models/field_types/compound_field.dart';
 import 'package:championforms/models/field_types/row.dart';
@@ -325,11 +326,46 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
       }
     }
 
+    // Resolve theme for the compound field
+    final mergedTheme = (compoundField.theme != null)
+        ? widget.theme.copyWith(theme: compoundField.theme)
+        : widget.theme;
+
+    // Get field state
+    final fieldState = widget.controller.getFieldState(compoundField.id);
+
+    // Determine colors based on state
+    final FieldColorScheme fieldColors;
+    switch (fieldState) {
+      case FieldState.error:
+        fieldColors = mergedTheme.errorColorScheme!;
+        break;
+      case FieldState.disabled:
+        fieldColors = mergedTheme.disabledColorScheme!;
+        break;
+      case FieldState.active:
+        fieldColors = mergedTheme.activeColorScheme!;
+        break;
+      case FieldState.normal:
+      default:
+        fieldColors = mergedTheme.colorScheme!;
+        break;
+    }
+
+    // Create FieldBuilderContext for the compound field
+    final fieldBuilderContext = FieldBuilderContext(
+      field: compoundField,
+      controller: widget.controller,
+      theme: mergedTheme,
+      state: fieldState,
+      colors: fieldColors,
+    );
+
     // Use custom layout builder or default
     final layoutBuilder =
         registration.layoutBuilder ?? CompoundField.buildDefaultCompoundLayout;
 
-    return layoutBuilder(context, subFieldWidgets, errors);
+    return layoutBuilder(fieldBuilderContext, subFieldWidgets, errors);
   }
 
   flutter.Widget _buildRow(Row row) {

@@ -2,6 +2,7 @@ import 'package:championforms/models/field_types/compound_field.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/field_converters.dart';
+import 'package:championforms/models/field_builder_context.dart';
 import 'package:flutter/widgets.dart';
 
 /// Data class that stores metadata for a registered compound field type.
@@ -41,24 +42,41 @@ class CompoundFieldRegistration {
 
   /// Optional custom layout builder for rendering the compound field.
   ///
-  /// If provided, this function receives the built sub-field widgets and
-  /// optional errors, and returns a widget that layouts the sub-fields.
+  /// If provided, this function receives the field builder context, built
+  /// sub-field widgets, and optional errors, and returns a widget that
+  /// layouts the sub-fields.
   ///
   /// If null, the default vertical layout (Column) will be used.
   ///
   /// **Parameters:**
-  /// - [context]: Build context
+  /// - [ctx]: FieldBuilderContext with access to controller, field, colors, etc.
   /// - [subFields]: List of built sub-field widgets
   /// - [errors]: Optional list of validation errors (if rollUpErrors is true)
   ///
+  /// The FieldBuilderContext provides access to:
+  /// - `ctx.controller` - FormController for programmatic updates
+  /// - `ctx.field` - The CompoundField instance
+  /// - `ctx.colors` - Theme colors (FieldColorScheme)
+  /// - `ctx.getValue<T>()` - Get the compound field value
+  /// - `ctx.setValue<T>()` - Set the compound field value
+  ///
   /// Example:
   /// ```dart
-  /// (context, subFields, errors) => Row(
-  ///   children: subFields.map((f) => Expanded(child: f)).toList(),
-  /// )
+  /// (ctx, subFields, errors) {
+  ///   // Can access controller and colors!
+  ///   final colors = ctx.colors;
+  ///   return Container(
+  ///     decoration: BoxDecoration(
+  ///       border: Border.all(color: colors.borderColor),
+  ///     ),
+  ///     child: Row(
+  ///       children: subFields.map((f) => Expanded(child: f)).toList(),
+  ///     ),
+  ///   );
+  /// }
   /// ```
   final Widget Function(
-    BuildContext context,
+    FieldBuilderContext ctx,
     List<Widget> subFields,
     List<FormBuilderError>? errors,
   )? layoutBuilder;

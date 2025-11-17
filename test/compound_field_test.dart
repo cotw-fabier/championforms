@@ -1,11 +1,14 @@
 import 'package:championforms/championforms.dart' as form;
 import 'package:championforms/models/field_types/compound_field.dart';
 import 'package:championforms/models/field_types/compound_field_registration.dart';
+import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/core/field_builder_registry.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'test_helpers.dart';
 
 /// Test implementation of CompoundField for testing purposes
 class TestCompoundField extends CompoundField {
@@ -220,7 +223,7 @@ void main() {
 
     test('Compound field builder storage and retrieval', () {
       // Custom layout builder
-      Widget customLayout(BuildContext context, List<Widget> subFields,
+      Widget customLayout(FieldBuilderContext ctx, List<Widget> subFields,
           List<FormBuilderError>? errors) {
         return Column(children: subFields);
       }
@@ -267,6 +270,10 @@ void main() {
   group('Default Layout Builder Tests', () {
     testWidgets('Default vertical layout builder stacks sub-fields',
         (WidgetTester tester) async {
+      // Create test dependencies
+      final controller = form.FormController();
+      final testField = form.TextField(id: 'test_compound', title: 'Test');
+
       // Create sub-field widgets
       final subFields = [
         Container(key: const Key('field1'), height: 50),
@@ -274,18 +281,20 @@ void main() {
         Container(key: const Key('field3'), height: 50),
       ];
 
-      // Build using default layout - wrap in Builder to get context
+      // Create FieldBuilderContext
+      final ctx = createTestContext(
+        controller: controller,
+        field: testField,
+      );
+
+      // Build using default layout
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                return CompoundField.buildDefaultCompoundLayout(
-                  context,
-                  subFields,
-                  null,
-                );
-              },
+            body: CompoundField.buildDefaultCompoundLayout(
+              ctx,
+              subFields,
+              null,
             ),
           ),
         ),
@@ -299,6 +308,10 @@ void main() {
 
     testWidgets('Default layout shows errors when rollUpErrors is true',
         (WidgetTester tester) async {
+      // Create test dependencies
+      final controller = form.FormController();
+      final testField = form.TextField(id: 'test_field', title: 'Test');
+
       final subFields = [
         Container(key: const Key('field1'), height: 50),
       ];
@@ -316,17 +329,19 @@ void main() {
         ),
       ];
 
+      // Create FieldBuilderContext
+      final ctx = createTestContext(
+        controller: controller,
+        field: testField,
+      );
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                return CompoundField.buildDefaultCompoundLayout(
-                  context,
-                  subFields,
-                  errors,
-                );
-              },
+            body: CompoundField.buildDefaultCompoundLayout(
+              ctx,
+              subFields,
+              errors,
             ),
           ),
         ),

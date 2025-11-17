@@ -460,39 +460,52 @@ void registerPhoneField() {
   FormFieldRegistry.registerCompound<PhoneField>(
     'phone',
     (field) => field.buildSubFields(),
-    (context, subFields, errors) {
-      // Custom horizontal layout
+    (ctx, subFields, errors) {
+      // Custom horizontal layout with access to FieldBuilderContext
+      // Available context properties:
+      // - ctx.controller: FormController for programmatic updates
+      // - ctx.field: The PhoneField instance
+      // - ctx.colors: Theme colors (FieldColorScheme)
+      // - ctx.getValue<T>() / ctx.setValue<T>(): Value access methods
+
       final hasExtension = subFields.length > 3;
 
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Country code (narrow)
-          SizedBox(
-            width: 60,
-            child: subFields[0],
-          ),
-          const SizedBox(width: 8),
-          // Area code (narrow)
-          SizedBox(
-            width: 80,
-            child: subFields[1],
-          ),
-          const SizedBox(width: 8),
-          // Number (flexible)
-          Expanded(
-            flex: 3,
-            child: subFields[2],
-          ),
-          // Extension (if included)
-          if (hasExtension) ...[
+      return Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: ctx.colors.borderColor),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        padding: const EdgeInsets.all(8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Country code (narrow)
+            SizedBox(
+              width: 60,
+              child: subFields[0],
+            ),
             const SizedBox(width: 8),
+            // Area code (narrow)
             SizedBox(
               width: 80,
-              child: subFields[3],
+              child: subFields[1],
             ),
+            const SizedBox(width: 8),
+            // Number (flexible)
+            Expanded(
+              flex: 3,
+              child: subFields[2],
+            ),
+            // Extension (if included)
+            if (hasExtension) ...[
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 80,
+                child: subFields[3],
+              ),
+            ],
           ],
-        ],
+        ),
       );
     },
   );
