@@ -192,8 +192,7 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
   void _updateDefaults(List<Field> fieldDefs) {
     widget.controller.addFields(fieldDefs, noNotify: true);
     for (final field in fieldDefs) {
-      final currentValue = widget.controller.getFieldValue(field.id);
-      if (currentValue == null && field.defaultValue != null) {
+      if (!widget.controller.hasFieldValue(field.id) && field.defaultValue != null) {
         widget.controller
             .updateFieldValue(field.id, field.defaultValue, noNotify: true);
       }

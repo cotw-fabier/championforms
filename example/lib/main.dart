@@ -80,7 +80,8 @@ class _MyHomePageState extends State<MyHomePage> {
   // --- Handling Form Submission ---
   void _executeLogin() {
     // Get results and trigger validation by creating FormResults instance.
-    final form.FormResults results = form.FormResults.getResults(controller: controller);
+    final form.FormResults results =
+        form.FormResults.getResults(controller: controller);
 
     // Check the error state.
     final errors = results.errorState;
@@ -174,6 +175,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 hintText: "Enter your email",
                 description: "Your login email.",
                 maxLines: 1,
+                defaultValue: "fabbage@tehfab1.com",
                 validateLive: true, // Validate on losing focus
                 // --- Autocomplete Example ---
                 autoComplete: form.AutoCompleteBuilder(
@@ -195,9 +197,11 @@ class _MyHomePageState extends State<MyHomePage> {
                       form.CompleteOption(value: "test2@example.com"),
                       form.CompleteOption(value: "another@domain.net"),
                       form.CompleteOption(value: "fabier@rogueskies.net"),
-                    ].where((opt) =>
-                      opt.value.toLowerCase().contains(searchValue.toLowerCase())
-                    ).toList();
+                    ]
+                        .where((opt) => opt.value
+                            .toLowerCase()
+                            .contains(searchValue.toLowerCase()))
+                        .toList();
                   },
                   debounceWait: const Duration(
                       milliseconds: 250), // Wait before calling updateOptions
@@ -209,8 +213,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     reason: "Email cannot be empty.",
                   ),
                   form.Validator(
-                    validator: (results) =>
-                        form.Validators.isEmail(results),
+                    validator: (results) => form.Validators.isEmail(results),
                     reason: "Please enter a valid email address.",
                   ),
                 ],
@@ -225,8 +228,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 id: "Password", // Changed ID
                 textFieldTitle: "Password",
                 description: "Enter your password",
+                defaultValue: "password123",
                 maxLines: 1,
-                password: true, // Obscures text
+                password: false, // Obscures text
                 validateLive: true,
                 onSubmit: (results) => _executeLogin(), // Submit on Enter
                 validators: [
@@ -251,7 +255,7 @@ class _MyHomePageState extends State<MyHomePage> {
         // multiselect: true,
         description: "Choose one from the list.",
         defaultValue: [
-          form.FieldOption(label: "Option 1", value: "Value 1"),
+          form.FieldOption(label: "Option 1", value: "Value 4"),
         ],
         options: [
           form.FieldOption(label: "Option 1", value: "Value 1"),
@@ -272,8 +276,7 @@ class _MyHomePageState extends State<MyHomePage> {
         validators: [
           // Example: require at least one selection
           form.Validator(
-              validator: (results) =>
-                  form.Validators.listIsNotEmpty(results),
+              validator: (results) => form.Validators.listIsNotEmpty(results),
               reason: "Please select at least one option."),
         ],
         defaultValue: [
@@ -358,7 +361,8 @@ class _MyHomePageState extends State<MyHomePage> {
       RatingField(
         id: "satisfaction_rating",
         title: "Rate Your Experience",
-        description: "Tap stars to rate (custom field example using StatefulFieldWidget)",
+        description:
+            "Tap stars to rate (custom field example using StatefulFieldWidget)",
         maxStars: 5,
         defaultValue: 0,
         validateLive: true,
@@ -405,7 +409,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     padding: const EdgeInsets.all(16.0),
                     child: Row(
                       children: [
-                        Icon(Icons.widgets, size: 40, color: Colors.blue.shade700),
+                        Icon(Icons.widgets,
+                            size: 40, color: Colors.blue.shade700),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
@@ -430,7 +435,8 @@ class _MyHomePageState extends State<MyHomePage> {
                             ],
                           ),
                         ),
-                        Icon(Icons.arrow_forward_ios, color: Colors.blue.shade700),
+                        Icon(Icons.arrow_forward_ios,
+                            color: Colors.blue.shade700),
                       ],
                     ),
                   ),

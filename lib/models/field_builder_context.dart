@@ -398,7 +398,8 @@ class FieldBuilderContext {
 
     // Get current selections and add the new option if not already present
     final currentSelected = getValue<List<FieldOption>>() ?? [];
-    final isAlreadySelected = currentSelected.any((o) => o.value == option.value);
+    final isAlreadySelected =
+        currentSelected.any((o) => o.value == option.value);
 
     if (!isAlreadySelected) {
       final updatedSelections = [...currentSelected, option];
@@ -444,9 +445,8 @@ class FieldBuilderContext {
 
     // Get current selections and remove the option if present
     final currentSelected = getValue<List<FieldOption>>() ?? [];
-    final updatedSelections = currentSelected
-        .where((o) => o.value != option.value)
-        .toList();
+    final updatedSelections =
+        currentSelected.where((o) => o.value != option.value).toList();
 
     // Only update if something changed
     if (updatedSelections.length != currentSelected.length) {
@@ -498,7 +498,8 @@ class FieldBuilderContext {
     final currentValues = currentSelected.map((o) => o.value).toSet();
 
     // Add new options that aren't already selected
-    final newOptions = options.where((o) => !currentValues.contains(o.value)).toList();
+    final newOptions =
+        options.where((o) => !currentValues.contains(o.value)).toList();
 
     if (newOptions.isNotEmpty) {
       final updatedSelections = [...currentSelected, ...newOptions];
@@ -775,7 +776,8 @@ class FieldBuilderContext {
   TextEditingController getTextController() {
     if (_textController == null) {
       // Check if controller already exists in FormController
-      _textController = controller.getFieldController<TextEditingController>(field.id);
+      _textController =
+          controller.getFieldController<TextEditingController>(field.id);
 
       // If not, create and register it
       if (_textController == null) {
@@ -785,7 +787,7 @@ class FieldBuilderContext {
           initialValue = controller.getFieldValue<String>(field.id) ?? '';
         } else {
           // Field doesn't exist yet, use default value
-          initialValue = controller.getFieldDefaultValue(field.id) as String? ?? '';
+          initialValue = field.defaultValue as String? ?? '';
           // Initialize field with default value (silent, no notifications)
           controller.createFieldValue(field.id, initialValue, noNotify: true);
         }
