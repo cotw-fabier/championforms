@@ -26,6 +26,7 @@ TextField overrideTextField({
   int? maxLength,
   TextInputType? keyboardType,
   List<TextInputFormatter>? inputFormatters,
+  Iterable<String>? autofillHints,
 }) {
   // Determine the current InputDecoration or use a fallback.
   final originalDecoration = baseField.decoration;
@@ -108,7 +109,7 @@ TextField overrideTextField({
     buildCounter: baseField.buildCounter,
     scrollController: baseField.scrollController,
     scrollPhysics: baseField.scrollPhysics,
-    autofillHints: baseField.autofillHints,
+    autofillHints: autofillHints ?? baseField.autofillHints,
     contentInsertionConfiguration: baseField.contentInsertionConfiguration,
     clipBehavior: baseField.clipBehavior,
     restorationId: baseField.restorationId,

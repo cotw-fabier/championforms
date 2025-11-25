@@ -61,6 +61,7 @@ class TextFieldWidget extends StatefulFieldWidget {
       controller: textController,
       focusNode: focusNode,
       obscureText: field.password,
+      autofillHints: field.autofillHints,
       colorScheme: ctx.colors,
       baseField: material_tf.TextField(
         maxLines: field.maxLines,

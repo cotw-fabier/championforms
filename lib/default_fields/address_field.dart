@@ -165,7 +165,7 @@ class AddressField extends CompoundField {
   @override
   List<Field> buildSubFields() {
     final fields = <Field>[
-      TextField(
+      TextField.streetAddress(
         id: 'street',
         title: 'Street Address',
         hintText: '123 Main St',
@@ -175,8 +175,9 @@ class AddressField extends CompoundField {
     // Add street2 field if enabled
     if (includeStreet2) {
       fields.add(
-        TextField(
+        TextField.streetAddress(
           id: 'street2',
+          isSecondLine: true,
           title: 'Apartment, suite, etc.',
           hintText: 'Apt 4B',
         ),
@@ -185,17 +186,17 @@ class AddressField extends CompoundField {
 
     // Add city, state, zip
     fields.addAll([
-      TextField(
+      TextField.city(
         id: 'city',
         title: 'City',
         hintText: 'City',
       ),
-      TextField(
+      TextField.state(
         id: 'state',
         title: 'State',
         hintText: 'State',
       ),
-      TextField(
+      TextField.postalCode(
         id: 'zip',
         title: 'ZIP Code',
         hintText: '12345',
@@ -205,7 +206,7 @@ class AddressField extends CompoundField {
     // Add country field if enabled
     if (includeCountry) {
       fields.add(
-        TextField(
+        TextField.country(
           id: 'country',
           title: 'Country',
           hintText: 'Country',

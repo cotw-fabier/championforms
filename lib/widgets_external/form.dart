@@ -18,6 +18,7 @@ class Form extends StatefulWidget {
     this.theme,
     this.formWrapper = simpleWrapper,
     this.fieldPadding = const EdgeInsets.all(8),
+    this.enableAutofillGroup = false,
   });
 
   /// Takes in a FormController() instance. Stores all fields and associated data in the controller.
@@ -75,6 +76,14 @@ class Form extends StatefulWidget {
   /// Will try to default to material widget colors if no theme is given.
   final FormTheme? theme;
 
+  /// Whether to wrap form content in [AutofillGroup].
+  ///
+  /// When enabled, allows browser/OS to fill multiple related fields at once
+  /// (e.g., filling all address fields together).
+  ///
+  /// Defaults to `false`.
+  final bool enableAutofillGroup;
+
   @override
   State<StatefulWidget> createState() => _FormWidgetState();
 }
@@ -108,6 +117,7 @@ class _FormWidgetState extends State<Form> {
       theme: formTheme,
       formWrapper: widget.formWrapper,
       fieldPadding: widget.fieldPadding,
+      enableAutofillGroup: widget.enableAutofillGroup,
     );
   }
 }

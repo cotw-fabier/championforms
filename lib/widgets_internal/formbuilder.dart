@@ -27,6 +27,7 @@ class FormBuilderWidget extends flutter.StatefulWidget {
     this.spacer,
     this.parentErrors,
     this.fieldPadding,
+    this.enableAutofillGroup = false,
   });
 
   final List<FormBuilderError>? parentErrors;
@@ -42,6 +43,10 @@ class FormBuilderWidget extends flutter.StatefulWidget {
   )? formWrapper;
 
   final FormTheme theme;
+
+  /// Whether to wrap form content in [AutofillGroup].
+  final bool enableAutofillGroup;
+
   @override
   flutter.State<flutter.StatefulWidget> createState() => _FormBuilderWidgetState();
 }
@@ -217,6 +222,11 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
 
         // The wrapper lays out the widgets.
         flutter.Widget formContent = formWrapper(context, output);
+
+        // Wrap in AutofillGroup if enabled
+        if (widget.enableAutofillGroup) {
+          formContent = flutter.AutofillGroup(child: formContent);
+        }
 
         // The FocusTraversalGroup should wrap the actual content.
         return flutter.FocusTraversalGroup(

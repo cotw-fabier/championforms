@@ -10,6 +10,52 @@ import 'package:championforms/controllers/form_controller.dart';
 import 'package:flutter/material.dart' as flutter;
 import 'package:flutter/services.dart';
 
+/// Specifies the type of name for autofill configuration.
+///
+/// Used with [TextField.name] to set appropriate autofill hints.
+enum NameType {
+  /// Full name (given + family)
+  full,
+
+  /// First name / given name
+  given,
+
+  /// Last name / family name
+  family,
+
+  /// Middle name
+  middle,
+
+  /// Name prefix (e.g., Mr., Mrs., Dr.)
+  prefix,
+
+  /// Name suffix (e.g., Jr., III)
+  suffix,
+
+  /// Nickname
+  nickname,
+}
+
+/// Helper function to get the autofill hint for a name type.
+String _autofillHintForNameType(NameType type) {
+  switch (type) {
+    case NameType.full:
+      return flutter.AutofillHints.name;
+    case NameType.given:
+      return flutter.AutofillHints.givenName;
+    case NameType.family:
+      return flutter.AutofillHints.familyName;
+    case NameType.middle:
+      return flutter.AutofillHints.middleName;
+    case NameType.prefix:
+      return flutter.AutofillHints.namePrefix;
+    case NameType.suffix:
+      return flutter.AutofillHints.nameSuffix;
+    case NameType.nickname:
+      return flutter.AutofillHints.nickname;
+  }
+}
+
 class TextField extends Field {
   // Define the type of field type
 
@@ -68,6 +114,20 @@ class TextField extends Field {
   /// Direct passthrough of inputFormatters from TextField
   final List<TextInputFormatter>? inputFormatters;
 
+  /// Autofill hints for browser/OS autofill functionality.
+  ///
+  /// Pass Flutter's [AutofillHints] constants to enable autofill suggestions.
+  /// Use semantic constructors like [TextField.email] for automatic configuration.
+  ///
+  /// Example:
+  /// ```dart
+  /// form.TextField(
+  ///   id: 'email',
+  ///   autofillHints: [AutofillHints.email],
+  /// )
+  /// ```
+  final Iterable<String>? autofillHints;
+
   // Add a builder for defining the field style
 
   // We need to have a callback which will be called when drag and drop
@@ -108,6 +168,7 @@ class TextField extends Field {
     this.defaultValue,
     this.keyboardType,
     this.inputFormatters,
+    this.autofillHints,
     super.validators,
     super.validateLive,
     super.onSubmit,
@@ -141,6 +202,7 @@ class TextField extends Field {
     String? defaultValue,
     flutter.TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
+    Iterable<String>? autofillHints,
     List<Validator>? validators,
     bool? validateLive,
     Function(FormResults results)? onSubmit,
@@ -192,6 +254,7 @@ class TextField extends Field {
       defaultValue: defaultValue ?? this.defaultValue,
       keyboardType: keyboardType ?? this.keyboardType,
       inputFormatters: inputFormatters ?? this.inputFormatters,
+      autofillHints: autofillHints ?? this.autofillHints,
       validators: validators ?? this.validators,
       validateLive: validateLive ?? this.validateLive,
       onSubmit: onSubmit ?? this.onSubmit,
@@ -203,6 +266,920 @@ class TextField extends Field {
       fieldBackground: fieldBackground ?? this.fieldBackground,
     );
   }
+
+  // ==========================================================================
+  // SEMANTIC NAMED CONSTRUCTORS
+  // ==========================================================================
+
+  /// Creates an email input field with autofill hints and email keyboard.
+  ///
+  /// Configures:
+  /// - `autofillHints`: [AutofillHints.email]
+  /// - `keyboardType`: TextInputType.emailAddress (unless overridden)
+  ///
+  /// Example:
+  /// ```dart
+  /// form.TextField.email(
+  ///   id: 'user_email',
+  ///   title: 'Email Address',
+  /// )
+  /// ```
+  TextField.email({
+    required String id,
+    flutter.Widget Function(FieldBuilderContext)? fieldBuilder,
+    int? maxLines,
+    AutoCompleteBuilder? autoComplete,
+    String? textFieldTitle,
+    String hintText = "email@example.com",
+    flutter.Widget? icon,
+    flutter.Widget? leading,
+    flutter.Widget? trailing,
+    FormTheme? theme,
+    String? title,
+    String? description,
+    int? maxLength,
+    bool disabled = false,
+    bool hideField = false,
+    bool requestFocus = false,
+    String? defaultValue,
+    flutter.TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    Iterable<String>? autofillHints,
+    List<Validator>? validators,
+    bool validateLive = false,
+    Function(FormResults results)? onSubmit,
+    Function(FormResults results)? onChange,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onDrop,
+    bool draggable = true,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onPaste,
+  }) : this(
+          id: id,
+          fieldBuilder: fieldBuilder,
+          maxLines: maxLines,
+          autoComplete: autoComplete,
+          textFieldTitle: textFieldTitle,
+          hintText: hintText,
+          icon: icon,
+          leading: leading,
+          trailing: trailing,
+          theme: theme,
+          title: title,
+          description: description,
+          maxLength: maxLength,
+          disabled: disabled,
+          hideField: hideField,
+          requestFocus: requestFocus,
+          password: false,
+          defaultValue: defaultValue,
+          keyboardType: keyboardType ?? flutter.TextInputType.emailAddress,
+          inputFormatters: inputFormatters,
+          autofillHints: autofillHints ?? const [flutter.AutofillHints.email],
+          validators: validators,
+          validateLive: validateLive,
+          onSubmit: onSubmit,
+          onChange: onChange,
+          onDrop: onDrop,
+          draggable: draggable,
+          onPaste: onPaste,
+        );
+
+  /// Creates a password input field with autofill hints and obscured text.
+  ///
+  /// Configures:
+  /// - `autofillHints`: [AutofillHints.password] or [AutofillHints.newPassword]
+  /// - `password`: true (obscures text)
+  /// - `maxLines`: 1 (passwords should be single line)
+  ///
+  /// Example:
+  /// ```dart
+  /// form.TextField.password(
+  ///   id: 'login_password',
+  ///   title: 'Password',
+  /// )
+  ///
+  /// // For registration forms (new password)
+  /// form.TextField.password(
+  ///   id: 'new_password',
+  ///   isNewPassword: true,
+  /// )
+  /// ```
+  TextField.password({
+    required String id,
+    bool isNewPassword = false,
+    flutter.Widget Function(FieldBuilderContext)? fieldBuilder,
+    AutoCompleteBuilder? autoComplete,
+    String? textFieldTitle,
+    String hintText = "",
+    flutter.Widget? icon,
+    flutter.Widget? leading,
+    flutter.Widget? trailing,
+    FormTheme? theme,
+    String? title,
+    String? description,
+    int? maxLength,
+    bool disabled = false,
+    bool hideField = false,
+    bool requestFocus = false,
+    String? defaultValue,
+    flutter.TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    Iterable<String>? autofillHints,
+    List<Validator>? validators,
+    bool validateLive = false,
+    Function(FormResults results)? onSubmit,
+    Function(FormResults results)? onChange,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onDrop,
+    bool draggable = true,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onPaste,
+  }) : this(
+          id: id,
+          fieldBuilder: fieldBuilder,
+          maxLines: 1,
+          autoComplete: autoComplete,
+          textFieldTitle: textFieldTitle,
+          hintText: hintText,
+          icon: icon,
+          leading: leading,
+          trailing: trailing,
+          theme: theme,
+          title: title,
+          description: description,
+          maxLength: maxLength,
+          disabled: disabled,
+          hideField: hideField,
+          requestFocus: requestFocus,
+          password: true,
+          defaultValue: defaultValue,
+          keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
+          autofillHints: autofillHints ??
+              [
+                isNewPassword
+                    ? flutter.AutofillHints.newPassword
+                    : flutter.AutofillHints.password
+              ],
+          validators: validators,
+          validateLive: validateLive,
+          onSubmit: onSubmit,
+          onChange: onChange,
+          onDrop: onDrop,
+          draggable: draggable,
+          onPaste: onPaste,
+        );
+
+  /// Creates a phone number input field with autofill hints and phone keyboard.
+  ///
+  /// Configures:
+  /// - `autofillHints`: [AutofillHints.telephoneNumber]
+  /// - `keyboardType`: TextInputType.phone
+  ///
+  /// Example:
+  /// ```dart
+  /// form.TextField.phone(
+  ///   id: 'phone',
+  ///   title: 'Phone Number',
+  /// )
+  /// ```
+  TextField.phone({
+    required String id,
+    flutter.Widget Function(FieldBuilderContext)? fieldBuilder,
+    int? maxLines,
+    AutoCompleteBuilder? autoComplete,
+    String? textFieldTitle,
+    String hintText = "",
+    flutter.Widget? icon,
+    flutter.Widget? leading,
+    flutter.Widget? trailing,
+    FormTheme? theme,
+    String? title,
+    String? description,
+    int? maxLength,
+    bool disabled = false,
+    bool hideField = false,
+    bool requestFocus = false,
+    String? defaultValue,
+    flutter.TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    Iterable<String>? autofillHints,
+    List<Validator>? validators,
+    bool validateLive = false,
+    Function(FormResults results)? onSubmit,
+    Function(FormResults results)? onChange,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onDrop,
+    bool draggable = true,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onPaste,
+  }) : this(
+          id: id,
+          fieldBuilder: fieldBuilder,
+          maxLines: maxLines,
+          autoComplete: autoComplete,
+          textFieldTitle: textFieldTitle,
+          hintText: hintText,
+          icon: icon,
+          leading: leading,
+          trailing: trailing,
+          theme: theme,
+          title: title,
+          description: description,
+          maxLength: maxLength,
+          disabled: disabled,
+          hideField: hideField,
+          requestFocus: requestFocus,
+          password: false,
+          defaultValue: defaultValue,
+          keyboardType: keyboardType ?? flutter.TextInputType.phone,
+          inputFormatters: inputFormatters,
+          autofillHints:
+              autofillHints ?? const [flutter.AutofillHints.telephoneNumber],
+          validators: validators,
+          validateLive: validateLive,
+          onSubmit: onSubmit,
+          onChange: onChange,
+          onDrop: onDrop,
+          draggable: draggable,
+          onPaste: onPaste,
+        );
+
+  /// Creates a name input field with autofill hints.
+  ///
+  /// Use [nameType] to specify which part of the name:
+  /// - [NameType.full] - Full name (default)
+  /// - [NameType.given] - First name
+  /// - [NameType.family] - Last name
+  /// - [NameType.middle] - Middle name
+  ///
+  /// Example:
+  /// ```dart
+  /// form.TextField.name(
+  ///   id: 'firstname',
+  ///   nameType: form.NameType.given,
+  ///   title: 'First Name',
+  /// )
+  /// ```
+  TextField.name({
+    required String id,
+    NameType nameType = NameType.full,
+    flutter.Widget Function(FieldBuilderContext)? fieldBuilder,
+    int? maxLines,
+    AutoCompleteBuilder? autoComplete,
+    String? textFieldTitle,
+    String hintText = "",
+    flutter.Widget? icon,
+    flutter.Widget? leading,
+    flutter.Widget? trailing,
+    FormTheme? theme,
+    String? title,
+    String? description,
+    int? maxLength,
+    bool disabled = false,
+    bool hideField = false,
+    bool requestFocus = false,
+    String? defaultValue,
+    flutter.TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    Iterable<String>? autofillHints,
+    List<Validator>? validators,
+    bool validateLive = false,
+    Function(FormResults results)? onSubmit,
+    Function(FormResults results)? onChange,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onDrop,
+    bool draggable = true,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onPaste,
+  }) : this(
+          id: id,
+          fieldBuilder: fieldBuilder,
+          maxLines: maxLines,
+          autoComplete: autoComplete,
+          textFieldTitle: textFieldTitle,
+          hintText: hintText,
+          icon: icon,
+          leading: leading,
+          trailing: trailing,
+          theme: theme,
+          title: title,
+          description: description,
+          maxLength: maxLength,
+          disabled: disabled,
+          hideField: hideField,
+          requestFocus: requestFocus,
+          password: false,
+          defaultValue: defaultValue,
+          keyboardType: keyboardType ?? flutter.TextInputType.name,
+          inputFormatters: inputFormatters,
+          autofillHints: autofillHints ?? [_autofillHintForNameType(nameType)],
+          validators: validators,
+          validateLive: validateLive,
+          onSubmit: onSubmit,
+          onChange: onChange,
+          onDrop: onDrop,
+          draggable: draggable,
+          onPaste: onPaste,
+        );
+
+  /// Creates a username input field with autofill hints.
+  ///
+  /// Configures:
+  /// - `autofillHints`: [AutofillHints.username]
+  ///
+  /// Example:
+  /// ```dart
+  /// form.TextField.username(
+  ///   id: 'username',
+  ///   title: 'Username',
+  /// )
+  /// ```
+  TextField.username({
+    required String id,
+    flutter.Widget Function(FieldBuilderContext)? fieldBuilder,
+    int? maxLines,
+    AutoCompleteBuilder? autoComplete,
+    String? textFieldTitle,
+    String hintText = "",
+    flutter.Widget? icon,
+    flutter.Widget? leading,
+    flutter.Widget? trailing,
+    FormTheme? theme,
+    String? title,
+    String? description,
+    int? maxLength,
+    bool disabled = false,
+    bool hideField = false,
+    bool requestFocus = false,
+    String? defaultValue,
+    flutter.TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    Iterable<String>? autofillHints,
+    List<Validator>? validators,
+    bool validateLive = false,
+    Function(FormResults results)? onSubmit,
+    Function(FormResults results)? onChange,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onDrop,
+    bool draggable = true,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onPaste,
+  }) : this(
+          id: id,
+          fieldBuilder: fieldBuilder,
+          maxLines: maxLines,
+          autoComplete: autoComplete,
+          textFieldTitle: textFieldTitle,
+          hintText: hintText,
+          icon: icon,
+          leading: leading,
+          trailing: trailing,
+          theme: theme,
+          title: title,
+          description: description,
+          maxLength: maxLength,
+          disabled: disabled,
+          hideField: hideField,
+          requestFocus: requestFocus,
+          password: false,
+          defaultValue: defaultValue,
+          keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
+          autofillHints:
+              autofillHints ?? const [flutter.AutofillHints.username],
+          validators: validators,
+          validateLive: validateLive,
+          onSubmit: onSubmit,
+          onChange: onChange,
+          onDrop: onDrop,
+          draggable: draggable,
+          onPaste: onPaste,
+        );
+
+  /// Creates a URL input field with autofill hints and URL keyboard.
+  ///
+  /// Configures:
+  /// - `autofillHints`: [AutofillHints.url]
+  /// - `keyboardType`: TextInputType.url
+  ///
+  /// Example:
+  /// ```dart
+  /// form.TextField.url(
+  ///   id: 'website',
+  ///   title: 'Website URL',
+  /// )
+  /// ```
+  TextField.url({
+    required String id,
+    flutter.Widget Function(FieldBuilderContext)? fieldBuilder,
+    int? maxLines,
+    AutoCompleteBuilder? autoComplete,
+    String? textFieldTitle,
+    String hintText = "https://",
+    flutter.Widget? icon,
+    flutter.Widget? leading,
+    flutter.Widget? trailing,
+    FormTheme? theme,
+    String? title,
+    String? description,
+    int? maxLength,
+    bool disabled = false,
+    bool hideField = false,
+    bool requestFocus = false,
+    String? defaultValue,
+    flutter.TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    Iterable<String>? autofillHints,
+    List<Validator>? validators,
+    bool validateLive = false,
+    Function(FormResults results)? onSubmit,
+    Function(FormResults results)? onChange,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onDrop,
+    bool draggable = true,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onPaste,
+  }) : this(
+          id: id,
+          fieldBuilder: fieldBuilder,
+          maxLines: maxLines,
+          autoComplete: autoComplete,
+          textFieldTitle: textFieldTitle,
+          hintText: hintText,
+          icon: icon,
+          leading: leading,
+          trailing: trailing,
+          theme: theme,
+          title: title,
+          description: description,
+          maxLength: maxLength,
+          disabled: disabled,
+          hideField: hideField,
+          requestFocus: requestFocus,
+          password: false,
+          defaultValue: defaultValue,
+          keyboardType: keyboardType ?? flutter.TextInputType.url,
+          inputFormatters: inputFormatters,
+          autofillHints: autofillHints ?? const [flutter.AutofillHints.url],
+          validators: validators,
+          validateLive: validateLive,
+          onSubmit: onSubmit,
+          onChange: onChange,
+          onDrop: onDrop,
+          draggable: draggable,
+          onPaste: onPaste,
+        );
+
+  /// Creates a street address input field with autofill hints.
+  ///
+  /// Configures:
+  /// - `autofillHints`: [AutofillHints.streetAddressLine1] or [AutofillHints.streetAddressLine2]
+  ///
+  /// Example:
+  /// ```dart
+  /// form.TextField.streetAddress(
+  ///   id: 'street',
+  ///   title: 'Street Address',
+  /// )
+  ///
+  /// // For second address line
+  /// form.TextField.streetAddress(
+  ///   id: 'street2',
+  ///   isSecondLine: true,
+  ///   title: 'Apartment, suite, etc.',
+  /// )
+  /// ```
+  TextField.streetAddress({
+    required String id,
+    bool isSecondLine = false,
+    flutter.Widget Function(FieldBuilderContext)? fieldBuilder,
+    int? maxLines,
+    AutoCompleteBuilder? autoComplete,
+    String? textFieldTitle,
+    String hintText = "",
+    flutter.Widget? icon,
+    flutter.Widget? leading,
+    flutter.Widget? trailing,
+    FormTheme? theme,
+    String? title,
+    String? description,
+    int? maxLength,
+    bool disabled = false,
+    bool hideField = false,
+    bool requestFocus = false,
+    String? defaultValue,
+    flutter.TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    Iterable<String>? autofillHints,
+    List<Validator>? validators,
+    bool validateLive = false,
+    Function(FormResults results)? onSubmit,
+    Function(FormResults results)? onChange,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onDrop,
+    bool draggable = true,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onPaste,
+  }) : this(
+          id: id,
+          fieldBuilder: fieldBuilder,
+          maxLines: maxLines,
+          autoComplete: autoComplete,
+          textFieldTitle: textFieldTitle,
+          hintText: hintText,
+          icon: icon,
+          leading: leading,
+          trailing: trailing,
+          theme: theme,
+          title: title,
+          description: description,
+          maxLength: maxLength,
+          disabled: disabled,
+          hideField: hideField,
+          requestFocus: requestFocus,
+          password: false,
+          defaultValue: defaultValue,
+          keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
+          autofillHints: autofillHints ??
+              [
+                isSecondLine
+                    ? flutter.AutofillHints.streetAddressLine2
+                    : flutter.AutofillHints.streetAddressLine1
+              ],
+          validators: validators,
+          validateLive: validateLive,
+          onSubmit: onSubmit,
+          onChange: onChange,
+          onDrop: onDrop,
+          draggable: draggable,
+          onPaste: onPaste,
+        );
+
+  /// Creates a city input field with autofill hints.
+  ///
+  /// Configures:
+  /// - `autofillHints`: [AutofillHints.addressCity]
+  ///
+  /// Example:
+  /// ```dart
+  /// form.TextField.city(
+  ///   id: 'city',
+  ///   title: 'City',
+  /// )
+  /// ```
+  TextField.city({
+    required String id,
+    flutter.Widget Function(FieldBuilderContext)? fieldBuilder,
+    int? maxLines,
+    AutoCompleteBuilder? autoComplete,
+    String? textFieldTitle,
+    String hintText = "",
+    flutter.Widget? icon,
+    flutter.Widget? leading,
+    flutter.Widget? trailing,
+    FormTheme? theme,
+    String? title,
+    String? description,
+    int? maxLength,
+    bool disabled = false,
+    bool hideField = false,
+    bool requestFocus = false,
+    String? defaultValue,
+    flutter.TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    Iterable<String>? autofillHints,
+    List<Validator>? validators,
+    bool validateLive = false,
+    Function(FormResults results)? onSubmit,
+    Function(FormResults results)? onChange,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onDrop,
+    bool draggable = true,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onPaste,
+  }) : this(
+          id: id,
+          fieldBuilder: fieldBuilder,
+          maxLines: maxLines,
+          autoComplete: autoComplete,
+          textFieldTitle: textFieldTitle,
+          hintText: hintText,
+          icon: icon,
+          leading: leading,
+          trailing: trailing,
+          theme: theme,
+          title: title,
+          description: description,
+          maxLength: maxLength,
+          disabled: disabled,
+          hideField: hideField,
+          requestFocus: requestFocus,
+          password: false,
+          defaultValue: defaultValue,
+          keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
+          autofillHints:
+              autofillHints ?? const [flutter.AutofillHints.addressCity],
+          validators: validators,
+          validateLive: validateLive,
+          onSubmit: onSubmit,
+          onChange: onChange,
+          onDrop: onDrop,
+          draggable: draggable,
+          onPaste: onPaste,
+        );
+
+  /// Creates a state/region input field with autofill hints.
+  ///
+  /// Configures:
+  /// - `autofillHints`: [AutofillHints.addressState]
+  ///
+  /// Example:
+  /// ```dart
+  /// form.TextField.state(
+  ///   id: 'state',
+  ///   title: 'State',
+  /// )
+  /// ```
+  TextField.state({
+    required String id,
+    flutter.Widget Function(FieldBuilderContext)? fieldBuilder,
+    int? maxLines,
+    AutoCompleteBuilder? autoComplete,
+    String? textFieldTitle,
+    String hintText = "",
+    flutter.Widget? icon,
+    flutter.Widget? leading,
+    flutter.Widget? trailing,
+    FormTheme? theme,
+    String? title,
+    String? description,
+    int? maxLength,
+    bool disabled = false,
+    bool hideField = false,
+    bool requestFocus = false,
+    String? defaultValue,
+    flutter.TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    Iterable<String>? autofillHints,
+    List<Validator>? validators,
+    bool validateLive = false,
+    Function(FormResults results)? onSubmit,
+    Function(FormResults results)? onChange,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onDrop,
+    bool draggable = true,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onPaste,
+  }) : this(
+          id: id,
+          fieldBuilder: fieldBuilder,
+          maxLines: maxLines,
+          autoComplete: autoComplete,
+          textFieldTitle: textFieldTitle,
+          hintText: hintText,
+          icon: icon,
+          leading: leading,
+          trailing: trailing,
+          theme: theme,
+          title: title,
+          description: description,
+          maxLength: maxLength,
+          disabled: disabled,
+          hideField: hideField,
+          requestFocus: requestFocus,
+          password: false,
+          defaultValue: defaultValue,
+          keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
+          autofillHints:
+              autofillHints ?? const [flutter.AutofillHints.addressState],
+          validators: validators,
+          validateLive: validateLive,
+          onSubmit: onSubmit,
+          onChange: onChange,
+          onDrop: onDrop,
+          draggable: draggable,
+          onPaste: onPaste,
+        );
+
+  /// Creates a postal/ZIP code input field with autofill hints and number keyboard.
+  ///
+  /// Configures:
+  /// - `autofillHints`: [AutofillHints.postalCode]
+  /// - `keyboardType`: TextInputType.number
+  ///
+  /// Example:
+  /// ```dart
+  /// form.TextField.postalCode(
+  ///   id: 'zip',
+  ///   title: 'ZIP Code',
+  /// )
+  /// ```
+  TextField.postalCode({
+    required String id,
+    flutter.Widget Function(FieldBuilderContext)? fieldBuilder,
+    int? maxLines,
+    AutoCompleteBuilder? autoComplete,
+    String? textFieldTitle,
+    String hintText = "",
+    flutter.Widget? icon,
+    flutter.Widget? leading,
+    flutter.Widget? trailing,
+    FormTheme? theme,
+    String? title,
+    String? description,
+    int? maxLength,
+    bool disabled = false,
+    bool hideField = false,
+    bool requestFocus = false,
+    String? defaultValue,
+    flutter.TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    Iterable<String>? autofillHints,
+    List<Validator>? validators,
+    bool validateLive = false,
+    Function(FormResults results)? onSubmit,
+    Function(FormResults results)? onChange,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onDrop,
+    bool draggable = true,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onPaste,
+  }) : this(
+          id: id,
+          fieldBuilder: fieldBuilder,
+          maxLines: maxLines,
+          autoComplete: autoComplete,
+          textFieldTitle: textFieldTitle,
+          hintText: hintText,
+          icon: icon,
+          leading: leading,
+          trailing: trailing,
+          theme: theme,
+          title: title,
+          description: description,
+          maxLength: maxLength,
+          disabled: disabled,
+          hideField: hideField,
+          requestFocus: requestFocus,
+          password: false,
+          defaultValue: defaultValue,
+          keyboardType: keyboardType ?? flutter.TextInputType.number,
+          inputFormatters: inputFormatters,
+          autofillHints:
+              autofillHints ?? const [flutter.AutofillHints.postalCode],
+          validators: validators,
+          validateLive: validateLive,
+          onSubmit: onSubmit,
+          onChange: onChange,
+          onDrop: onDrop,
+          draggable: draggable,
+          onPaste: onPaste,
+        );
+
+  /// Creates a country input field with autofill hints.
+  ///
+  /// Configures:
+  /// - `autofillHints`: [AutofillHints.countryName]
+  ///
+  /// Example:
+  /// ```dart
+  /// form.TextField.country(
+  ///   id: 'country',
+  ///   title: 'Country',
+  /// )
+  /// ```
+  TextField.country({
+    required String id,
+    flutter.Widget Function(FieldBuilderContext)? fieldBuilder,
+    int? maxLines,
+    AutoCompleteBuilder? autoComplete,
+    String? textFieldTitle,
+    String hintText = "",
+    flutter.Widget? icon,
+    flutter.Widget? leading,
+    flutter.Widget? trailing,
+    FormTheme? theme,
+    String? title,
+    String? description,
+    int? maxLength,
+    bool disabled = false,
+    bool hideField = false,
+    bool requestFocus = false,
+    String? defaultValue,
+    flutter.TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    Iterable<String>? autofillHints,
+    List<Validator>? validators,
+    bool validateLive = false,
+    Function(FormResults results)? onSubmit,
+    Function(FormResults results)? onChange,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onDrop,
+    bool draggable = true,
+    Future<void> Function({
+      flutter.TextEditingController controller,
+      required String formId,
+      required String fieldId,
+    })? onPaste,
+  }) : this(
+          id: id,
+          fieldBuilder: fieldBuilder,
+          maxLines: maxLines,
+          autoComplete: autoComplete,
+          textFieldTitle: textFieldTitle,
+          hintText: hintText,
+          icon: icon,
+          leading: leading,
+          trailing: trailing,
+          theme: theme,
+          title: title,
+          description: description,
+          maxLength: maxLength,
+          disabled: disabled,
+          hideField: hideField,
+          requestFocus: requestFocus,
+          password: false,
+          defaultValue: defaultValue,
+          keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
+          autofillHints:
+              autofillHints ?? const [flutter.AutofillHints.countryName],
+          validators: validators,
+          validateLive: validateLive,
+          onSubmit: onSubmit,
+          onChange: onChange,
+          onDrop: onDrop,
+          draggable: draggable,
+          onPaste: onPaste,
+        );
 
   // --- Implementation of Field<String> Converters ---
 

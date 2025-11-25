@@ -1,8 +1,13 @@
+import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/core/field_builder_registry.dart';
+import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/field_types/textfield.dart';
 import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/field_converters.dart';
+import 'package:championforms/models/formresults.dart';
+import 'package:championforms/models/themes.dart';
+import 'package:championforms/models/validatorclass.dart';
 import 'package:flutter/material.dart' as material;
 import 'package:flutter_test/flutter_test.dart';
 
@@ -12,6 +17,41 @@ class CustomTestField extends Field with TextFieldConverters {
 
   @override
   dynamic get defaultValue => '';
+
+  @override
+  CustomTestField copyWith({
+    String? id,
+    material.Widget? icon,
+    FormTheme? theme,
+    String? title,
+    String? description,
+    bool? disabled,
+    bool? hideField,
+    bool? requestFocus,
+    List<Validator>? validators,
+    bool? validateLive,
+    Function(FormResults results)? onSubmit,
+    Function(FormResults results)? onChange,
+    material.Widget Function(
+      material.BuildContext context,
+      Field fieldDetails,
+      FormController controller,
+      FieldColorScheme currentColors,
+      material.Widget renderedField,
+    )? fieldLayout,
+    material.Widget Function(
+      material.BuildContext context,
+      Field fieldDetails,
+      FormController controller,
+      FieldColorScheme currentColors,
+      material.Widget renderedField,
+    )? fieldBackground,
+  }) {
+    return CustomTestField(
+      id: id ?? this.id,
+      title: title ?? this.title,
+    );
+  }
 }
 
 // Custom converters for testing

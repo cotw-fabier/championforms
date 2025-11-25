@@ -150,13 +150,15 @@ class NameField extends CompoundField {
   @override
   List<Field> buildSubFields() {
     final fields = <Field>[
-      TextField(
+      TextField.name(
         id: 'firstname',
+        nameType: NameType.given,
         title: 'First Name',
         hintText: 'First',
       ),
-      TextField(
+      TextField.name(
         id: 'lastname',
+        nameType: NameType.family,
         title: 'Last Name',
         hintText: 'Last',
       ),
@@ -166,8 +168,9 @@ class NameField extends CompoundField {
     if (includeMiddleName) {
       fields.insert(
         1,
-        TextField(
+        TextField.name(
           id: 'middlename',
+          nameType: NameType.middle,
           title: 'Middle Name',
           hintText: 'Middle',
         ),
