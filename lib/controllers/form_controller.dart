@@ -1,5 +1,7 @@
 // We are going to build one giant controller to handle all aspects of our form.
 
+import 'dart:async';
+
 import 'package:championforms/models/field_types/optionselect.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
@@ -182,14 +184,80 @@ class FormController extends ChangeNotifier {
   /// focus events, or timer callbacks.
   bool _isDisposed = false;
 
-  /// Safely notifies listeners only if the controller has not been disposed.
+  /// Tracks the current notification depth to prevent re-entrant notifications.
   ///
-  /// This prevents the Flutter error that occurs when [dispose] is called
-  /// during [notifyListeners] execution, which can happen during widget
-  /// tree teardown when pending async operations or focus events fire.
+  /// When > 0, we are inside a notification cycle and should defer new notifications.
+  /// This prevents infinite loops where notification handlers trigger state changes
+  /// that trigger more notifications.
+  int _notificationDepth = 0;
+
+  /// Flag indicating a notification was requested while inside a notification cycle.
+  ///
+  /// When true, a notification will be scheduled after the current cycle completes.
+  bool _pendingNotification = false;
+
+  /// Set of field IDs that need validation after the current notification cycle.
+  ///
+  /// Validation is deferred to prevent re-entrant state modifications during
+  /// notification handling.
+  final Set<String> _deferredValidations = {};
+
+  /// Safely notifies listeners with re-entrancy protection.
+  ///
+  /// If called while already inside a notification cycle (notificationDepth > 0),
+  /// defers the notification until the current cycle completes. This prevents
+  /// infinite loops where notification handlers trigger state changes that
+  /// trigger more notifications.
   void _safeNotifyListeners() {
-    if (!_isDisposed) {
+    if (_isDisposed) return;
+
+    if (_notificationDepth > 0) {
+      // We're inside a notification cycle - defer this notification
+      _pendingNotification = true;
+      return;
+    }
+
+    _executeNotification();
+  }
+
+  /// Executes the actual notification with depth tracking.
+  void _executeNotification() {
+    if (_isDisposed) return;
+
+    _notificationDepth++;
+    try {
       notifyListeners();
+    } finally {
+      _notificationDepth--;
+
+      // After notification completes, process any deferred work
+      if (_notificationDepth == 0) {
+        _processDeferred();
+      }
+    }
+  }
+
+  /// Processes deferred notifications and validations after a notification cycle.
+  void _processDeferred() {
+    // Process deferred validations first (they may add errors)
+    if (_deferredValidations.isNotEmpty) {
+      final fieldsToValidate = Set<String>.from(_deferredValidations);
+      _deferredValidations.clear();
+
+      for (final fieldId in fieldsToValidate) {
+        _validateField(fieldId, notify: false);
+      }
+    }
+
+    // Then send the deferred notification if one was requested
+    if (_pendingNotification) {
+      _pendingNotification = false;
+      // Use scheduleMicrotask to break potential synchronous chains
+      scheduleMicrotask(() {
+        if (!_isDisposed) {
+          _executeNotification();
+        }
+      });
     }
   }
 
@@ -1428,6 +1496,45 @@ class FormController extends ChangeNotifier {
       );
     }
     _validateField(fieldId, notify: true);
+  }
+
+  /// Requests validation for a field to be run after current notification cycle.
+  ///
+  /// If not currently in a notification cycle, validation runs immediately.
+  /// Otherwise, it's deferred until the cycle completes. This is useful for
+  /// triggering validation from within notification handlers without causing
+  /// infinite loops.
+  ///
+  /// **Parameters:**
+  /// - [fieldId]: The unique identifier of the field to validate
+  ///
+  /// **Throws:**
+  /// - [ArgumentError]: If field with [fieldId] does not exist
+  ///
+  /// **Example:**
+  /// ```dart
+  /// // Safe to call from onValueChanged or other notification handlers
+  /// controller.requestDeferredValidation('email');
+  /// ```
+  ///
+  /// See also:
+  /// - [validateField] for immediate validation
+  /// - [validateForm] to validate all fields
+  void requestDeferredValidation(String fieldId) {
+    if (!_fieldDefinitions.containsKey(fieldId)) {
+      throw ArgumentError(
+        'Field "$fieldId" does not exist in controller. '
+        'Available fields: ${_fieldDefinitions.keys.join(", ")}',
+      );
+    }
+
+    if (_notificationDepth > 0) {
+      // Defer validation - will run after notification cycle completes
+      _deferredValidations.add(fieldId);
+    } else {
+      // Run immediately
+      _validateField(fieldId, notify: true);
+    }
   }
 
   /// Validates all fields on a specific page.

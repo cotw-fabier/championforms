@@ -551,6 +551,51 @@ class FormResults {
     );
   }
 
+  /// Gets form results without triggering validation.
+  ///
+  /// Use this method when you need to read field values during notification
+  /// handling or other scenarios where triggering validation could cause
+  /// infinite loops.
+  ///
+  /// Unlike [getResults], this method:
+  /// - Does NOT run validators
+  /// - Does NOT modify controller state (no addError/clearErrors)
+  /// - Returns existing errors without recalculating
+  ///
+  /// **Example:**
+  /// ```dart
+  /// // In an onValueChanged callback (safe - no validation)
+  /// final results = FormResults.getResultsReadOnly(controller: controller);
+  /// final value = results.grab('fieldId').asString();
+  ///
+  /// // For full validation, use getResults() outside notification handlers
+  /// final validatedResults = FormResults.getResults(controller: controller);
+  /// ```
+  factory FormResults.getResultsReadOnly({
+    required FormController controller,
+    List<Field>? fields,
+  }) {
+    List<Field> finalFields = fields ?? controller.activeFields;
+    Map<String, dynamic> collectedResults = {};
+    Map<String, Field> definitions = {};
+
+    for (final field in finalFields) {
+      if (field.hideField) continue;
+
+      definitions[field.id] = field as Field;
+      final rawValue = controller.getFieldValue(field.id) ?? field.defaultValue;
+      collectedResults[field.id] = rawValue;
+    }
+
+    // Return existing errors without running validation
+    return FormResults(
+      formErrors: controller.formErrors,
+      errorState: controller.formErrors.isNotEmpty,
+      results: collectedResults,
+      fieldDefinitions: definitions,
+    );
+  }
+
   // --- Helper to get result and definition ---
   // Returns null if field not found
   // ({FieldResults<T>? result, Field<T>? definition}) _getResultAndDef<T>(

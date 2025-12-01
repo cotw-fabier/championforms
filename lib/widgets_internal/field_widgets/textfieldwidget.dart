@@ -110,8 +110,10 @@ class TextFieldWidget extends StatefulFieldWidget {
     }
 
     // Trigger onChange callback if defined
+    // Use getResultsReadOnly to avoid triggering validation during notification
+    // handling, which can cause infinite loops
     if (field.onChange != null) {
-      final results = FormResults.getResults(
+      final results = FormResults.getResultsReadOnly(
         controller: context.controller,
         fields: [context.field],
       );

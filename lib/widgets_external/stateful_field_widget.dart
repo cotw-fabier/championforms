@@ -192,11 +192,14 @@ abstract class StatefulFieldWidget extends StatefulWidget {
 
   /// Called when the field should be validated (on focus loss by default).
   ///
-  /// The default implementation triggers validation if `field.validateLive` is true:
+  /// The default implementation triggers deferred validation if `field.validateLive`
+  /// is true. Deferred validation runs after the current notification cycle completes,
+  /// preventing infinite loops when validation is triggered from within notification
+  /// handlers.
   ///
   /// ```dart
   /// if (context.field.validateLive) {
-  ///   context.controller.validateField(context.field.id);
+  ///   context.controller.requestDeferredValidation(context.field.id);
   /// }
   /// ```
   ///
@@ -213,9 +216,11 @@ abstract class StatefulFieldWidget extends StatefulWidget {
   /// }
   /// ```
   void onValidate() {
-    // Default: trigger validation if validateLive is true
+    // Default: trigger deferred validation if validateLive is true
+    // Using requestDeferredValidation prevents infinite loops when validation
+    // is triggered from within notification handlers
     if (context.field.validateLive) {
-      context.controller.validateField(context.field.id);
+      context.controller.requestDeferredValidation(context.field.id);
     }
   }
 
