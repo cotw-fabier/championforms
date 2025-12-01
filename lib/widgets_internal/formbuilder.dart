@@ -76,6 +76,7 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
     widget.controller.removeListener(_rebuildOnControllerUpdate);
     widget.controller.removeActiveFields(
       _flattenAllFields(widget.fields),
+      noNotify: true,
     );
     super.dispose();
   }
