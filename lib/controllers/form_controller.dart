@@ -268,15 +268,53 @@ class FormController extends ChangeNotifier {
         _fieldFocusStates.putIfAbsent(field.id, () => false);
         _updateFieldState(field.id);
         changed = true;
-      } else if (_fieldDefinitions[field.id] != field) {
+      } else {
+        final existingField = _fieldDefinitions[field.id]!;
+        // Always update the field definition to get latest hideField, etc.
         _fieldDefinitions[field.id] = field;
-        _updateFieldState(field.id);
-        changed = true;
+
+        // Only notify if data-relevant properties changed
+        // Visual properties like hideField should NOT trigger notifications
+        if (_hasDataRelevantChanges(existingField, field)) {
+          _updateFieldState(field.id);
+          changed = true;
+        }
       }
     }
     if (changed && !noNotify) {
       _safeNotifyListeners();
     }
+  }
+
+  /// Checks if two fields have data-relevant differences that warrant notification.
+  ///
+  /// Visual-only properties (hideField, theme, fieldLayout, fieldBackground) are
+  /// intentionally ignored because they don't affect the field's data or behavior.
+  /// This prevents infinite loops when visual properties change during rebuilds.
+  ///
+  /// **Parameters:**
+  /// - [oldField]: The existing field definition
+  /// - [newField]: The new field definition to compare
+  ///
+  /// **Returns:** true if data-relevant properties differ
+  bool _hasDataRelevantChanges(Field oldField, Field newField) {
+    // Different types always count as changed
+    if (oldField.runtimeType != newField.runtimeType) return true;
+
+    // Compare data-relevant properties
+    if (oldField.id != newField.id) return true;
+    if (oldField.disabled != newField.disabled) return true;
+    if (oldField.defaultValue != newField.defaultValue) return true;
+    if ((oldField.validators?.length ?? 0) != (newField.validators?.length ?? 0)) return true;
+
+    // Note: We intentionally do NOT compare:
+    // - hideField (visual only)
+    // - theme (visual only)
+    // - fieldLayout (visual only)
+    // - fieldBackground (visual only)
+    // - title, description, hintText (visual only)
+
+    return false;
   }
 
   /// Updates the list of currently rendered fields.
