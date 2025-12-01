@@ -175,6 +175,24 @@ class FormController extends ChangeNotifier {
   /// Example: `{'name': TextEditingController(), 'description': TextEditingController()}`
   final Map<String, dynamic> _fieldControllers = {};
 
+  /// Flag indicating whether this controller has been disposed.
+  ///
+  /// Used to prevent [notifyListeners] calls after disposal, which can cause
+  /// errors when widget teardown triggers state changes via pending futures,
+  /// focus events, or timer callbacks.
+  bool _isDisposed = false;
+
+  /// Safely notifies listeners only if the controller has not been disposed.
+  ///
+  /// This prevents the Flutter error that occurs when [dispose] is called
+  /// during [notifyListeners] execution, which can happen during widget
+  /// tree teardown when pending async operations or focus events fire.
+  void _safeNotifyListeners() {
+    if (!_isDisposed) {
+      notifyListeners();
+    }
+  }
+
   // ===========================================================================
   // PUBLIC LIFECYCLE METHODS
   // ===========================================================================
@@ -198,6 +216,11 @@ class FormController extends ChangeNotifier {
   /// ```
   @override
   void dispose() {
+    // Set disposed flag first to prevent notifyListeners during teardown.
+    // This guards against pending async operations, focus events, and timers
+    // that may fire during the disposal window.
+    _isDisposed = true;
+
     _fieldControllers.forEach((key, controller) {
       if (controller is ChangeNotifier) {
         controller.dispose();
@@ -252,7 +275,7 @@ class FormController extends ChangeNotifier {
       }
     }
     if (changed && !noNotify) {
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -277,7 +300,7 @@ class FormController extends ChangeNotifier {
     activeFields = [...activeFields, ...fields];
 
     if (!noNotify) {
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -299,7 +322,7 @@ class FormController extends ChangeNotifier {
         .toList();
 
     if (!noNotify) {
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -491,7 +514,7 @@ class FormController extends ChangeNotifier {
   /// // Batch updates without notifications
   /// controller.updateFieldValue<String>('name', 'John', noNotify: true);
   /// controller.updateFieldValue<String>('email', 'john@example.com', noNotify: true);
-  /// controller.notifyListeners();
+  /// controller._safeNotifyListeners();
   /// ```
   ///
   /// See also:
@@ -574,7 +597,7 @@ class FormController extends ChangeNotifier {
       }
     }
     if (!noNotify) {
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -678,7 +701,7 @@ class FormController extends ChangeNotifier {
   /// // Batch creation without notifications
   /// controller.createFieldValue<String>('field1', 'value1', noNotify: true);
   /// controller.createFieldValue<String>('field2', 'value2', noNotify: true);
-  /// controller.notifyListeners();
+  /// controller._safeNotifyListeners();
   /// ```
   ///
   /// **Note:** If you need to ensure a field definition exists before
@@ -720,7 +743,7 @@ class FormController extends ChangeNotifier {
     }
 
     if (!noNotify) {
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -784,7 +807,7 @@ class FormController extends ChangeNotifier {
     _fieldDefinitions[field.id] = field;
     _fieldFocusStates.putIfAbsent(field.id, () => false);
     _updateFieldState(field.id);
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   /// Removes a field from the controller.
@@ -830,7 +853,7 @@ class FormController extends ChangeNotifier {
     // Clear errors for this field
     clearErrors(fieldId, noNotify: true);
 
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   /// Checks if a field definition exists in the controller.
@@ -882,7 +905,7 @@ class FormController extends ChangeNotifier {
     final defaultValue = _fieldDefinitions[fieldId]?.defaultValue;
     updateFieldValue(fieldId, defaultValue, noNotify: true);
     clearErrors(fieldId, noNotify: true);
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   /// Resets all fields to their default values.
@@ -915,7 +938,7 @@ class FormController extends ChangeNotifier {
     clearAllErrors(noNotify: true);
 
     if (!noNotify) {
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -950,7 +973,7 @@ class FormController extends ChangeNotifier {
     }
 
     if (!noNotify) {
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -1305,7 +1328,7 @@ class FormController extends ChangeNotifier {
     for (final field in activeFields) {
       _validateField(field.id, notify: false);
     }
-    notifyListeners();
+    _safeNotifyListeners();
     return formErrors.isEmpty;
   }
 
@@ -1413,7 +1436,7 @@ class FormController extends ChangeNotifier {
     for (final field in fieldsOnPage) {
       _validateField(field.id, notify: false);
     }
-    notifyListeners();
+    _safeNotifyListeners();
 
     // Check if any field on this page has errors
     final fieldIdsOnPage = fieldsOnPage.map((f) => f.id).toSet();
@@ -1507,7 +1530,7 @@ class FormController extends ChangeNotifier {
   /// // Or during batch operations
   /// controller.clearAllErrors(noNotify: true);
   /// // ... more operations
-  /// controller.notifyListeners();
+  /// controller._safeNotifyListeners();
   /// ```
   ///
   /// See also:
@@ -1530,7 +1553,7 @@ class FormController extends ChangeNotifier {
     }
 
     if (!noNotify) {
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -1582,7 +1605,7 @@ class FormController extends ChangeNotifier {
   /// // Clear errors during batch operations
   /// controller.clearErrors('name', noNotify: true);
   /// controller.clearErrors('email', noNotify: true);
-  /// controller.notifyListeners();
+  /// controller._safeNotifyListeners();
   /// ```
   ///
   /// See also:
@@ -1598,7 +1621,7 @@ class FormController extends ChangeNotifier {
           formErrors.where((error) => error.fieldId != fieldId).toList();
       _updateFieldState(fieldId);
       if (!noNotify) {
-        notifyListeners();
+        _safeNotifyListeners();
       }
     }
   }
@@ -1636,7 +1659,7 @@ class FormController extends ChangeNotifier {
     if (formErrors.length < initialCount) {
       _updateFieldState(fieldId);
       if (!noNotify) {
-        notifyListeners();
+        _safeNotifyListeners();
       }
     }
   }
@@ -1677,7 +1700,7 @@ class FormController extends ChangeNotifier {
       formErrors = [error, ...formErrors];
       _updateFieldState(error.fieldId);
       if (!noNotify) {
-        notifyListeners();
+        _safeNotifyListeners();
       }
     }
   }
@@ -1734,7 +1757,7 @@ class FormController extends ChangeNotifier {
     _fieldFocusStates[fieldId] = true;
     _updateFieldState(fieldId);
 
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   /// Removes focus from the specified field programmatically.
@@ -1773,7 +1796,7 @@ class FormController extends ChangeNotifier {
       _fieldFocusStates[fieldId] = false;
       _updateFieldState(fieldId);
 
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -1810,18 +1833,18 @@ class FormController extends ChangeNotifier {
         }
         _fieldFocusStates[fieldId] = true;
         _updateFieldState(fieldId);
-        notifyListeners();
+        _safeNotifyListeners();
       }
     } else {
       if (currentlyFocused == fieldId) {
         _fieldFocusStates[fieldId] = false;
         _updateFieldState(fieldId);
-        notifyListeners();
+        _safeNotifyListeners();
       } else {
         if (alreadyHadFocus) {
           _fieldFocusStates[fieldId] = false;
           _updateFieldState(fieldId);
-          notifyListeners();
+          _safeNotifyListeners();
         }
       }
     }
@@ -2069,7 +2092,7 @@ class FormController extends ChangeNotifier {
     if (errorsChanged) {
       _updateFieldState(fieldId);
       if (notify) {
-        notifyListeners();
+        _safeNotifyListeners();
       }
     }
   }
