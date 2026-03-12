@@ -104,8 +104,23 @@ class _FileUploadContentState extends State<_FileUploadContent> {
     final field = widget.context.field as FileUpload;
     FilePickerResult? result;
 
-    final fileType = field.allowedExtensions != null ? FileType.custom : FileType.any;
-    final allowedExtensions = field.allowedExtensions;
+    FileType fileType;
+    List<String>? allowedExtensions;
+
+    if (field.fileType != null) {
+      fileType = field.fileType!;
+      allowedExtensions = null;
+      if (field.allowedExtensions != null) {
+        debugPrint('Warning: FileUpload "${field.id}" has both fileType and allowedExtensions set. '
+            'fileType takes priority; allowedExtensions will be ignored.');
+      }
+    } else if (field.allowedExtensions != null) {
+      fileType = FileType.custom;
+      allowedExtensions = field.allowedExtensions;
+    } else {
+      fileType = FileType.any;
+      allowedExtensions = null;
+    }
 
     if (field.multiselect) {
       result = await FilePicker.platform.pickFiles(

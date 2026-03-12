@@ -100,3 +100,6 @@ export 'package:championforms/widgets_external/stateful_field_widget.dart';
 export 'package:championforms/models/field_converters.dart';
 export 'package:championforms/models/file_model.dart';
 export 'package:championforms/models/themes.dart';
+
+// Export FileType from file_picker for use with FileUpload
+export 'package:file_picker/file_picker.dart' show FileType;

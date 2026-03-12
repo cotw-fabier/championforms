@@ -8,6 +8,7 @@ import 'package:championforms/models/validatorclass.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/controllers/form_controller.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
@@ -38,6 +39,14 @@ class FileUpload extends OptionSelect {
   /// may cause OutOfMemory errors on mobile devices.
   final int? maxFileSize;
 
+  /// The type of files to pick.
+  /// When set, this takes priority over [allowedExtensions].
+  /// Use `FileType.image`, `FileType.video`, `FileType.audio`, or `FileType.media`
+  /// for native OS-level file filtering.
+  /// If null (default), the picker uses `FileType.custom` when [allowedExtensions] is set,
+  /// or `FileType.any` otherwise.
+  final FileType? fileType;
+
   /// Change the display of the drag and drop zone for file uploads.
   /// Takes parameters of the current color scheme and the
   /// field details so they're available for building your custom implementation.
@@ -65,6 +74,7 @@ class FileUpload extends OptionSelect {
     super.fieldLayout,
     super.fieldBackground,
     this.allowedExtensions,
+    this.fileType,
     this.maxFileSize = 52428800, // 50 MB default
     this.displayUploadedFiles = true,
     this.clearOnUpload = false,
@@ -111,6 +121,7 @@ class FileUpload extends OptionSelect {
     )? fieldBackground,
     Widget Function(FieldBuilderContext)? fieldBuilder,
     List<String>? allowedExtensions,
+    FileType? fileType,
     int? maxFileSize,
     bool? displayUploadedFiles,
     bool? clearOnUpload,
@@ -140,6 +151,7 @@ class FileUpload extends OptionSelect {
       fieldBackground: fieldBackground ?? this.fieldBackground,
       fieldBuilder: fieldBuilder ?? this.fieldBuilder,
       allowedExtensions: allowedExtensions ?? this.allowedExtensions,
+      fileType: fileType ?? this.fileType,
       maxFileSize: maxFileSize ?? this.maxFileSize,
       displayUploadedFiles: displayUploadedFiles ?? this.displayUploadedFiles,
       clearOnUpload: clearOnUpload ?? this.clearOnUpload,
