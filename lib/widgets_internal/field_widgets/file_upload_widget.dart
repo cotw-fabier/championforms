@@ -9,11 +9,11 @@ import 'package:championforms/widgets_external/helper_widgets/fading_opacity.dar
 import 'package:championforms/widgets_external/stateful_field_widget.dart';
 import 'package:championforms/widgets_internal/platform/file_drag_target.dart';
 import 'package:cross_file/cross_file.dart';
+import 'package:uuid/uuid.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:typed_data';
 import 'package:championforms/championforms_themes.dart';
 
 /// FileUpload widget using [StatefulFieldWidget].
@@ -46,11 +46,11 @@ class FileUploadWidget extends StatefulFieldWidget {
     FormTheme theme,
     FieldBuilderContext ctx,
   ) {
-    // Read value here where StatefulFieldWidget protects us from initialization race
-    final files = ctx.getValue<List<FieldOption>>() ?? [];
+    // Ensure field value is initialized (StatefulFieldWidget protects from race)
+    ctx.getValue<List<FieldOption>>();
 
-    // Delegate to content widget which handles local UI state
-    return _FileUploadContent(context: ctx, files: files);
+    // Delegate to content widget which reads files directly from controller
+    return _FileUploadContent(context: ctx);
   }
 
   @override
@@ -68,13 +68,15 @@ class FileUploadWidget extends StatefulFieldWidget {
 }
 
 /// Internal content widget that manages drag-hover UI state.
+///
+/// Reads files directly from the controller to avoid stale state issues.
+/// Listens to the controller directly to ensure rebuilds happen immediately
+/// when files are added/removed, regardless of parent widget rebuild timing.
 class _FileUploadContent extends StatefulWidget {
   final FieldBuilderContext context;
-  final List<FieldOption> files;
 
   const _FileUploadContent({
     required this.context,
-    required this.files,
   });
 
   @override
@@ -83,6 +85,37 @@ class _FileUploadContent extends StatefulWidget {
 
 class _FileUploadContentState extends State<_FileUploadContent> {
   bool _isDragHovering = false;
+
+  /// Read the current files directly from the controller (never stale).
+  List<FieldOption> get _files =>
+      widget.context.getValue<List<FieldOption>>() ?? [];
+
+  @override
+  void initState() {
+    super.initState();
+    widget.context.controller.addListener(_onControllerChanged);
+  }
+
+  @override
+  void didUpdateWidget(_FileUploadContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.context.controller != widget.context.controller) {
+      oldWidget.context.controller.removeListener(_onControllerChanged);
+      widget.context.controller.addListener(_onControllerChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.context.controller.removeListener(_onControllerChanged);
+    super.dispose();
+  }
+
+  void _onControllerChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   void _showInlineError(String message) {
     // Use FormController's error system (user decision)
@@ -120,6 +153,36 @@ class _FileUploadContentState extends State<_FileUploadContent> {
     }
   }
 
+  /// Reads an [XFile], validates size, and returns a [FieldOption] or null if invalid.
+  Future<FieldOption?> _buildFileOption(XFile xfile, FileUpload field) async {
+    final name = xfile.name;
+
+    // Validate file size
+    if (field.maxFileSize != null) {
+      final fileSize = await xfile.length();
+      if (fileSize > field.maxFileSize!) {
+        _showFileSizeError(name, fileSize, field.maxFileSize!);
+        return null;
+      }
+    }
+
+    final bytes = await xfile.readAsBytes();
+
+    FileModel fileData = FileModel(
+      fileName: name,
+      uploadExtension: name.split('.').lastOrNull ?? '',
+      fileBytes: bytes,
+    );
+
+    fileData = fileData.copyWith(mimeData: await fileData.readMimeData());
+
+    return FieldOption(
+      label: name,
+      value: const Uuid().v4(),
+      additionalData: fileData,
+    );
+  }
+
   Future<void> _pickWithImagePicker(FileUpload field) async {
     final picker = ImagePicker();
     List<XFile> picked;
@@ -143,11 +206,22 @@ class _FileUploadContentState extends State<_FileUploadContent> {
     }
 
     if (picked.isNotEmpty) {
-      if (field.clearOnUpload) {
-        widget.context.setValue(<FieldOption>[], noNotify: true);
-      }
+      // Build all options first, then set once
+      final baseFiles = field.clearOnUpload
+          ? <FieldOption>[]
+          : (widget.context.getValue<List<FieldOption>>() ?? []);
+
+      final newOptions = <FieldOption>[];
       for (final xfile in picked) {
-        await _addFile(xfile);
+        final option = await _buildFileOption(xfile, field);
+        if (option != null) newOptions.add(option);
+      }
+
+      if (newOptions.isNotEmpty) {
+        final finalFiles = field.multiselect
+            ? [...baseFiles, ...newOptions]
+            : [newOptions.last];
+        widget.context.setValue(finalFiles);
       }
     }
   }
@@ -187,106 +261,24 @@ class _FileUploadContentState extends State<_FileUploadContent> {
     }
 
     if (result != null) {
-      // Clear existing files if clearOnUpload is true
-      if (field.clearOnUpload) {
-        widget.context.setValue(<FieldOption>[], noNotify: true);
-      }
+      // Build all options first, then set once
+      final baseFiles = field.clearOnUpload
+          ? <FieldOption>[]
+          : (widget.context.getValue<List<FieldOption>>() ?? []);
 
-      // Add new files
+      final newOptions = <FieldOption>[];
       for (final xfile in result.xFiles) {
-        await _addFile(xfile);
+        final option = await _buildFileOption(xfile, field);
+        if (option != null) newOptions.add(option);
+      }
+
+      if (newOptions.isNotEmpty) {
+        final finalFiles = field.multiselect
+            ? [...baseFiles, ...newOptions]
+            : [newOptions.last];
+        widget.context.setValue(finalFiles);
       }
     }
-  }
-
-  Future<void> _handleDroppedFile(XFile droppedFile, {bool isFirstFile = false}) async {
-    try {
-      final field = widget.context.field as FileUpload;
-      final name = droppedFile.name;
-
-      // Validate file size
-      if (field.maxFileSize != null) {
-        final fileSize = await droppedFile.length();
-        if (fileSize > field.maxFileSize!) {
-          _showFileSizeError(name, fileSize, field.maxFileSize!);
-          return;
-        }
-      }
-
-      // Clear existing files if clearOnUpload and first file
-      if (field.clearOnUpload && isFirstFile) {
-        widget.context.setValue(<FieldOption>[], noNotify: true);
-      }
-
-      // Read file bytes
-      final Uint8List fileBytes = await droppedFile.readAsBytes();
-      final path = droppedFile.path;
-
-      // Create FileModel
-      FileModel fileData = FileModel(
-        fileName: name,
-        fileBytes: fileBytes,
-        uploadExtension: name.split('.').lastOrNull ?? '',
-      );
-
-      fileData = fileData.copyWith(mimeData: await fileData.readMimeData());
-
-      final option = FieldOption(
-        label: name,
-        value: path,
-        additionalData: fileData,
-      );
-
-      // Update value
-      final currentFiles = widget.files;
-      final newFiles = field.multiselect
-          ? [...currentFiles, option]
-          : [option];
-
-      widget.context.setValue(newFiles);
-    } catch (e) {
-      // Fail silently
-    }
-  }
-
-  Future<void> _addFile(XFile xfile) async {
-    final field = widget.context.field as FileUpload;
-    final name = xfile.name;
-    final path = xfile.path;
-
-    // Validate file size
-    if (field.maxFileSize != null) {
-      final fileSize = await xfile.length();
-      if (fileSize > field.maxFileSize!) {
-        _showFileSizeError(name, fileSize, field.maxFileSize!);
-        return;
-      }
-    }
-
-    final bytes = await xfile.readAsBytes();
-
-    // Create FileModel
-    FileModel fileData = FileModel(
-      fileName: name,
-      uploadExtension: name.split('.').lastOrNull ?? '',
-      fileBytes: bytes,
-    );
-
-    fileData = fileData.copyWith(mimeData: await fileData.readMimeData());
-
-    final option = FieldOption(
-      label: name,
-      value: path,
-      additionalData: fileData,
-    );
-
-    // Update value
-    final currentFiles = widget.files;
-    final newFiles = field.multiselect
-        ? [...currentFiles, option]
-        : [option];
-
-    widget.context.setValue(newFiles);
   }
 
   IconData _getFileIcon(FieldOption opt) {
@@ -314,7 +306,8 @@ class _FileUploadContentState extends State<_FileUploadContent> {
   }
 
   void _removeFile(FieldOption opt) {
-    final currentFiles = widget.files;
+    // Read fresh from controller
+    final currentFiles = widget.context.getValue<List<FieldOption>>() ?? [];
     final newFiles = currentFiles.where((f) => f.value != opt.value).toList();
     widget.context.setValue(newFiles);
   }
@@ -329,11 +322,26 @@ class _FileUploadContentState extends State<_FileUploadContent> {
       allowedExtensions: field.allowedExtensions,
       multiselect: field.multiselect,
       onDrop: (files) async {
-        bool isFirst = true;
-        for (final file in files) {
-          await _handleDroppedFile(file, isFirstFile: isFirst);
-          isFirst = false;
+        final field = widget.context.field as FileUpload;
+
+        // Build all options first, then set once
+        final baseFiles = field.clearOnUpload
+            ? <FieldOption>[]
+            : (widget.context.getValue<List<FieldOption>>() ?? []);
+
+        final newOptions = <FieldOption>[];
+        for (final droppedFile in files) {
+          final option = await _buildFileOption(droppedFile, field);
+          if (option != null) newOptions.add(option);
         }
+
+        if (newOptions.isNotEmpty) {
+          final finalFiles = field.multiselect
+              ? [...baseFiles, ...newOptions]
+              : [newOptions.last];
+          widget.context.setValue(finalFiles);
+        }
+
         setState(() {
           _isDragHovering = false;
         });
@@ -381,7 +389,7 @@ class _FileUploadContentState extends State<_FileUploadContent> {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: widget.files.map((opt) {
+                  children: _files.map((opt) {
                     final iconAsset = _getFileIcon(opt);
                     return Stack(
                       clipBehavior: Clip.none,
