@@ -47,6 +47,16 @@ class FileUpload extends OptionSelect {
   /// or `FileType.any` otherwise.
   final FileType? fileType;
 
+  /// Whether to use `image_picker` (native photo gallery) instead of `file_picker` (file browser).
+  ///
+  /// When `null` (default): auto-detects based on [fileType]:
+  /// - `FileType.image` or `FileType.video` → uses image picker (native gallery)
+  /// - All other types → uses file picker (file browser)
+  ///
+  /// When explicitly `true`: always uses the native photo gallery picker.
+  /// When explicitly `false`: always uses the file browser picker.
+  final bool? useImagePicker;
+
   /// Change the display of the drag and drop zone for file uploads.
   /// Takes parameters of the current color scheme and the
   /// field details so they're available for building your custom implementation.
@@ -78,6 +88,7 @@ class FileUpload extends OptionSelect {
     this.maxFileSize = 52428800, // 50 MB default
     this.displayUploadedFiles = true,
     this.clearOnUpload = false,
+    this.useImagePicker,
     this.fileUploadBuilder,
     this.dropDisplayWidget,
     super.fieldBuilder, // Pass through optional custom fieldBuilder
@@ -125,6 +136,7 @@ class FileUpload extends OptionSelect {
     int? maxFileSize,
     bool? displayUploadedFiles,
     bool? clearOnUpload,
+    bool? useImagePicker,
     Widget Function(List<FieldOption>)? fileUploadBuilder,
     Widget Function(FieldColorScheme, FileUpload)? dropDisplayWidget,
   }) {
@@ -155,6 +167,7 @@ class FileUpload extends OptionSelect {
       maxFileSize: maxFileSize ?? this.maxFileSize,
       displayUploadedFiles: displayUploadedFiles ?? this.displayUploadedFiles,
       clearOnUpload: clearOnUpload ?? this.clearOnUpload,
+      useImagePicker: useImagePicker ?? this.useImagePicker,
       fileUploadBuilder: fileUploadBuilder ?? this.fileUploadBuilder,
       dropDisplayWidget: dropDisplayWidget ?? this.dropDisplayWidget,
     );

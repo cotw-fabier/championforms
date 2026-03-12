@@ -10,7 +10,9 @@ import 'package:championforms/widgets_external/stateful_field_widget.dart';
 import 'package:championforms/widgets_internal/platform/file_drag_target.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
 import 'package:championforms/championforms_themes.dart';
 
@@ -100,8 +102,57 @@ class _FileUploadContentState extends State<_FileUploadContent> {
     );
   }
 
+  /// Resolves whether to use the native image picker (photo gallery) or file picker (file browser).
+  bool _shouldUseImagePicker(FileUpload field) {
+    if (field.useImagePicker != null) return field.useImagePicker!;
+    // Auto-detect: use image_picker for image/video file types on mobile
+    return field.fileType == FileType.image || field.fileType == FileType.video;
+  }
+
   Future<void> _pickFiles() async {
     final field = widget.context.field as FileUpload;
+
+    // Use native image picker on mobile platforms for image/video types
+    if (!kIsWeb && _shouldUseImagePicker(field)) {
+      await _pickWithImagePicker(field);
+    } else {
+      await _pickWithFilePicker(field);
+    }
+  }
+
+  Future<void> _pickWithImagePicker(FileUpload field) async {
+    final picker = ImagePicker();
+    List<XFile> picked;
+
+    if (field.multiselect) {
+      if (field.fileType == FileType.video) {
+        // image_picker doesn't support multi-video; pick single video
+        final video = await picker.pickVideo(source: ImageSource.gallery);
+        picked = video != null ? [video] : [];
+      } else {
+        picked = await picker.pickMultiImage();
+      }
+    } else {
+      XFile? single;
+      if (field.fileType == FileType.video) {
+        single = await picker.pickVideo(source: ImageSource.gallery);
+      } else {
+        single = await picker.pickImage(source: ImageSource.gallery);
+      }
+      picked = single != null ? [single] : [];
+    }
+
+    if (picked.isNotEmpty) {
+      if (field.clearOnUpload) {
+        widget.context.setValue(<FieldOption>[], noNotify: true);
+      }
+      for (final xfile in picked) {
+        await _addFile(xfile);
+      }
+    }
+  }
+
+  Future<void> _pickWithFilePicker(FileUpload field) async {
     FilePickerResult? result;
 
     FileType fileType;
