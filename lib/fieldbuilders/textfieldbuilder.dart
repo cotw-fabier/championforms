@@ -22,7 +22,7 @@ TextField overrideTextField({
   FocusNode? focusNode,
   bool? autofocus = false,
   bool? obscureText = false,
-  bool? autocorrect = false,
+  bool? autocorrect,
   int? maxLength,
   TextInputType? keyboardType,
   List<TextInputFormatter>? inputFormatters,

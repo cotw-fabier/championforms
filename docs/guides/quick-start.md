@@ -71,7 +71,7 @@ class _MyFormPageState extends State<MyFormPage> {
 
 ### Step 2: Define Fields
 
-Create a list of form fields with validation:
+Create a list of form fields with validation. Note that `form.TextField` enables native spellcheck and autocorrect by default on iOS/Android — see [Spellcheck & Autocorrect](basic-patterns.md#spellcheck--autocorrect) for how to toggle them per-field or app-wide.
 
 ```dart
 final fields = [

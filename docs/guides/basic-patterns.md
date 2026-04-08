@@ -731,6 +731,55 @@ Field Theme (individual field)
 
 **More specific themes override general ones.**
 
+### Spellcheck & Autocorrect
+
+`form.TextField` enables native spellcheck underlines and autocorrect by default on iOS and Android. These are separate Flutter features (underlines vs. active text rewriting) and are exposed as two independent nullable flags so you can toggle one without the other.
+
+**Resolution order** (first non-null wins):
+
+1. Field-level explicit value — `form.TextField(id: 'code', spellCheck: false)`
+2. Global singleton — `FormFieldDefaults.instance.spellCheck`
+3. Package hard-coded default (`true`)
+
+**Per-field opt-out** — disable spellcheck and/or autocorrect for a single field that holds structured input:
+
+```dart
+form.TextField(
+  id: 'promo_code',
+  textFieldTitle: 'Promo Code',
+  spellCheck: false,
+  autocorrect: false,
+)
+```
+
+**Per-field custom config** — advanced users can pass a raw `SpellCheckConfiguration` directly to the underlying Material `TextField` via the escape hatch. This is useful if you need a custom `SpellCheckService` or styling:
+
+```dart
+form.TextField(
+  id: 'custom',
+  spellCheckConfiguration: SpellCheckConfiguration(
+    misspelledTextStyle: material.TextField.materialMisspelledTextStyle,
+  ),
+)
+```
+
+**App-wide override** — flip the defaults for every `TextField` in your app with a single line at startup:
+
+```dart
+import 'package:championforms/championforms_themes.dart';
+
+void main() {
+  FormFieldDefaults.instance
+    ..spellCheck = false
+    ..autocorrect = false; // restore pre-0.6.0 behavior
+  runApp(MyApp());
+}
+```
+
+**Semantic constructors are always off.** `form.TextField.email`, `.password`, `.phone`, `.url`, `.name`, `.username`, `.streetAddress`, `.city`, `.state`, `.postalCode`, and `.country` all opt out of spellcheck and autocorrect automatically since they hold structured data — global defaults don't affect them. Pass your own values to `.copyWith()` if you need to override.
+
+**Platform support.** Spellcheck underlines require a native spellcheck service, which Flutter only provides on iOS and Android. On web, desktop, and test platforms the underline config is silently skipped. Autocorrect works on all platforms.
+
 ### Creating Custom Themes
 
 Define a custom `FormTheme`:

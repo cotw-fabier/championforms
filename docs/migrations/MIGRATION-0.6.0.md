@@ -17,9 +17,46 @@ Version 0.6.0 is a **breaking change release** that dramatically simplifies cust
 
 **Who This Affects:**
 - ✅ **Custom field developers**: If you've created custom field types, you need to migrate
-- ❌ **Regular users**: If you only use built-in fields (TextField, OptionSelect, FileUpload), **no changes required**
+- ⚠️ **Regular users**: One behavior change — `form.TextField` now enables native spellcheck and autocorrect by default on iOS/Android. See [TextField Spellcheck & Autocorrect Default Change](#textfield-spellcheck--autocorrect-default-change) below for a one-line opt-out.
 
-**Migration Time Estimate:** 30-60 minutes per custom field
+**Migration Time Estimate:** 30-60 minutes per custom field (custom field developers), or 30 seconds (regular users opting out of the new spellcheck default).
+
+---
+
+## TextField Spellcheck & Autocorrect Default Change
+
+In v0.6.0, `form.TextField` enables both native spellcheck (passive red squiggly underlines) and autocorrect (active text rewriting) by default on iOS and Android. In v0.5.x both were silently off — `TextField` never passed a `spellCheckConfiguration` through, and `overrideTextField` forced `autocorrect: false`.
+
+**If you want the new behavior (recommended):** Do nothing. All your existing `form.TextField(...)` calls will automatically pick up spellcheck and autocorrect on mobile.
+
+**If you want to restore the v0.5.x behavior:** Add a single two-line override at app startup:
+
+```dart
+import 'package:championforms/championforms_themes.dart';
+
+void main() {
+  FormFieldDefaults.instance
+    ..spellCheck = false
+    ..autocorrect = false;
+  runApp(MyApp());
+}
+```
+
+**If you want a mix (spellcheck on globally, but off for specific fields):** Override per-field:
+
+```dart
+form.TextField(
+  id: 'promo_code',
+  spellCheck: false,   // red squigglies off
+  autocorrect: false,  // active rewriting off
+)
+```
+
+**Semantic constructors are unaffected.** `form.TextField.email`, `.password`, `.phone`, `.url`, `.name`, `.username`, `.streetAddress`, `.city`, `.state`, `.postalCode`, and `.country` all opt out automatically — they held structured data in v0.5.x and they still do in v0.6.0.
+
+**Platform support.** Spellcheck underlines are gated to iOS and Android at runtime (they require a native spellcheck service). On web, desktop, and test platforms, the underline config is silently skipped. Autocorrect works everywhere.
+
+See [Spellcheck & Autocorrect in basic-patterns.md](../guides/basic-patterns.md#spellcheck--autocorrect) for the full resolution order and examples.
 
 ---
 

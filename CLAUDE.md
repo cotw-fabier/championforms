@@ -137,6 +137,17 @@ All field types share common properties defined in `FieldBase`:
 
 The `copyWith` method must accept nullable parameters for ALL properties (both from the parent class and custom properties) and return a new instance with updated values using the `?? this.property` pattern. See [Custom Field Cookbook](docs/custom-fields/custom-field-cookbook.md#required-implementing-copywith-for-custom-field-classes) for implementation examples.
 
+**Sensible-default convention for field behavior flags.** When adding a new "should this field do X by default?" flag (e.g. `spellCheck`, `autocorrect`), follow the three-layer pattern established by `FormFieldDefaults`:
+
+1. **Default ON in the package.** Pick the value a typical consumer would want and hard-code it as the package fallback. Don't make consumers opt in to common-sense behavior.
+2. **Nullable field-level parameter.** Declare the field property as `bool?` (not `bool`) with no default value in the constructor. `null` means "fall through"; `true`/`false` means "explicit override for this field."
+3. **Mutable global default in `FormFieldDefaults`.** Add a plain mutable field to the `FormFieldDefaults` singleton (`lib/models/field_defaults_singleton.dart`) so consumers can flip the default app-wide with one line in `main()`.
+4. **Resolution chain in the widget layer.** In the field's widget (e.g. `textfieldwidget.dart`), resolve with `field.flag ?? FormFieldDefaults.instance.flag`. Never bake the package default into the model — only the singleton and the widget layer know about it.
+5. **Semantic constructors override explicitly.** Named constructors like `.email`/`.password`/`.url` should pass explicit values for behavior flags that don't match their field type (e.g. `spellCheck: false` on `.email`).
+6. **Platform gating if the underlying Flutter feature requires it.** If the feature only works on some platforms (e.g. spellcheck only on iOS/Android), add a platform check in the widget so the flag is silently no-op elsewhere rather than throwing.
+
+This pattern keeps the field API small, gives consumers single-line escape hatches at two levels (per-field and app-wide), and avoids polluting every field construction with boilerplate.
+
 #### 3. Validation System
 
 Validation happens at two points:

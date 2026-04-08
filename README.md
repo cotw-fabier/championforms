@@ -338,6 +338,11 @@ Standard text input.
 *   `onSubmit`: Callback triggered on Enter key press (if `maxLines` is 1 or `null`).
 *   `onChange`: Callback triggered on every character change.
 *   `autoComplete`: Instance of `form.AutoCompleteBuilder` to enable suggestions.
+*   `spellCheck`: Toggle native spellcheck underlines (iOS/Android). Defaults to `FormFieldDefaults.instance.spellCheck` (package default: `true`). See [Global Field Defaults](#global-field-defaults).
+*   `autocorrect`: Toggle native autocorrect (iOS/Android). Defaults to `FormFieldDefaults.instance.autocorrect` (package default: `true`). Independent from `spellCheck`.
+*   `spellCheckConfiguration`: Advanced escape hatch for passing a custom `SpellCheckConfiguration` directly to the underlying Material `TextField`.
+
+Semantic named constructors (`.email`, `.password`, `.phone`, `.url`, `.name`, `.username`, `.streetAddress`, `.city`, `.state`, `.postalCode`, `.country`) all automatically opt out of spellcheck and autocorrect since they hold structured data.
 
 ### `form.OptionSelect` (Base for Dropdown, Checkbox, etc.)
 
@@ -429,6 +434,38 @@ ChampionForms uses a `FormTheme` object to control appearance.
 *   **Pre-built Themes:** `softBlueColorTheme`, `redAccentFormTheme`, `iconicColorTheme` are provided. Create your own by defining a `FormTheme` object.
 
 **Note:** Theme-related classes (`FormTheme`, pre-built themes, `FormFieldRegistry`) are exported from `package:championforms/championforms_themes.dart` and don't use the `form.` namespace prefix.
+
+## Global Field Defaults
+
+ChampionForms exposes a separate `FormFieldDefaults` singleton for non-theme behavioral defaults (spellcheck, autocorrect, etc.). Unlike `FormTheme`, which controls visual appearance, `FormFieldDefaults` controls how fields *behave*.
+
+By default, `form.TextField` enables native spellcheck underlines and autocorrect on iOS and Android — the sensible default for user-authored content. To flip the defaults app-wide (for example, to restore pre-0.6.0 behavior), override them once at app startup:
+
+```dart
+import 'package:championforms/championforms_themes.dart';
+import 'package:flutter/widgets.dart';
+
+void main() {
+  FormFieldDefaults.instance
+    ..spellCheck = false
+    ..autocorrect = false
+    // Optional: app-wide custom SpellCheckConfiguration (e.g. custom service
+    // or misspelled-text styling) passed straight to the underlying Material
+    // TextField. Defaults to null (the widget builds a default config from
+    // the resolved spellCheck flag).
+    ..spellCheckConfiguration = const SpellCheckConfiguration();
+  runApp(MyApp());
+}
+```
+
+**Resolution order** (first non-null wins):
+
+1. Field-level explicit value — `form.TextField(id: 'code', spellCheck: false)`
+2. Password-implicit override — `password: true` forces spellcheck and autocorrect off and bypasses any global `spellCheckConfiguration`
+3. Global singleton — `FormFieldDefaults.instance.spellCheck` / `.autocorrect` / `.spellCheckConfiguration`
+4. Package hard-coded default (`true` for the flags, `null` for the config)
+
+Field-level values always win, so individual fields can opt back in or out regardless of the global default — including on password fields, if a consumer really wants spellcheck enabled there. Semantic named constructors (`.email`, `.password`, `.url`, etc.) always opt out automatically since they hold structured data.
 
 ## Getting Results
 

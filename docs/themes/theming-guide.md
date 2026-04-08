@@ -73,6 +73,8 @@ Each level can override properties from the previous level. If a property is `nu
 
 More specific themes only need to define properties they want to override. All other properties cascade from parent themes.
 
+> **Note:** `FormThemeSingleton` only controls **visual theme** (colors, text styles, decoration). For non-theme **behavioral** defaults — native spellcheck, autocorrect, and similar field behavior flags — use the separate [`FormFieldDefaults`](../guides/basic-patterns.md#spellcheck--autocorrect) singleton. It follows the same "override at app startup" pattern but lives in its own class to keep behavior concerns separate from appearance concerns.
+
 ### Visual Diagram
 
 ```

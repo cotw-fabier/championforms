@@ -20,6 +20,10 @@ export 'package:championforms/models/colorscheme.dart';
 // Export theme singleton for global theme configuration
 export 'package:championforms/models/theme_singleton.dart';
 
+// Export field defaults singleton for global field behavior configuration
+// (spellcheck, autocorrect, and other non-theme behavioral defaults)
+export 'package:championforms/models/field_defaults_singleton.dart';
+
 // Export pre-built themes
 export 'package:championforms/themes/soft_blue.dart';
 export 'package:championforms/themes/red_accent.dart';

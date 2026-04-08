@@ -29,6 +29,98 @@ Version 0.6.0 dramatically simplifies custom field creation by reducing boilerpl
 
 ### Added
 
+#### Native Spellcheck & Autocorrect on TextField
+
+**TextField now enables native spellcheck and autocorrect by default** on iOS
+and Android. Previously both were silently off — `TextField` never passed a
+`spellCheckConfiguration` through to the underlying Material field, and
+`overrideTextField` forced `autocorrect: false`.
+
+**New `form.TextField` parameters** (all nullable — `null` falls through to
+the global default):
+
+- `spellCheck: bool?` — passive red-squiggly underlines on misspelled
+  words, tap-to-correct via long-press. Package default: `true` unless `password=true`.
+- `autocorrect: bool?` — active text rewriting as you type. Independent
+  from `spellCheck` — you can have one on without the other. Package
+  default: `true` unless `password=true`.
+- `spellCheckConfiguration: SpellCheckConfiguration?` — advanced escape
+  hatch for passing a custom spellcheck service or styling directly to
+  the underlying Material `TextField`.
+
+Per-field opt-out:
+
+```dart
+form.TextField(id: 'coupon', spellCheck: false, autocorrect: false)
+```
+
+**New `FormFieldDefaults` singleton** for app-wide behavior defaults,
+mirroring the existing `FormThemeSingleton` pattern. Override at app
+startup to change defaults app-wide:
+
+```dart
+import 'package:championforms/championforms_themes.dart';
+import 'package:flutter/widgets.dart';
+
+void main() {
+  FormFieldDefaults.instance
+    ..spellCheck = false
+    ..autocorrect = false // restore pre-0.6.0 behavior
+    ..spellCheckConfiguration = const SpellCheckConfiguration(); // optional
+  runApp(MyApp());
+}
+```
+
+Exposed defaults:
+
+- `spellCheck: bool` (default `true`)
+- `autocorrect: bool` (default `true`)
+- `spellCheckConfiguration: SpellCheckConfiguration?` (default `null`) —
+  app-wide custom spellcheck service / styling. Field-level
+  `spellCheckConfiguration` overrides this. Password fields bypass the
+  global config automatically (the field-level value still wins if a
+  consumer wants to opt back in).
+
+Resolution order (first non-null wins): field-level explicit value →
+password-implicit override (passwords force spellcheck/autocorrect off) →
+`FormFieldDefaults.instance` → package default (`true`).
+
+**Semantic constructors opt out automatically.** `.email`, `.password`,
+`.phone`, `.url`, `.name`, `.username`, `.streetAddress`, `.city`,
+`.state`, `.postalCode`, and `.country` all explicitly set
+`spellCheck: false, autocorrect: false` — these field types should never
+spellcheck or autocorrect regardless of global defaults. Users can still
+override by passing their own values via `.copyWith()`.
+
+**Generic `TextField(password: true)` is also safe.** Even when a
+password field is constructed via the base constructor (rather than the
+`.password` named constructor), the widget layer implicitly forces
+`spellCheck: false`, `autocorrect: false`, and ignores any global
+`spellCheckConfiguration`. A consumer who really wants spellcheck on a
+password field can still force it by passing the flag explicitly.
+
+**Platform support.** Spellcheck underlines require a native spellcheck
+service, which Flutter only provides on iOS and Android. On web, desktop,
+and test platforms, the underline config is silently skipped (gated on
+`WidgetsBinding.instance.platformDispatcher.nativeSpellCheckServiceDefined`).
+Autocorrect works on all platforms.
+
+### Changed
+
+- **Default behavior change:** `TextField` now enables spellcheck +
+  autocorrect by default on iOS/Android. Existing apps that want the
+  old behavior should add the two-line `FormFieldDefaults` override
+  shown above at app startup.
+
+### Fixed
+
+- **`overrideTextField` no longer forces `autocorrect: false`.** The
+  `autocorrect` parameter previously defaulted to `false` in the function
+  signature, meaning the baseField's `autocorrect` value was silently
+  discarded. Now the parameter defaults to `null` and correctly falls
+  through to the baseField value.
+  Location: `lib/fieldbuilders/textfieldbuilder.dart`
+
 #### Compound Fields API
 
 **CompoundField System**

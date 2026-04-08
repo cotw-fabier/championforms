@@ -147,6 +147,31 @@ class TextField extends Field {
     required String fieldId,
   })? onPaste;
 
+  /// Whether native spellcheck (passive red squiggly underlines on
+  /// misspellings, tap-to-correct via long-press) is enabled on iOS/Android.
+  ///
+  /// `null` (default) falls through to [FormFieldDefaults.instance.spellCheck]
+  /// (package default: `true`). Set explicitly to `false` to disable for
+  /// this field only. Ignored if [spellCheckConfiguration] is explicitly
+  /// provided.
+  final bool? spellCheck;
+
+  /// Whether native autocorrect (active text rewriting as you type) is
+  /// enabled on iOS/Android.
+  ///
+  /// Independent from [spellCheck] — you can have one on without the
+  /// other. `null` (default) falls through to
+  /// [FormFieldDefaults.instance.autocorrect] (package default: `true`).
+  /// Set explicitly to `false` for fields where autocorrect would be
+  /// wrong (codes, URLs, structured input).
+  final bool? autocorrect;
+
+  /// Advanced escape hatch: custom spellcheck configuration passed
+  /// directly to the underlying Material TextField. When non-null,
+  /// overrides the [spellCheck] flag's effect on the spellcheck-underline
+  /// behavior. Most consumers should use [spellCheck] alone.
+  final flutter.SpellCheckConfiguration? spellCheckConfiguration;
+
   TextField({
     required super.id,
     this.fieldBuilder,
@@ -176,6 +201,9 @@ class TextField extends Field {
     this.onDrop,
     this.draggable = true,
     this.onPaste,
+    this.spellCheck,
+    this.autocorrect,
+    this.spellCheckConfiguration,
     super.fieldLayout,
     super.fieldBackground,
   });
@@ -218,6 +246,9 @@ class TextField extends Field {
       required String formId,
       required String fieldId,
     })? onPaste,
+    bool? spellCheck,
+    bool? autocorrect,
+    flutter.SpellCheckConfiguration? spellCheckConfiguration,
     flutter.Widget Function(
       flutter.BuildContext context,
       Field fieldDetails,
@@ -262,6 +293,10 @@ class TextField extends Field {
       onDrop: onDrop ?? this.onDrop,
       draggable: draggable ?? this.draggable,
       onPaste: onPaste ?? this.onPaste,
+      spellCheck: spellCheck ?? this.spellCheck,
+      autocorrect: autocorrect ?? this.autocorrect,
+      spellCheckConfiguration:
+          spellCheckConfiguration ?? this.spellCheckConfiguration,
       fieldLayout: fieldLayout ?? this.fieldLayout,
       fieldBackground: fieldBackground ?? this.fieldBackground,
     );
@@ -349,6 +384,8 @@ class TextField extends Field {
           onDrop: onDrop,
           draggable: draggable,
           onPaste: onPaste,
+          spellCheck: false,
+          autocorrect: false,
         );
 
   /// Creates a password input field with autofill hints and obscured text.
@@ -441,6 +478,8 @@ class TextField extends Field {
           onDrop: onDrop,
           draggable: draggable,
           onPaste: onPaste,
+          spellCheck: false,
+          autocorrect: false,
         );
 
   /// Creates a phone number input field with autofill hints and phone keyboard.
@@ -522,6 +561,8 @@ class TextField extends Field {
           onDrop: onDrop,
           draggable: draggable,
           onPaste: onPaste,
+          spellCheck: false,
+          autocorrect: false,
         );
 
   /// Creates a name input field with autofill hints.
@@ -606,6 +647,8 @@ class TextField extends Field {
           onDrop: onDrop,
           draggable: draggable,
           onPaste: onPaste,
+          spellCheck: false,
+          autocorrect: false,
         );
 
   /// Creates a username input field with autofill hints.
@@ -686,6 +729,8 @@ class TextField extends Field {
           onDrop: onDrop,
           draggable: draggable,
           onPaste: onPaste,
+          spellCheck: false,
+          autocorrect: false,
         );
 
   /// Creates a URL input field with autofill hints and URL keyboard.
@@ -766,6 +811,8 @@ class TextField extends Field {
           onDrop: onDrop,
           draggable: draggable,
           onPaste: onPaste,
+          spellCheck: false,
+          autocorrect: false,
         );
 
   /// Creates a street address input field with autofill hints.
@@ -858,6 +905,8 @@ class TextField extends Field {
           onDrop: onDrop,
           draggable: draggable,
           onPaste: onPaste,
+          spellCheck: false,
+          autocorrect: false,
         );
 
   /// Creates a city input field with autofill hints.
@@ -938,6 +987,8 @@ class TextField extends Field {
           onDrop: onDrop,
           draggable: draggable,
           onPaste: onPaste,
+          spellCheck: false,
+          autocorrect: false,
         );
 
   /// Creates a state/region input field with autofill hints.
@@ -1018,6 +1069,8 @@ class TextField extends Field {
           onDrop: onDrop,
           draggable: draggable,
           onPaste: onPaste,
+          spellCheck: false,
+          autocorrect: false,
         );
 
   /// Creates a postal/ZIP code input field with autofill hints and number keyboard.
@@ -1099,6 +1152,8 @@ class TextField extends Field {
           onDrop: onDrop,
           draggable: draggable,
           onPaste: onPaste,
+          spellCheck: false,
+          autocorrect: false,
         );
 
   /// Creates a country input field with autofill hints.
@@ -1179,6 +1234,8 @@ class TextField extends Field {
           onDrop: onDrop,
           draggable: draggable,
           onPaste: onPaste,
+          spellCheck: false,
+          autocorrect: false,
         );
 
   // --- Implementation of Field<String> Converters ---
