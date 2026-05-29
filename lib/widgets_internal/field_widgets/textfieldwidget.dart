@@ -5,6 +5,7 @@ import 'package:championforms/models/field_types/textfield.dart' as form_types;
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/widgets_external/stateful_field_widget.dart';
 import 'package:championforms/widgets_internal/autocomplete_overlay_widget.dart';
+import 'package:championforms/widgets_internal/field_interaction_animator.dart';
 import 'package:championforms/widgets_internal/fieldwrapperdefault.dart';
 import 'package:championforms/championforms_themes.dart';
 import 'package:flutter/foundation.dart'
@@ -85,6 +86,13 @@ class TextFieldWidget extends StatefulFieldWidget {
             ? const SpellCheckConfiguration()
             : null);
 
+    // Resolve keyboard auto-capitalization with field → global → package
+    // default. Flutter's own TextField default is TextCapitalization.none,
+    // which is why fields don't capitalize sentences the way native fields
+    // do; FormFieldDefaults restores the native default (sentences).
+    final effectiveTextCapitalization =
+        field.textCapitalization ?? defaults.textCapitalization;
+
     // Build the TextField widget
     final textField = overrideTextField(
       context: context,
@@ -103,6 +111,7 @@ class TextFieldWidget extends StatefulFieldWidget {
       baseField: material_tf.TextField(
         maxLines: field.maxLines,
         autocorrect: effectiveAutocorrect,
+        textCapitalization: effectiveTextCapitalization,
         spellCheckConfiguration: effectiveSpellCheckConfig,
         onChanged: (value) {
           // Sync TextEditingController changes back to FormController
@@ -121,15 +130,30 @@ class TextFieldWidget extends StatefulFieldWidget {
       ),
     );
 
+    // Resolve gentle focus-driven micro-interaction. Field-level explicit
+    // value wins, then FormFieldDefaults, then package default (true).
+    final effectiveAnimateInteractions =
+        field.animateInteractions ?? defaults.animateInteractions;
+
+    // Wrap the inner field with the focus animator BEFORE the autocomplete
+    // wrapper so the overlay's anchor RenderBox doesn't move when the
+    // field lifts on focus.
+    final maybeAnimatedField = effectiveAnimateInteractions
+        ? FieldInteractionAnimator(
+            focusNode: focusNode,
+            child: textField,
+          )
+        : textField;
+
     // Wrap with autocomplete if configured
     final wrappedField = field.autoComplete != null &&
             field.autoComplete!.type != AutoCompleteType.none
         ? AutocompleteWrapper(
             autoComplete: field.autoComplete!,
             context: ctx,
-            child: textField,
+            child: maybeAnimatedField,
           )
-        : textField;
+        : maybeAnimatedField;
 
     // Wrap with field builder
     return FormFieldWrapperDesignWidget(child: wrappedField);

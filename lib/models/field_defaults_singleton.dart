@@ -1,5 +1,6 @@
 // lib/models/field_defaults_singleton.dart
 
+import 'package:flutter/services.dart' show TextCapitalization;
 import 'package:flutter/widgets.dart' show SpellCheckConfiguration;
 
 /// A singleton class to hold global defaults for form field behavior.
@@ -75,10 +76,47 @@ class FormFieldDefaults {
   /// Package default: `null`.
   SpellCheckConfiguration? spellCheckConfiguration;
 
+  /// Default for [TextField.animateInteractions] when a field doesn't
+  /// specify a value.
+  ///
+  /// Controls a gentle lift-and-scale micro-interaction when the field
+  /// gains focus: roughly a 1px upward translation and a 0.8% scale-up,
+  /// reversed when focus is lost. Tuned to be perceptible but never
+  /// distracting — no bounce, no elastic, exponential ease-out.
+  ///
+  /// Set to `false` to disable for the whole app (e.g. for accessibility,
+  /// reduced-motion preferences, or stylistic reasons):
+  ///
+  /// ```dart
+  /// FormFieldDefaults.instance.animateInteractions = false;
+  /// ```
+  ///
+  /// Package default: `true`.
+  bool animateInteractions = true;
+
+  /// Default for [TextField.textCapitalization] when a field doesn't specify
+  /// a value.
+  ///
+  /// Controls how the on-screen keyboard auto-capitalizes typed text on
+  /// mobile (sentences, words, characters, or none). Flutter's own
+  /// `TextField` default is [TextCapitalization.none], which is why fields
+  /// feel "un-native" — native iOS/Android text fields auto-capitalize the
+  /// first letter of each sentence. We default to
+  /// [TextCapitalization.sentences] to match that native behavior.
+  ///
+  /// Semantic constructors that shouldn't capitalize ([TextField.email],
+  /// [TextField.url], [TextField.username], [TextField.password]) override
+  /// this with [TextCapitalization.none] explicitly.
+  ///
+  /// Package default: [TextCapitalization.sentences].
+  TextCapitalization textCapitalization = TextCapitalization.sentences;
+
   /// Resets all behavior defaults to the package baselines.
   void reset() {
     spellCheck = true;
     autocorrect = true;
     spellCheckConfiguration = null;
+    animateInteractions = true;
+    textCapitalization = TextCapitalization.sentences;
   }
 }

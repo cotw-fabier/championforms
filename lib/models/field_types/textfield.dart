@@ -172,6 +172,28 @@ class TextField extends Field {
   /// behavior. Most consumers should use [spellCheck] alone.
   final flutter.SpellCheckConfiguration? spellCheckConfiguration;
 
+  /// Whether the field plays a gentle lift-and-scale micro-interaction
+  /// when it gains focus (roughly a 1px upward translation and a 0.8%
+  /// scale-up, reversed on blur).
+  ///
+  /// `null` (default) falls through to
+  /// [FormFieldDefaults.instance.animateInteractions] (package default:
+  /// `true`). Set explicitly to `false` to disable for this field only —
+  /// useful for fields embedded in already-animated layouts where any
+  /// extra motion would compete for attention.
+  final bool? animateInteractions;
+
+  /// How the on-screen keyboard auto-capitalizes typed text on mobile
+  /// (sentences, words, characters, or none).
+  ///
+  /// `null` (default) falls through to
+  /// [FormFieldDefaults.instance.textCapitalization] (package default:
+  /// [TextCapitalization.sentences], matching native iOS/Android fields).
+  /// Set explicitly for fields where a different rule applies — e.g.
+  /// [TextCapitalization.none] is forced by the email/url/username/password
+  /// semantic constructors.
+  final flutter.TextCapitalization? textCapitalization;
+
   TextField({
     required super.id,
     this.fieldBuilder,
@@ -204,6 +226,8 @@ class TextField extends Field {
     this.spellCheck,
     this.autocorrect,
     this.spellCheckConfiguration,
+    this.animateInteractions,
+    this.textCapitalization,
     super.fieldLayout,
     super.fieldBackground,
   });
@@ -249,6 +273,8 @@ class TextField extends Field {
     bool? spellCheck,
     bool? autocorrect,
     flutter.SpellCheckConfiguration? spellCheckConfiguration,
+    bool? animateInteractions,
+    flutter.TextCapitalization? textCapitalization,
     flutter.Widget Function(
       flutter.BuildContext context,
       Field fieldDetails,
@@ -297,6 +323,8 @@ class TextField extends Field {
       autocorrect: autocorrect ?? this.autocorrect,
       spellCheckConfiguration:
           spellCheckConfiguration ?? this.spellCheckConfiguration,
+      animateInteractions: animateInteractions ?? this.animateInteractions,
+      textCapitalization: textCapitalization ?? this.textCapitalization,
       fieldLayout: fieldLayout ?? this.fieldLayout,
       fieldBackground: fieldBackground ?? this.fieldBackground,
     );
@@ -386,6 +414,7 @@ class TextField extends Field {
           onPaste: onPaste,
           spellCheck: false,
           autocorrect: false,
+          textCapitalization: flutter.TextCapitalization.none,
         );
 
   /// Creates a password input field with autofill hints and obscured text.
@@ -480,6 +509,7 @@ class TextField extends Field {
           onPaste: onPaste,
           spellCheck: false,
           autocorrect: false,
+          textCapitalization: flutter.TextCapitalization.none,
         );
 
   /// Creates a phone number input field with autofill hints and phone keyboard.
@@ -563,6 +593,7 @@ class TextField extends Field {
           onPaste: onPaste,
           spellCheck: false,
           autocorrect: false,
+          textCapitalization: flutter.TextCapitalization.none,
         );
 
   /// Creates a name input field with autofill hints.
@@ -649,6 +680,7 @@ class TextField extends Field {
           onPaste: onPaste,
           spellCheck: false,
           autocorrect: false,
+          textCapitalization: flutter.TextCapitalization.words,
         );
 
   /// Creates a username input field with autofill hints.
@@ -731,6 +763,7 @@ class TextField extends Field {
           onPaste: onPaste,
           spellCheck: false,
           autocorrect: false,
+          textCapitalization: flutter.TextCapitalization.none,
         );
 
   /// Creates a URL input field with autofill hints and URL keyboard.
@@ -813,6 +846,7 @@ class TextField extends Field {
           onPaste: onPaste,
           spellCheck: false,
           autocorrect: false,
+          textCapitalization: flutter.TextCapitalization.none,
         );
 
   /// Creates a street address input field with autofill hints.
@@ -907,6 +941,7 @@ class TextField extends Field {
           onPaste: onPaste,
           spellCheck: false,
           autocorrect: false,
+          textCapitalization: flutter.TextCapitalization.words,
         );
 
   /// Creates a city input field with autofill hints.
@@ -989,6 +1024,7 @@ class TextField extends Field {
           onPaste: onPaste,
           spellCheck: false,
           autocorrect: false,
+          textCapitalization: flutter.TextCapitalization.words,
         );
 
   /// Creates a state/region input field with autofill hints.
@@ -1071,6 +1107,7 @@ class TextField extends Field {
           onPaste: onPaste,
           spellCheck: false,
           autocorrect: false,
+          textCapitalization: flutter.TextCapitalization.words,
         );
 
   /// Creates a postal/ZIP code input field with autofill hints and number keyboard.
@@ -1154,6 +1191,7 @@ class TextField extends Field {
           onPaste: onPaste,
           spellCheck: false,
           autocorrect: false,
+          textCapitalization: flutter.TextCapitalization.none,
         );
 
   /// Creates a country input field with autofill hints.
@@ -1236,6 +1274,7 @@ class TextField extends Field {
           onPaste: onPaste,
           spellCheck: false,
           autocorrect: false,
+          textCapitalization: flutter.TextCapitalization.words,
         );
 
   // --- Implementation of Field<String> Converters ---

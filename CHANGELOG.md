@@ -29,6 +29,45 @@ Version 0.6.0 dramatically simplifies custom field creation by reducing boilerpl
 
 ### Added
 
+#### Gentle Focus Animation on TextField
+
+**TextField now plays a gentle "lift and settle" micro-interaction when it
+gains focus** — a ~1px upward translation paired with a 0.8% scale-up,
+reversed (slightly slower) when focus is lost. Tuned to be perceptible but
+never distracting: exponential ease-out, no bounce, no elastic, all
+inside a `Transform` so layout never thrashes.
+
+**New `form.TextField` parameter** (nullable — `null` falls through to the
+global default):
+
+- `animateInteractions: bool?` — toggle the focus animation per field.
+  Package default: `true`.
+
+Per-field opt-out:
+
+```dart
+form.TextField(id: 'note', animateInteractions: false)
+```
+
+App-wide opt-out (e.g. for accessibility / reduced-motion preferences):
+
+```dart
+import 'package:championforms/championforms_themes.dart';
+
+void main() {
+  FormFieldDefaults.instance.animateInteractions = false;
+  runApp(MyApp());
+}
+```
+
+Resolution order (first non-null wins): field-level explicit value →
+`FormFieldDefaults.instance.animateInteractions` → package default
+(`true`).
+
+The animator wraps the inner field *inside* the autocomplete overlay
+wrapper, so autocomplete anchor positions remain stable while the field
+itself lifts on focus.
+
 #### Native Spellcheck & Autocorrect on TextField
 
 **TextField now enables native spellcheck and autocorrect by default** on iOS
