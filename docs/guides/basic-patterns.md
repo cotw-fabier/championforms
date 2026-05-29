@@ -173,6 +173,47 @@ form.TextField(
 - `maxLines: null` or `> 1` - Multi-line text area
 - `leading`, `trailing`, `icon` - Icons/widgets around field
 
+**Submitting a multi-line field:**
+
+On a single-line field, pressing Enter fires `onSubmit`. On a multi-line
+field (`maxLines: null` or `> 1`), Enter inserts a newline, so there are two
+ways to submit:
+
+- `submitOnControlEnter: true` - Pressing **Ctrl+Enter** (Cmd+Enter on macOS)
+  fires `onSubmit` without inserting a newline. Plain Enter still adds a line
+  break. Works on desktop and any device with a hardware keyboard. Off by
+  default; enable per-field, or app-wide with
+  `FormFieldDefaults.instance.submitOnControlEnter = true`.
+- `submitOnEnter: true` - Reverses the default: plain **Enter** submits and
+  **Shift+Enter** inserts a newline (the classic "chat input" pattern). This
+  is a hardware-keyboard behavior (desktop/web); it does not affect mobile
+  soft keyboards — use `textInputAction` there. Off by default; enable
+  per-field or app-wide with `FormFieldDefaults.instance.submitOnEnter = true`.
+- `textInputAction: TextInputAction.send` (or `done`/`go`) - Turns the mobile
+  soft keyboard's return key into a submit button that fires `onSubmit`. Note
+  this replaces newline insertion on that key, so use it when you want the
+  return key to submit rather than add a line break.
+
+```dart
+form.TextField(
+  id: "message",
+  title: "Message",
+  maxLines: 5,
+  submitOnControlEnter: true, // Ctrl/Cmd+Enter submits; Enter = newline
+  textInputAction: TextInputAction.send, // mobile keyboard "send" button
+  onSubmit: (results) => print(results.grab("message").asString()),
+)
+
+// Or a chat-style input: Enter sends, Shift+Enter adds a line.
+form.TextField(
+  id: "chat",
+  maxLines: null,
+  submitOnEnter: true,
+  textInputAction: TextInputAction.send, // mobile keyboard "send" button
+  onSubmit: (results) => print(results.grab("chat").asString()),
+)
+```
+
 #### Dropdown Pattern
 
 ```dart

@@ -1,4 +1,3 @@
-import 'package:championforms/models/autocomplete/autocomplete_type.dart';
 import 'package:flutter/widgets.dart';
 
 /// A CompleteOption houses the details of autocomplete data received into

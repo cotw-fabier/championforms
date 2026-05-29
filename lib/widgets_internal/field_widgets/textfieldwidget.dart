@@ -12,6 +12,7 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter/material.dart' hide TextField;
 import 'package:flutter/material.dart' as material_tf show TextField;
+import 'package:flutter/services.dart';
 
 /// TextField widget implementation using [StatefulFieldWidget].
 ///
@@ -101,6 +102,18 @@ class TextFieldWidget extends StatefulFieldWidget {
             ? TextCapitalization.none
             : defaults.textCapitalization);
 
+    // Triggers the field's onSubmit callback (shared by Enter-key submission
+    // via the soft keyboard's action button and by Ctrl/Cmd+Enter on
+    // physical keyboards).
+    void triggerSubmit() {
+      if (field.onSubmit != null) {
+        final formResults = FormResults.getResults(
+          controller: ctx.controller,
+        );
+        field.onSubmit!(formResults);
+      }
+    }
+
     // Build the TextField widget
     final textField = overrideTextField(
       context: context,
@@ -120,23 +133,78 @@ class TextFieldWidget extends StatefulFieldWidget {
         maxLines: field.maxLines,
         autocorrect: effectiveAutocorrect,
         textCapitalization: effectiveTextCapitalization,
+        textInputAction: field.textInputAction,
         spellCheckConfiguration: effectiveSpellCheckConfig,
         onChanged: (value) {
           // Sync TextEditingController changes back to FormController
           ctx.setValue(value);
         },
         onSubmitted: (value) {
-          // Handle Enter key submission
-          if (field.onSubmit != null) {
-            final formResults = FormResults.getResults(
-              controller: ctx.controller,
-            );
-            field.onSubmit!(formResults);
-          }
+          // Handle Enter key submission (single-line fields, or multiline
+          // fields with a submitting [textInputAction] set).
+          triggerSubmit();
         },
         style: materialTheme.textTheme.bodyMedium,
       ),
     );
+
+    // Resolve keyboard-submission behaviors with field → global → package
+    // default (false), then wrap the field in a Focus ancestor that
+    // intercepts the relevant Enter chord on hardware keyboards (desktop/web).
+    //
+    // - submitOnControlEnter: Ctrl+Enter (Cmd+Enter on macOS) submits without
+    //   inserting a newline. Plain Enter still falls through and inserts a
+    //   line break on multiline fields. Applies to single- and multi-line
+    //   fields (single-line Ctrl+Enter never fires onSubmitted, so there's no
+    //   double-submit).
+    // - submitOnEnter: plain Enter submits while Shift+Enter inserts a newline
+    //   ("chat input" pattern). Only applied to multiline fields — single-line
+    //   fields already submit on Enter via onSubmitted, so intercepting here
+    //   too would double-fire.
+    final effectiveSubmitOnControlEnter =
+        field.submitOnControlEnter ?? defaults.submitOnControlEnter;
+    final isMultiline = field.maxLines == null || field.maxLines! > 1;
+    final submitOnEnterActive =
+        (field.submitOnEnter ?? defaults.submitOnEnter) && isMultiline;
+    final maybeSubmittableField = ((effectiveSubmitOnControlEnter ||
+                submitOnEnterActive) &&
+            field.onSubmit != null)
+        ? Focus(
+            // This wrapper only listens for the submit chord; it must not
+            // steal focus or traversal from the inner TextField.
+            canRequestFocus: false,
+            skipTraversal: true,
+            onKeyEvent: (node, event) {
+              if (event is! KeyDownEvent) return KeyEventResult.ignored;
+              final isEnter =
+                  event.logicalKey == LogicalKeyboardKey.enter ||
+                      event.logicalKey == LogicalKeyboardKey.numpadEnter;
+              if (!isEnter) return KeyEventResult.ignored;
+
+              final hasCtrlOrMeta =
+                  HardwareKeyboard.instance.isControlPressed ||
+                      HardwareKeyboard.instance.isMetaPressed;
+              final hasShift = HardwareKeyboard.instance.isShiftPressed;
+
+              // Ctrl/Cmd+Enter submits when enabled.
+              if (effectiveSubmitOnControlEnter && hasCtrlOrMeta) {
+                triggerSubmit();
+                return KeyEventResult.handled;
+              }
+
+              // Plain Enter submits when submitOnEnter is active; Shift+Enter
+              // (and any modifier combo) falls through so the newline is
+              // inserted as usual.
+              if (submitOnEnterActive && !hasCtrlOrMeta && !hasShift) {
+                triggerSubmit();
+                return KeyEventResult.handled;
+              }
+
+              return KeyEventResult.ignored;
+            },
+            child: textField,
+          )
+        : textField;
 
     // Resolve gentle focus-driven micro-interaction. Field-level explicit
     // value wins, then FormFieldDefaults, then package default (true).
@@ -149,9 +217,9 @@ class TextFieldWidget extends StatefulFieldWidget {
     final maybeAnimatedField = effectiveAnimateInteractions
         ? FieldInteractionAnimator(
             focusNode: focusNode,
-            child: textField,
+            child: maybeSubmittableField,
           )
-        : textField;
+        : maybeSubmittableField;
 
     // Wrap with autocomplete if configured
     final wrappedField = field.autoComplete != null &&

@@ -5,7 +5,7 @@ All notable changes to ChampionForms will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.0] - 2026-05-29 (Unreleased)
+## [0.6.0] - 2026-05-29
 
 ### 🎉 Major Release: Simplified Custom Field API
 
@@ -28,6 +28,50 @@ Version 0.6.0 dramatically simplifies custom field creation by reducing boilerpl
 ---
 
 ### Added
+
+#### Multi-line TextField Submission (Ctrl/Cmd+Enter & `textInputAction`)
+
+Multi-line text fields (`maxLines: null` or `> 1`) previously had no way to
+fire `onSubmit` from the keyboard — Enter just inserts a newline. Two new,
+non-breaking options resolve this:
+
+- `submitOnControlEnter: bool?` — when `true`, pressing **Ctrl+Enter**
+  (Cmd+Enter on macOS) fires `onSubmit` without inserting a newline; plain
+  Enter still adds a line break. Works on desktop and any device with a
+  hardware keyboard. **Off by default** (`null` falls through to
+  `FormFieldDefaults.instance.submitOnControlEnter`, package default
+  `false`). Enable per-field, or app-wide:
+
+  ```dart
+  FormFieldDefaults.instance.submitOnControlEnter = true;
+  ```
+
+- `submitOnEnter: bool?` — the inverse "chat input" pattern: when `true` on a
+  multiline field, plain **Enter** submits (fires `onSubmit`) and
+  **Shift+Enter** inserts a newline. Hardware-keyboard behavior (desktop/web);
+  single-line fields are unaffected (they already submit on Enter). **Off by
+  default** (`null` falls through to `FormFieldDefaults.instance.submitOnEnter`,
+  package default `false`). Enable per-field, or app-wide:
+
+  ```dart
+  FormFieldDefaults.instance.submitOnEnter = true;
+  ```
+
+- `textInputAction: TextInputAction?` — passthrough to the underlying Material
+  `TextField`. Set to a submitting action (e.g. `TextInputAction.send`,
+  `done`, or `go`) to turn the mobile soft keyboard's return key into a submit
+  button that fires `onSubmit`. Note this replaces newline insertion on that
+  key.
+
+```dart
+form.TextField(
+  id: 'message',
+  maxLines: 5,
+  submitOnControlEnter: true,            // Ctrl/Cmd+Enter submits
+  textInputAction: TextInputAction.send, // mobile keyboard submit button
+  onSubmit: (results) => send(results.grab('message').asString()),
+)
+```
 
 #### Gentle Focus Animation on TextField
 
@@ -509,7 +553,7 @@ Form(
 - No functional changes - all behavior remains identical
 
 **Migration:**
-- **Automated**: Use migration script `dart run tools/project-migration.dart /path/to/your/project`
+- **Automated**: Use migration script `dart run tool/project-migration.dart /path/to/your/project`
 - **Manual**: See [Migration Guide v0.3.x → v0.4.0](docs/migrations/MIGRATION-0.4.0.md)
 - **Estimated time**: 5-15 minutes (automated), 30-60 minutes (manual)
 

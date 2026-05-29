@@ -766,8 +766,6 @@ class FormFieldRegistry {
         // Determine which optional fields are present
         // Sub-fields are in order: street, [street2], city, state, zip, [country]
         final hasStreet2 = subFields.length > 4;
-        final hasCountry =
-            subFields.length == 6 || (subFields.length == 5 && !hasStreet2);
 
         int idx = 0;
         final street = subFields[idx++];

@@ -6,9 +6,7 @@ import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/field_types/column.dart';
 import 'package:championforms/models/field_types/compound_field.dart';
 import 'package:championforms/models/field_types/row.dart';
-import 'package:championforms/models/field_types/textfield.dart';
 import 'package:championforms/models/fieldstate.dart';
-import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/themes.dart';
 import 'package:championforms/widgets_external/form_wrappers/simple_wrapper.dart';
 import 'package:flutter/material.dart' as flutter;
@@ -357,7 +355,6 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
         fieldColors = mergedTheme.activeColorScheme!;
         break;
       case FieldState.normal:
-      default:
         fieldColors = mergedTheme.colorScheme!;
         break;
     }
@@ -518,7 +515,6 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
         fieldColors = mergedTheme.activeColorScheme!;
         break;
       case FieldState.normal:
-      default:
         fieldColors = mergedTheme.colorScheme!;
         break;
     }

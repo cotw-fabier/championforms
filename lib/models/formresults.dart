@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:championforms/championforms.dart';
 import 'package:championforms/models/field_types/formfielddefnull.dart';
 import 'package:championforms/models/file_model.dart';
@@ -481,7 +479,7 @@ class FormResults {
 
       // Store the field definition, casting its type parameter to dynamic for the map.
       // The actual instance retains its specific type (e.g., Field<String>).
-      definitions[field.id] = field as Field;
+      definitions[field.id] = field;
 
       // Retrieve the raw value from the controller.
       // Use dynamic type hint. Fall back to the field's default value if controller returns null.
@@ -513,16 +511,16 @@ class FormResults {
         _validateField<dynamic>(field, rawValue, controller, formErrors);
       } else if (rawValue is String) {
         _validateField<String>(
-            field as Field, rawValue, controller, formErrors);
+            field, rawValue, controller, formErrors);
       } else if (rawValue is int) {
         _validateField<int>(
-            field as Field, rawValue, controller, formErrors);
+            field, rawValue, controller, formErrors);
       } else if (rawValue is bool) {
         _validateField<bool>(
-            field as Field, rawValue, controller, formErrors);
+            field, rawValue, controller, formErrors);
       } else if (rawValue is List<FieldOption>) {
         _validateField<List<FieldOption>>(
-            field as Field, rawValue, controller, formErrors);
+            field, rawValue, controller, formErrors);
       } else {
         _validateField<dynamic>(field, rawValue, controller, formErrors);
       }
@@ -582,7 +580,7 @@ class FormResults {
     for (final field in finalFields) {
       if (field.hideField) continue;
 
-      definitions[field.id] = field as Field;
+      definitions[field.id] = field;
       final rawValue = controller.getFieldValue(field.id) ?? field.defaultValue;
       collectedResults[field.id] = rawValue;
     }
@@ -690,7 +688,7 @@ void _validateField<T>(
   for (int i = 0; i < field.validators!.length; i++) {
     final validator = field.validators![i];
     try {
-      final bool isValid = validator.validator(rawValue as T?);
+      final bool isValid = validator.validator(rawValue);
 
       if (!isValid) {
         final error = FormBuilderError(
@@ -701,7 +699,7 @@ void _validateField<T>(
         formErrors.add(error);
         controller.addError(error);
       }
-    } catch (e, s) {
+    } catch (e) {
       // Handle validation errors
       debugPrint("Validation error for field ${field.id}: $e");
       formErrors.add(FormBuilderError(

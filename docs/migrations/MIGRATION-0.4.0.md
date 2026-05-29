@@ -669,7 +669,7 @@ cd /path/to/championforms/package
 
 2. Run the migration script on your project:
 ```bash
-dart run tools/project-migration.dart /path/to/your/flutter/project
+dart run tool/project-migration.dart /path/to/your/flutter/project
 ```
 
 ### What the Script Does
@@ -717,19 +717,19 @@ Next steps:
 
 ```bash
 # Dry run (preview changes without modifying files)
-dart run tools/project-migration.dart /path/to/project --dry-run
+dart run tool/project-migration.dart /path/to/project --dry-run
 
 # Skip backup creation (not recommended)
-dart run tools/project-migration.dart /path/to/project --no-backup
+dart run tool/project-migration.dart /path/to/project --no-backup
 
 # Use custom namespace (default is 'form')
-dart run tools/project-migration.dart /path/to/project --namespace cf
+dart run tool/project-migration.dart /path/to/project --namespace cf
 
 # Combine options
-dart run tools/project-migration.dart /path/to/project --namespace myforms --dry-run
+dart run tool/project-migration.dart /path/to/project --namespace myforms --dry-run
 
 # Show help
-dart run tools/project-migration.dart --help
+dart run tool/project-migration.dart --help
 ```
 
 **Custom Namespace Option:**
@@ -871,7 +871,7 @@ import 'package:championforms/championforms.dart' as form;
 
 1. Updated your pubspec.yaml: `championforms: ^0.4.0`
 2. Run `flutter pub get`
-3. The script is at `tools/project-migration.dart` in the package directory
+3. The script is at `tool/project-migration.dart` in the package directory
 
 ### Q: Can I use a different namespace alias besides "form"?
 
@@ -888,7 +888,7 @@ import 'package:championforms/championforms.dart' as forms;
 **With the automated migration script**, you can specify your preferred namespace:
 
 ```bash
-dart run tools/project-migration.dart /path/to/project --namespace cf
+dart run tool/project-migration.dart /path/to/project --namespace cf
 ```
 
 This will automatically use your custom namespace throughout the migration instead of the default 'form'.
@@ -993,7 +993,7 @@ Use this checklist to verify your migration:
 - Result handling
 
 ### Migration Options
-1. **Automated** (Recommended): Run `dart run tools/project-migration.dart` (~5-15 minutes)
+1. **Automated** (Recommended): Run `dart run tool/project-migration.dart` (~5-15 minutes)
 2. **Manual**: Follow step-by-step guide above (~30-60 minutes)
 
 ### Why Upgrade?

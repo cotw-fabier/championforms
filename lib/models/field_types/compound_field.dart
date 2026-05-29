@@ -1,10 +1,8 @@
 import 'package:championforms/models/field_types/formfieldclass.dart';
-import 'package:championforms/models/field_types/formfieldbase.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/field_converters.dart';
 import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/themes.dart';
-import 'package:championforms/models/validatorclass.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:flutter/material.dart';
 
@@ -185,9 +183,6 @@ abstract class CompoundField extends Field with TextFieldConverters {
     final subFields = buildSubFields();
 
     return subFields.map((subField) {
-      // Apply ID prefixing
-      final prefixedId = _prefixSubFieldId(id, subField.id);
-
       // Create a copy with prefixed ID and propagated state
       // Note: This is a simplified approach. In practice, each Field subclass
       // would need to implement a copyWith method. For now, we'll work with

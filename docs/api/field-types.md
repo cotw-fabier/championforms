@@ -126,6 +126,9 @@ Standard text input field with support for single-line, multi-line, password, an
 | `maxLength` | `int?` | `null` | Maximum character length |
 | `keyboardType` | `TextInputType?` | `null` | Keyboard type (numeric, email, etc.) |
 | `inputFormatters` | `List<TextInputFormatter>?` | `null` | Input format restrictions |
+| `submitOnControlEnter` | `bool?` | `null` (falls through to `FormFieldDefaults`, package default `false`) | When `true`, Ctrl+Enter (Cmd+Enter on macOS) fires `onSubmit` without inserting a newline. Useful for multiline fields where plain Enter adds a line break. |
+| `submitOnEnter` | `bool?` | `null` (falls through to `FormFieldDefaults`, package default `false`) | When `true` on a multiline field, plain Enter submits (fires `onSubmit`) and **Shift+Enter** inserts a newline (the "chat input" pattern). Hardware-keyboard behavior (desktop/web); does not affect mobile soft keyboards. |
+| `textInputAction` | `TextInputAction?` | `null` | Passthrough to the Material `TextField`. Set to a submitting action (e.g. `TextInputAction.send`) to make the mobile soft keyboard's return key submit (fires `onSubmit`); replaces newline insertion on that key. |
 | **Visual Elements** |
 | `leading` | `Widget?` | `null` | Widget displayed at the start of the field |
 | `trailing` | `Widget?` | `null` | Widget displayed at the end of the field |
@@ -212,8 +215,28 @@ form.TextField(
   hintText: "Tell us about yourself...",
   maxLines: 5,  // Multi-line text area
   maxLength: 500,  // Character limit
+  submitOnControlEnter: true,  // Ctrl/Cmd+Enter submits; Enter = newline
+  textInputAction: TextInputAction.send,  // mobile keyboard submit button
+  onSubmit: (results) => _save(results.grab("bio").asString()),
 )
 ```
+
+> **Submitting a multi-line field:** On a single-line field, Enter fires
+> `onSubmit`. On a multi-line field, Enter inserts a newline, so you have a
+> few options:
+>
+> - `submitOnControlEnter: true` — **Ctrl/Cmd+Enter** submits; plain Enter
+>   still adds a line break.
+> - `submitOnEnter: true` — plain **Enter** submits and **Shift+Enter** adds a
+>   line break (the "chat input" pattern).
+> - `textInputAction` — set to a submitting action (e.g. `TextInputAction.send`)
+>   to turn the mobile soft keyboard's return key into a submit button.
+>
+> `submitOnControlEnter` and `submitOnEnter` are hardware-keyboard behaviors
+> (desktop/web); use `textInputAction` for mobile soft keyboards. Both flags
+> can be enabled app-wide via
+> `FormFieldDefaults.instance.submitOnControlEnter = true` /
+> `FormFieldDefaults.instance.submitOnEnter = true`.
 
 #### Text Field with Autocomplete
 

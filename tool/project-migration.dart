@@ -11,9 +11,9 @@
 /// - Provides dry-run mode for preview
 ///
 /// Usage:
-///   dart run tools/project-migration.dart /path/to/your/project
-///   dart run tools/project-migration.dart /path/to/your/project --dry-run
-///   dart run tools/project-migration.dart --help
+///   dart run tool/project-migration.dart /path/to/your/project
+///   dart run tool/project-migration.dart /path/to/your/project --dry-run
+///   dart run tool/project-migration.dart --help
 
 import 'dart:io';
 
@@ -545,7 +545,7 @@ ChampionForms Migration Tool v0.4.0
 Migrates ChampionForms projects from v0.3.x to v0.4.0
 
 Usage:
-  dart run tools/project-migration.dart <project-path> [options]
+  dart run tool/project-migration.dart <project-path> [options]
 
 Arguments:
   <project-path>    Path to your Flutter project directory
@@ -558,10 +558,10 @@ Options:
   --help, -h        Show this help message
 
 Examples:
-  dart run tools/project-migration.dart /path/to/my/project
-  dart run tools/project-migration.dart /path/to/my/project --dry-run
-  dart run tools/project-migration.dart . --dry-run
-  dart run tools/project-migration.dart /path/to/my/project --namespace cf
+  dart run tool/project-migration.dart /path/to/my/project
+  dart run tool/project-migration.dart /path/to/my/project --dry-run
+  dart run tool/project-migration.dart . --dry-run
+  dart run tool/project-migration.dart /path/to/my/project --namespace cf
 
 What this script does:
   1. Scans your project for .dart files using ChampionForms

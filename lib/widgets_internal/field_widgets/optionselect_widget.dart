@@ -1,7 +1,6 @@
 import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/field_types/optionselect.dart';
 import 'package:championforms/models/formresults.dart';
-import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/widgets_external/stateful_field_widget.dart';
 import 'package:championforms/championforms_themes.dart';
 import 'package:flutter/widgets.dart';

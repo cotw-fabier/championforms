@@ -187,7 +187,9 @@ void main() {
       expect(activeFieldIds, contains('name_firstname'));
       expect(activeFieldIds, contains('name_lastname'));
       expect(activeFieldIds, contains('phone'));
-      expect(activeFieldIds.length, equals(4)); // email, name_firstname, name_lastname, phone
+      expect(activeFieldIds, contains('name')); // parent compound field
+      expect(activeFieldIds.length,
+          equals(5)); // email, name, name_firstname, name_lastname, phone
 
       controller.dispose();
     });

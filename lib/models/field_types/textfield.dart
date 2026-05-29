@@ -194,6 +194,55 @@ class TextField extends Field {
   /// semantic constructors.
   final flutter.TextCapitalization? textCapitalization;
 
+  /// The keyboard action button shown on mobile soft keyboards (e.g.
+  /// [TextInputAction.send], [TextInputAction.done], [TextInputAction.go]).
+  ///
+  /// Direct passthrough to the underlying Material `TextField`.
+  ///
+  /// For multiline fields ([maxLines] != 1) the platform default is
+  /// [TextInputAction.newline], which makes the soft-keyboard return key
+  /// insert a line break with no way to submit. Set this to a submitting
+  /// action (e.g. [TextInputAction.send]) to turn the return key into a
+  /// submit button that fires [onSubmit] — note this replaces newline
+  /// insertion on that key. To keep newline-via-Enter and still allow
+  /// submission, leave this `null` and enable [submitOnControlEnter] for
+  /// Ctrl/Cmd+Enter submission instead.
+  final TextInputAction? textInputAction;
+
+  /// Whether pressing Ctrl+Enter (or Cmd+Enter on macOS) submits the field,
+  /// firing [onSubmit].
+  ///
+  /// Primarily useful for multiline fields ([maxLines] != 1) where plain
+  /// Enter inserts a newline and there is otherwise no meaningful way to
+  /// submit from a physical keyboard. Plain Enter still inserts a newline —
+  /// only the Ctrl/Cmd modifier triggers submission. Works on desktop and any
+  /// device with a hardware keyboard; soft-keyboard-only devices should use
+  /// [textInputAction] instead.
+  ///
+  /// `null` (default) falls through to
+  /// [FormFieldDefaults.instance.submitOnControlEnter] (package default:
+  /// `false`). Has no effect unless [onSubmit] is also provided.
+  final bool? submitOnControlEnter;
+
+  /// Whether plain Enter submits the field (firing [onSubmit]) while
+  /// Shift+Enter inserts a newline — the inverse of the default multiline
+  /// behavior, matching the common "chat input" pattern.
+  ///
+  /// Only affects multiline fields ([maxLines] `null` or `> 1`); single-line
+  /// fields already submit on Enter via [onSubmit]. When enabled, plain Enter
+  /// is intercepted (no newline is inserted) and Shift+Enter inserts a line
+  /// break instead.
+  ///
+  /// This is a hardware-keyboard behavior — it works on desktop and web (and
+  /// devices with a physical keyboard). It does **not** affect mobile soft
+  /// keyboards, where the return key sends a newline action directly; use
+  /// [textInputAction] to control the soft-keyboard submit button there.
+  ///
+  /// `null` (default) falls through to
+  /// [FormFieldDefaults.instance.submitOnEnter] (package default: `false`).
+  /// Has no effect unless [onSubmit] is also provided.
+  final bool? submitOnEnter;
+
   TextField({
     required super.id,
     this.fieldBuilder,
@@ -228,6 +277,9 @@ class TextField extends Field {
     this.spellCheckConfiguration,
     this.animateInteractions,
     this.textCapitalization,
+    this.textInputAction,
+    this.submitOnControlEnter,
+    this.submitOnEnter,
     super.fieldLayout,
     super.fieldBackground,
   });
@@ -275,6 +327,9 @@ class TextField extends Field {
     flutter.SpellCheckConfiguration? spellCheckConfiguration,
     bool? animateInteractions,
     flutter.TextCapitalization? textCapitalization,
+    TextInputAction? textInputAction,
+    bool? submitOnControlEnter,
+    bool? submitOnEnter,
     flutter.Widget Function(
       flutter.BuildContext context,
       Field fieldDetails,
@@ -325,6 +380,9 @@ class TextField extends Field {
           spellCheckConfiguration ?? this.spellCheckConfiguration,
       animateInteractions: animateInteractions ?? this.animateInteractions,
       textCapitalization: textCapitalization ?? this.textCapitalization,
+      textInputAction: textInputAction ?? this.textInputAction,
+      submitOnControlEnter: submitOnControlEnter ?? this.submitOnControlEnter,
+      submitOnEnter: submitOnEnter ?? this.submitOnEnter,
       fieldLayout: fieldLayout ?? this.fieldLayout,
       fieldBackground: fieldBackground ?? this.fieldBackground,
     );

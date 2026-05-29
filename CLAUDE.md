@@ -246,7 +246,7 @@ Run tests from repository root using `flutter test` or `flutter test example/tes
 
 ### Migration from v0.3.x
 
-The project underwent a breaking API change in v0.4.0. An automated migration script exists at `tools/project-migration.dart`. When helping users upgrade, reference `MIGRATION-0.4.0.md` for complete migration instructions.
+The project underwent a breaking API change in v0.4.0. An automated migration script exists at `tool/project-migration.dart`. When helping users upgrade, reference `MIGRATION-0.4.0.md` for complete migration instructions.
 
 Key changes:
 - `ChampionTextField` → `form.TextField`

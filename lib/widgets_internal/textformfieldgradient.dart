@@ -53,7 +53,8 @@ class GradientTextFormField extends StatelessWidget {
               const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
           hintText: hintText,
           hintStyle: theme.textTheme.bodyMedium
-              ?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.5)),
+              ?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
         ),
         onFieldSubmitted: (value) {
           if (onComplete != null) onComplete!(value);

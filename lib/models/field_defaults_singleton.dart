@@ -111,6 +111,44 @@ class FormFieldDefaults {
   /// Package default: [TextCapitalization.sentences].
   TextCapitalization textCapitalization = TextCapitalization.sentences;
 
+  /// Default for [TextField.submitOnControlEnter] when a field doesn't
+  /// specify a value.
+  ///
+  /// Controls whether pressing Ctrl+Enter (Cmd+Enter on macOS) submits a
+  /// field — firing its `onSubmit` — without inserting a newline. This is
+  /// most useful for multiline text fields ([TextField.maxLines] != 1),
+  /// where plain Enter inserts a line break and there is otherwise no way to
+  /// submit from a physical keyboard.
+  ///
+  /// Defaults to `false` (opt-in) so existing multiline fields keep their
+  /// current behavior. Flip it on app-wide with:
+  ///
+  /// ```dart
+  /// FormFieldDefaults.instance.submitOnControlEnter = true;
+  /// ```
+  ///
+  /// Package default: `false`.
+  bool submitOnControlEnter = false;
+
+  /// Default for [TextField.submitOnEnter] when a field doesn't specify a
+  /// value.
+  ///
+  /// Controls whether plain Enter submits a multiline field — firing its
+  /// `onSubmit` — while Shift+Enter inserts a newline (the common "chat
+  /// input" pattern). This is a hardware-keyboard behavior (desktop/web and
+  /// devices with a physical keyboard); mobile soft keyboards should use
+  /// [TextField.textInputAction] instead.
+  ///
+  /// Defaults to `false` (opt-in) so existing multiline fields keep their
+  /// current Enter-inserts-newline behavior. Flip it on app-wide with:
+  ///
+  /// ```dart
+  /// FormFieldDefaults.instance.submitOnEnter = true;
+  /// ```
+  ///
+  /// Package default: `false`.
+  bool submitOnEnter = false;
+
   /// Resets all behavior defaults to the package baselines.
   void reset() {
     spellCheck = true;
@@ -118,5 +156,7 @@ class FormFieldDefaults {
     spellCheckConfiguration = null;
     animateInteractions = true;
     textCapitalization = TextCapitalization.sentences;
+    submitOnControlEnter = false;
+    submitOnEnter = false;
   }
 }

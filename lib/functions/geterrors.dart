@@ -29,7 +29,6 @@ List<FormBuilderError> getFormBuilderErrors({
       continue;
     }
 
-    final FieldResultAccessor fieldAccessor;
     if (baseResult is! FieldResults) {
       debugPrint(
           "Error in getFormBuilderErrors: Result for '$fieldId' is not a FieldResults instance. Skipping.");

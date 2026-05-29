@@ -1,5 +1,3 @@
-import 'package:championforms/models/multiselect_option.dart';
-
 // Depreciated
 // class MultiselectFormFieldValueById {
 //   final String id;
