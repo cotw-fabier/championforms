@@ -86,12 +86,20 @@ class TextFieldWidget extends StatefulFieldWidget {
             ? const SpellCheckConfiguration()
             : null);
 
-    // Resolve keyboard auto-capitalization with field → global → package
-    // default. Flutter's own TextField default is TextCapitalization.none,
-    // which is why fields don't capitalize sentences the way native fields
-    // do; FormFieldDefaults restores the native default (sentences).
-    final effectiveTextCapitalization =
-        field.textCapitalization ?? defaults.textCapitalization;
+    // Resolve keyboard auto-capitalization with field → password-implicit →
+    // global → package default. Field-level explicit value wins, then
+    // password fields implicitly force TextCapitalization.none (so the
+    // keyboard never auto-capitalizes the first character of a secret),
+    // then FormFieldDefaults, then Flutter's own TextField default is
+    // TextCapitalization.none — which is why fields don't capitalize
+    // sentences the way native fields do; FormFieldDefaults restores the
+    // native default (sentences). A consumer who really wants capitalization
+    // on a password field can still force it by passing textCapitalization
+    // explicitly.
+    final effectiveTextCapitalization = field.textCapitalization ??
+        (field.password
+            ? TextCapitalization.none
+            : defaults.textCapitalization);
 
     // Build the TextField widget
     final textField = overrideTextField(
