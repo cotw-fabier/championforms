@@ -5,7 +5,7 @@ All notable changes to ChampionForms will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.0] - 2025-11-13 (Unreleased)
+## [0.6.0] - 2026-05-29 (Unreleased)
 
 ### 🎉 Major Release: Simplified Custom Field API
 
@@ -144,12 +144,52 @@ and test platforms, the underline config is silently skipped (gated on
 `WidgetsBinding.instance.platformDispatcher.nativeSpellCheckServiceDefined`).
 Autocorrect works on all platforms.
 
+#### Native Auto-Capitalization on TextField
+
+**TextField now auto-capitalizes the first letter of each sentence by
+default**, matching native iOS/Android text fields. Previously the widget
+never set `textCapitalization`, so it fell through to Flutter's own
+`TextField` default of `TextCapitalization.none` — which is why typed text
+felt "un-native" and never capitalized sentence starts.
+
+**New `form.TextField` parameter** (nullable — `null` falls through to the
+global default):
+
+- `textCapitalization: TextCapitalization?` — how the on-screen keyboard
+  auto-capitalizes typed text (`sentences`, `words`, `characters`, or
+  `none`). Package default: `sentences` unless `password=true`.
+
+**New `FormFieldDefaults` default:**
+
+- `textCapitalization: TextCapitalization` (default
+  `TextCapitalization.sentences`) — flip app-wide at startup, e.g.
+  `FormFieldDefaults.instance.textCapitalization = TextCapitalization.none;`
+
+Resolution order (first non-null wins): field-level explicit value →
+password-implicit override (passwords force `TextCapitalization.none`) →
+`FormFieldDefaults.instance` → package default (`sentences`).
+
+**Semantic constructors set an appropriate value automatically.** `.email`,
+`.password`, `.username`, `.url`, `.phone`, and `.postalCode` force
+`TextCapitalization.none`; `.name`, `.streetAddress`, `.city`, `.state`,
+and `.country` use `TextCapitalization.words` (proper-noun casing). Users
+can still override via `.copyWith()`.
+
+**Generic `TextField(password: true)` is also safe.** Even when constructed
+via the base constructor, the widget layer implicitly forces
+`TextCapitalization.none` so the keyboard never capitalizes the first
+character of a secret. A consumer who really wants capitalization on a
+password field can still force it by passing `textCapitalization`
+explicitly.
+
 ### Changed
 
 - **Default behavior change:** `TextField` now enables spellcheck +
-  autocorrect by default on iOS/Android. Existing apps that want the
-  old behavior should add the two-line `FormFieldDefaults` override
-  shown above at app startup.
+  autocorrect by default on iOS/Android, and auto-capitalizes sentences
+  by default on all platforms. Existing apps that want the old behavior
+  should add the `FormFieldDefaults` overrides shown above at app startup
+  (set `spellCheck`/`autocorrect` to `false` and `textCapitalization` to
+  `TextCapitalization.none`).
 
 ### Fixed
 

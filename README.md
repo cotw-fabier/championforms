@@ -5,6 +5,28 @@
 
 A declarative Flutter form builder focusing on clean structure, easy validation, state management via a central controller, and customizable theming. Designed to simplify form creation and management.
 
+> ## 📣 Actively developed — refreshing pub.dev
+>
+> ChampionForms has matured **significantly** since its last pub.dev release. It has been under
+> consistent, active development while running in production across several real Flutter
+> applications, and a great deal has changed: a simplified custom-field API, compound fields,
+> native spellcheck/autocorrect and auto-capitalization defaults, focus micro-interactions,
+> expanded autofill support, and many refinements throughout.
+>
+> All of this work has been landing on **GitHub** first. We're now pushing the latest GitHub
+> changes back to **pub.dev** so users can install the current, mature ChampionForms the easy way —
+> straight from the package registry — rather than pinning a git dependency.
+>
+> If you want the absolute latest between pub.dev releases, you can always depend on the
+> [GitHub repository](https://github.com/cotw-fabier/championforms/) directly:
+>
+> ```yaml
+> dependencies:
+>   championforms:
+>     git:
+>       url: https://github.com/cotw-fabier/championforms.git
+> ```
+
 ## Documentation
 
 📚 **[Complete Documentation](docs/README.md)** - Comprehensive guides, API references, and examples

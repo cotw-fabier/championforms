@@ -324,7 +324,7 @@ Minimum requirements:
 
 This is a published package on pub.dev: https://pub.dev/packages/championforms
 
-Current version: 0.5.3
+Current version: 0.6.0
 
 When making changes, ensure:
 1. Version is updated in `pubspec.yaml`
