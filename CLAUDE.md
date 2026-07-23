@@ -128,7 +128,33 @@ All field types share common properties defined in `FieldBase`:
 - `defaultValue`
 - `validateLive` (validate on blur)
 - `onChange`/`onSubmit` callbacks
+- `colors` (`FieldColors` emphasis — see below; defaults to `FieldColors.normal`)
+- `animateValidationErrors` (nullable per-field validation-wiggle toggle — see below)
 - `copyWith` method (required for all Field subclasses)
+
+#### Field emphasis colors (`colors` / `FieldColors`)
+
+Every base-library field accepts a `colors` parameter of type `FieldColors`
+(enum: `normal`, `destructive`). Default is `FieldColors.normal`. A field set
+to `FieldColors.destructive` renders in the theme's ERROR palette **while it is
+empty and unfocused**, to draw attention to a required or dangerous field
+before the user interacts with it. It reverts to normal styling once the field
+is focused and/or filled, and a real validation error always takes precedence.
+This is additive and non-breaking: the base `Field` defaults `colors` to
+`FieldColors.normal`, and custom field subclasses opt in by forwarding `colors`
+through their constructor and `copyWith`.
+
+#### Validation wiggle animation
+
+When a field transitions into a real validation-error state (on submit via
+`FormResults.getResults()` and on live/on-blur validation), it plays a subtle
+horizontal "wiggle" to draw the eye. This is automatic and library-level — no
+per-field wiring required. It is **visibility-gated**: an on-screen field
+wiggles immediately, while a field scrolled off screen defers its wiggle until
+it scrolls into view (playing a beat after it settles). Visibility is tracked
+by the reusable internal utility `ChampionVisibilityDetector`
+(`lib/widgets_internal/visibility/champion_visibility_detector.dart`). The
+animation respects the OS "reduce motion" accessibility setting.
 
 **IMPORTANT:** All custom field classes that extend `Field` or its subclasses (TextField, OptionSelect, FileUpload, etc.) **must** implement the `copyWith` method. This requirement was introduced to enable:
 - Proper field copying for compound fields (e.g., AddressField, NameField)
@@ -147,6 +173,16 @@ The `copyWith` method must accept nullable parameters for ALL properties (both f
 6. **Platform gating if the underlying Flutter feature requires it.** If the feature only works on some platforms (e.g. spellcheck only on iOS/Android), add a platform check in the widget so the flag is silently no-op elsewhere rather than throwing.
 
 This pattern keeps the field API small, gives consumers single-line escape hatches at two levels (per-field and app-wide), and avoids polluting every field construction with boilerplate.
+
+`animateValidationErrors` (the validation-wiggle toggle) is another instance of
+this exact pattern: it is a nullable `bool?` field-level parameter that falls
+through to the mutable `FormFieldDefaults.instance.animateValidationErrors`
+singleton default (package default `true`, reduce-motion aware), resolved in
+the widget layer with `field.animateValidationErrors ?? FormFieldDefaults.instance.animateValidationErrors`.
+The `colors` / `FieldColors` emphasis parameter follows the same spirit but is
+non-nullable with an enum default (`FieldColors.normal`) rather than a
+`FormFieldDefaults` singleton, since emphasis is inherently a per-field opt-in
+rather than an app-wide behavior default.
 
 #### 3. Validation System
 

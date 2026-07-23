@@ -56,6 +56,8 @@ FieldColorScheme _getColorsForState(FormTheme theme, FieldState state) {
       return theme.activeColorScheme ?? theme.colorScheme ?? defaultColors;
     case FieldState.error:
       return theme.errorColorScheme ?? theme.colorScheme ?? defaultColors;
+    case FieldState.destructive:
+      return theme.errorColorScheme ?? theme.colorScheme ?? defaultColors;
     case FieldState.disabled:
       return theme.disabledColorScheme ?? theme.colorScheme ?? defaultColors;
   }

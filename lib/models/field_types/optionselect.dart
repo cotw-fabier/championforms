@@ -1,4 +1,5 @@
 import 'package:championforms/models/field_builder_context.dart';
+import 'package:championforms/models/field_colors.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/multiselect_option.dart';
@@ -71,6 +72,8 @@ class OptionSelect extends Field {
     super.onChange,
     super.fieldLayout,
     super.fieldBackground,
+    super.colors,
+    super.animateValidationErrors,
     Widget Function(FieldBuilderContext)? fieldBuilder,
   }) : fieldBuilder = fieldBuilder ?? dropdownFieldBuilder;
 
@@ -83,6 +86,8 @@ class OptionSelect extends Field {
     Widget? leading,
     Widget? trailing,
     FormTheme? theme,
+    FieldColors? colors,
+    bool? animateValidationErrors,
     String? title,
     String? description,
     bool? disabled,
@@ -118,6 +123,9 @@ class OptionSelect extends Field {
       leading: leading ?? this.leading,
       trailing: trailing ?? this.trailing,
       theme: theme ?? this.theme,
+      colors: colors ?? this.colors,
+      animateValidationErrors:
+          animateValidationErrors ?? this.animateValidationErrors,
       title: title ?? this.title,
       description: description ?? this.description,
       disabled: disabled ?? this.disabled,

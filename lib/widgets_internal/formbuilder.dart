@@ -6,8 +6,10 @@ import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/field_types/column.dart';
 import 'package:championforms/models/field_types/compound_field.dart';
 import 'package:championforms/models/field_types/row.dart';
+import 'package:championforms/models/field_defaults_singleton.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/themes.dart';
+import 'package:championforms/widgets_internal/field_wiggle_animator.dart';
 import 'package:championforms/widgets_external/form_wrappers/simple_wrapper.dart';
 import 'package:flutter/material.dart' as flutter;
 import 'package:championforms/models/formbuildererrorclass.dart';
@@ -354,6 +356,9 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
       case FieldState.active:
         fieldColors = mergedTheme.activeColorScheme!;
         break;
+      case FieldState.destructive:
+        fieldColors = mergedTheme.errorColorScheme!;
+        break;
       case FieldState.normal:
         fieldColors = mergedTheme.colorScheme!;
         break;
@@ -372,7 +377,19 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
     final layoutBuilder =
         registration.layoutBuilder ?? CompoundField.buildDefaultCompoundLayout;
 
-    return layoutBuilder(fieldBuilderContext, subFieldWidgets, errors);
+    final flutter.Widget built =
+        layoutBuilder(fieldBuilderContext, subFieldWidgets, errors);
+
+    final bool animateErrors = compoundField.animateValidationErrors ??
+        FormFieldDefaults.instance.animateValidationErrors;
+
+    return animateErrors
+        ? FieldWiggleAnimator(
+            controller: widget.controller,
+            fieldId: compoundField.id,
+            child: built,
+          )
+        : built;
   }
 
   flutter.Widget _buildRow(Row row) {
@@ -514,6 +531,9 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
       case FieldState.active:
         fieldColors = mergedTheme.activeColorScheme!;
         break;
+      case FieldState.destructive:
+        fieldColors = mergedTheme.errorColorScheme!;
+        break;
       case FieldState.normal:
         fieldColors = mergedTheme.colorScheme!;
         break;
@@ -535,7 +555,7 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
           flutter.Padding(padding: widget.fieldPadding!, child: outputWidget);
     }
 
-    return field.fieldLayout(
+    final flutter.Widget built = field.fieldLayout(
       context,
       field,
       widget.controller,
@@ -548,5 +568,16 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
         outputWidget,
       ),
     );
+
+    final bool animateErrors = field.animateValidationErrors ??
+        FormFieldDefaults.instance.animateValidationErrors;
+
+    return animateErrors
+        ? FieldWiggleAnimator(
+            controller: widget.controller,
+            fieldId: field.id,
+            child: built,
+          )
+        : built;
   }
 }

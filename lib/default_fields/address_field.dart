@@ -1,3 +1,4 @@
+import 'package:championforms/models/field_colors.dart';
 import 'package:championforms/models/field_types/compound_field.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/field_types/textfield.dart';
@@ -107,6 +108,8 @@ class AddressField extends CompoundField {
     super.hideField,
     super.rollUpErrors,
     super.theme,
+    super.colors,
+    super.animateValidationErrors,
     super.validators,
     super.validateLive,
     super.onSubmit,
@@ -124,6 +127,8 @@ class AddressField extends CompoundField {
     bool? hideField,
     bool? rollUpErrors,
     FormTheme? theme,
+    FieldColors? colors,
+    bool? animateValidationErrors,
     List<Validator>? validators,
     bool? validateLive,
     Function(FormResults results)? onSubmit,
@@ -155,6 +160,9 @@ class AddressField extends CompoundField {
       hideField: hideField ?? this.hideField,
       rollUpErrors: rollUpErrors ?? this.rollUpErrors,
       theme: theme ?? this.theme,
+      colors: colors ?? this.colors,
+      animateValidationErrors:
+          animateValidationErrors ?? this.animateValidationErrors,
       validators: validators ?? this.validators,
       validateLive: validateLive ?? this.validateLive,
       onSubmit: onSubmit ?? this.onSubmit,
