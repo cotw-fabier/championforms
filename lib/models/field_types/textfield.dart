@@ -1,6 +1,7 @@
 import 'package:championforms/models/autocomplete/autocomplete_class.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/field_builder_context.dart';
+import 'package:championforms/core/field_json.dart';
 import 'package:championforms/models/field_condition.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/themes.dart';
@@ -390,6 +391,129 @@ class TextField extends Field {
       fieldLayout: fieldLayout ?? this.fieldLayout,
       fieldBackground: fieldBackground ?? this.fieldBackground,
     );
+  }
+
+  /// Builds a [TextField] from its JSON map.
+  ///
+  /// Registered for the type names `textField`, `text`, `textarea`, `email`,
+  /// `password`, `tel`, `url` and `number` — **one Dart class, several logical
+  /// types**, because what separates them is a keyboard, an autofill hint and
+  /// an obscure flag rather than a different widget. Reading `type` here is
+  /// what lets a document say `"type": "email"` and get the email keyboard and
+  /// autofill hint without also having to spell out `keyboardType` and
+  /// `autofillHints`, which it has no vocabulary for.
+  ///
+  /// Recognised keys, all optional except `id`: `title`, `description`,
+  /// `hintText`, `textFieldTitle`, `maxLines`, `maxLength`, `password`,
+  /// `disabled`, `hideField`, `requestFocus`, `validateLive`, `defaultValue`,
+  /// `validators`, `conditional`.
+  ///
+  /// Unrecognised keys are ignored rather than rejected. A document may have
+  /// been written by a newer build, and a field that fails to *decode* takes
+  /// the whole form down, where a field that ignores one key it does not
+  /// understand does not.
+  factory TextField.fromJson(Map<String, dynamic> json) {
+    final type = FieldJson.type(json);
+    final id = FieldJson.id(json);
+    final title = FieldJson.string(json, 'title');
+    final description = FieldJson.string(json, 'description');
+    final defaultValue = FieldJson.defaultText(json);
+    final validators = FieldJson.validators(json);
+    final conditional = FieldJson.conditional(json);
+    final disabled = FieldJson.boolean(json, 'disabled');
+    final hideField = FieldJson.boolean(json, 'hideField');
+    final requestFocus = FieldJson.boolean(json, 'requestFocus');
+    final validateLive = FieldJson.boolean(json, 'validateLive');
+    final maxLength = FieldJson.integer(json, 'maxLength');
+    final hintText = FieldJson.string(json, 'hintText') ?? '';
+
+    // A textarea's height is a property of the type, not something every
+    // document has to remember to set; an explicit `maxLines` still wins.
+    final maxLines =
+        FieldJson.integer(json, 'maxLines') ?? (type == 'textarea' ? 5 : 1);
+
+    switch (type) {
+      case 'email':
+        return TextField.email(
+          id: id,
+          title: title,
+          description: description,
+          defaultValue: defaultValue,
+          validators: validators,
+          validateLive: validateLive,
+          disabled: disabled,
+          hideField: hideField,
+          conditional: conditional,
+          requestFocus: requestFocus,
+          maxLength: maxLength,
+        );
+      case 'password':
+        return TextField.password(
+          id: id,
+          title: title,
+          description: description,
+          defaultValue: defaultValue,
+          validators: validators,
+          validateLive: validateLive,
+          disabled: disabled,
+          hideField: hideField,
+          conditional: conditional,
+          requestFocus: requestFocus,
+          maxLength: maxLength,
+        );
+      case 'tel':
+        return TextField.phone(
+          id: id,
+          title: title,
+          description: description,
+          defaultValue: defaultValue,
+          validators: validators,
+          validateLive: validateLive,
+          disabled: disabled,
+          hideField: hideField,
+          conditional: conditional,
+          requestFocus: requestFocus,
+          maxLength: maxLength,
+        );
+      case 'url':
+        return TextField.url(
+          id: id,
+          title: title,
+          description: description,
+          defaultValue: defaultValue,
+          validators: validators,
+          validateLive: validateLive,
+          disabled: disabled,
+          hideField: hideField,
+          conditional: conditional,
+          requestFocus: requestFocus,
+          maxLength: maxLength,
+        );
+      default:
+        return TextField(
+          id: id,
+          title: title,
+          description: description,
+          textFieldTitle: FieldJson.string(json, 'textFieldTitle'),
+          hintText: hintText,
+          maxLines: maxLines,
+          maxLength: maxLength,
+          password: FieldJson.boolean(json, 'password'),
+          defaultValue: defaultValue,
+          validators: validators,
+          validateLive: validateLive,
+          disabled: disabled,
+          hideField: hideField,
+          conditional: conditional,
+          requestFocus: requestFocus,
+          keyboardType: type == 'number'
+              ? const flutter.TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: true,
+                )
+              : null,
+        );
+    }
   }
 
   // ==========================================================================

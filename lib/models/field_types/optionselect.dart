@@ -1,4 +1,5 @@
 import 'package:championforms/models/field_builder_context.dart';
+import 'package:championforms/core/field_json.dart';
 import 'package:championforms/models/field_condition.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/file_model.dart';
@@ -75,6 +76,38 @@ class OptionSelect extends Field {
     super.fieldBackground,
     Widget Function(FieldBuilderContext)? fieldBuilder,
   }) : fieldBuilder = fieldBuilder ?? dropdownFieldBuilder;
+
+  /// Builds an [OptionSelect] from its JSON map.
+  ///
+  /// Registered for the type names `optionSelect` and `select`.
+  ///
+  /// Recognised keys, all optional except `id`: `title`, `description`,
+  /// `options`, `multiselect`, `defaultValue`, `caseSensitiveDefaultValue`,
+  /// `disabled`, `hideField`, `requestFocus`, `validateLive`, `validators`,
+  /// `conditional`.
+  ///
+  /// `defaultValue` is resolved against `options` — see
+  /// [FieldJson.defaultSelection] for why a value with no matching option is
+  /// dropped rather than invented.
+  factory OptionSelect.fromJson(Map<String, dynamic> json) {
+    final options = FieldJson.options(json);
+    return OptionSelect(
+      id: FieldJson.id(json),
+      title: FieldJson.string(json, 'title'),
+      description: FieldJson.string(json, 'description'),
+      options: options,
+      multiselect: FieldJson.boolean(json, 'multiselect'),
+      defaultValue: FieldJson.defaultSelection(json, options),
+      caseSensitiveDefaultValue:
+          FieldJson.boolean(json, 'caseSensitiveDefaultValue', fallback: true),
+      disabled: FieldJson.boolean(json, 'disabled'),
+      hideField: FieldJson.boolean(json, 'hideField'),
+      requestFocus: FieldJson.boolean(json, 'requestFocus'),
+      validateLive: FieldJson.boolean(json, 'validateLive'),
+      validators: FieldJson.validators(json),
+      conditional: FieldJson.conditional(json),
+    );
+  }
 
   @override
   OptionSelect copyWith({

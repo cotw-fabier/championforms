@@ -154,6 +154,24 @@ typedef FormFieldBuilder = flutter.Widget Function(
 );
 
 // ===========================================================================
+// JSON FACTORY SIGNATURE (v0.7.0+)
+// ===========================================================================
+
+/// Builds a [Field] from its JSON map.
+///
+/// Registered per field type through [FormFieldRegistry.register]'s `fromJson`
+/// parameter, and dispatched to by [FormFieldRegistry.fieldFromJson].
+///
+/// The map is the *whole* field object, including the `type` key that selected
+/// this factory. A factory is free to read it, and `TextField.fromJson` does,
+/// because several logical types (`email`, `password`, `tel`, `number`) are one
+/// Dart class configured differently.
+///
+/// See `FieldJson` for readers covering the properties every field has, so a
+/// factory only parses what is specific to its own type.
+typedef FieldFromJson = Field Function(Map<String, dynamic> json);
+
+// ===========================================================================
 // FORM FIELD REGISTRY
 // ===========================================================================
 
@@ -294,6 +312,9 @@ class FormFieldRegistry {
   /// the reverse map for every write would be O(n) per field.
   final Map<Type, String> _namesByType = {};
 
+  /// JSON factories, keyed by `typeName`.
+  final Map<String, FieldFromJson> _fromJson = {};
+
   // ===========================================================================
   // NEW STATIC API (v0.6.0+)
   // ===========================================================================
@@ -340,8 +361,9 @@ class FormFieldRegistry {
     String typeName,
     FormFieldBuilder builder, {
     FieldConverters? converters,
+    FieldFromJson? fromJson,
   }) {
-    _instance._registerInternal<T>(typeName, builder, converters);
+    _instance._registerInternal<T>(typeName, builder, converters, fromJson);
   }
 
   /// Checks if a builder is registered for a specific field type (static method).
@@ -430,6 +452,121 @@ class FormFieldRegistry {
   }
 
   // ===========================================================================
+  // JSON DECODING (v0.7.0+)
+  // ===========================================================================
+
+  /// Builds a [Field] from [json], dispatching on its `"type"` key.
+  ///
+  /// This is the whole point of the type-name index: a decoder outside this
+  /// package no longer needs to switch over every field type and know every
+  /// constructor. It hands the map over and gets a field back.
+  ///
+  /// ```dart
+  /// FormFieldRegistry.ensureInitialized();
+  /// ValidatorRegistry.ensureInitialized();
+  ///
+  /// final field = FormFieldRegistry.fieldFromJson({
+  ///   'id': 'email',
+  ///   'type': 'email',
+  ///   'title': 'Email',
+  ///   'validators': [
+  ///     'required',
+  ///     {'name': 'maxLength', 'params': {'max': 254}},
+  ///   ],
+  /// });
+  /// ```
+  ///
+  /// Returns `null` when `type` is absent or names a type with no registered
+  /// factory. **Null, not an exception**, because a document is data that can
+  /// outlive the build reading it — a form saved a year ago, a schema written
+  /// by a newer server — and a caller that gets null can render a placeholder
+  /// for one field it does not understand. Throwing would take the whole form
+  /// down over a single unknown type, which is strictly worse. Errors *within*
+  /// a recognised field (a missing `id`, a `validators` that is not a list, an
+  /// unknown validator name) still throw, because those are malformed rather
+  /// than merely unfamiliar.
+  static Field? fieldFromJson(Map<String, dynamic> json) {
+    final typeName = json['type'];
+    if (typeName is! String) return null;
+    return fieldFromJsonNamed(typeName, json);
+  }
+
+  /// [fieldFromJson] with the type named explicitly.
+  ///
+  /// For documents that carry the type somewhere other than a `type` key —
+  /// a map keyed by type name, say — so they need not synthesise one.
+  static Field? fieldFromJsonNamed(String typeName, Map<String, dynamic> json) {
+    final factory = _instance._fromJson[typeName];
+    if (factory == null) return null;
+    return factory(json);
+  }
+
+  /// Whether a JSON factory is registered under [typeName].
+  ///
+  /// Distinct from [hasBuilderForName]: a type may be renderable without being
+  /// decodable, which is the normal state for a custom field whose author has
+  /// not needed serialization.
+  static bool hasFromJsonFor(String typeName) =>
+      _instance._fromJson.containsKey(typeName);
+
+  /// Every `typeName` that can be decoded from JSON.
+  static Iterable<String> get decodableTypeNames => _instance._fromJson.keys;
+
+  /// Registers an additional `typeName` that decodes and renders as `T`.
+  ///
+  /// The vocabulary a document uses and the set of Dart classes that implement
+  /// it are not the same size. `email`, `password`, `tel`, `url`, `number`,
+  /// `text` and `textarea` are seven type names and one [TextField]; `select`
+  /// and `optionSelect` are the same widget under the name each audience
+  /// reaches for first.
+  ///
+  /// An alias resolves through [typeForName] and [fieldFromJson] like any other
+  /// name, but it does **not** become the type's canonical name — [nameForType]
+  /// keeps answering with the name the type was registered under, so
+  /// serializing a field still produces one stable, predictable string rather
+  /// than whichever alias happened to be registered last.
+  static void registerJsonAlias<T extends Field>(
+    String typeName,
+    FieldFromJson fromJson,
+  ) {
+    _instance._fromJson[typeName] = fromJson;
+    _instance._typesByName[typeName] = T;
+  }
+
+  /// The type-name vocabulary the built-in fields answer to beyond their
+  /// canonical names.
+  void _registerCoreAliases() {
+    // One TextField, several keyboards. `TextField.fromJson` reads `type` and
+    // configures itself, which is why they can all share a factory.
+    for (final name in const [
+      'text',
+      'textarea',
+      'email',
+      'password',
+      'tel',
+      'url',
+      'number',
+    ]) {
+      FormFieldRegistry.registerJsonAlias<TextField>(name, TextField.fromJson);
+    }
+
+    FormFieldRegistry.registerJsonAlias<OptionSelect>(
+      'select',
+      OptionSelect.fromJson,
+    );
+    // A single-select checkbox group. `CheckboxSelect.fromJson` reads `type`
+    // to decide whether `multiselect` defaults on or off.
+    FormFieldRegistry.registerJsonAlias<CheckboxSelect>(
+      'checkbox',
+      CheckboxSelect.fromJson,
+    );
+    FormFieldRegistry.registerJsonAlias<ChipSelect>(
+      'chips',
+      ChipSelect.fromJson,
+    );
+  }
+
+  // ===========================================================================
   // COMPOUND FIELD API
   // ===========================================================================
 
@@ -475,6 +612,7 @@ class FormFieldRegistry {
     )? layoutBuilder, {
     bool rollUpErrors = false,
     FieldConverters? converters,
+    FieldFromJson? fromJson,
   }) {
     _instance._registerCompoundInternal<T>(
       typeName,
@@ -482,6 +620,7 @@ class FormFieldRegistry {
       layoutBuilder,
       rollUpErrors,
       converters,
+      fromJson,
     );
   }
 
@@ -518,6 +657,7 @@ class FormFieldRegistry {
     String typeName,
     FormFieldBuilder builder,
     FieldConverters? converters,
+    FieldFromJson? fromJson,
   ) {
     if (_builders.containsKey(T)) {
       flutter.debugPrint('Warning: Overwriting builder for type $T');
@@ -525,6 +665,13 @@ class FormFieldRegistry {
     _builders[T] = builder;
     if (converters != null) {
       _converters[T] = converters;
+    }
+    if (fromJson != null) {
+      // Keyed by NAME, not by Type: one Dart class legitimately serves several
+      // type names (`email` and `password` are both `TextField`), and each of
+      // them needs its own entry pointing at the same factory. Keying by Type
+      // would let only one of them through.
+      _fromJson[typeName] = fromJson;
     }
     _indexTypeName<T>(typeName);
     flutter.debugPrint('Registered builder for type $T ($typeName)');
@@ -568,6 +715,7 @@ class FormFieldRegistry {
     )? layoutBuilder,
     bool rollUpErrors,
     FieldConverters? converters,
+    FieldFromJson? fromJson,
   ) {
     if (_compoundRegistrations.containsKey(T)) {
       flutter.debugPrint('Warning: Overwriting compound field for type $T');
@@ -586,6 +734,9 @@ class FormFieldRegistry {
 
     if (converters != null) {
       _converters[T] = converters;
+    }
+    if (fromJson != null) {
+      _fromJson[typeName] = fromJson;
     }
     _indexTypeName<T>(typeName);
 
@@ -781,12 +932,29 @@ class FormFieldRegistry {
     initialized = true;
 
     // Register standard fields with new StatefulFieldWidget API
-    FormFieldRegistry.register<TextField>('textField', buildTextField);
-    FormFieldRegistry.register<OptionSelect>('optionSelect', buildOptionSelect);
+    FormFieldRegistry.register<TextField>(
+      'textField',
+      buildTextField,
+      fromJson: TextField.fromJson,
+    );
+    FormFieldRegistry.register<OptionSelect>(
+      'optionSelect',
+      buildOptionSelect,
+      fromJson: OptionSelect.fromJson,
+    );
     FormFieldRegistry.register<CheckboxSelect>(
-        'checkboxSelect', buildCheckboxSelect);
-    FormFieldRegistry.register<ChipSelect>('chipSelect', buildChipSelect);
+      'checkboxSelect',
+      buildCheckboxSelect,
+      fromJson: CheckboxSelect.fromJson,
+    );
+    FormFieldRegistry.register<ChipSelect>(
+      'chipSelect',
+      buildChipSelect,
+      fromJson: ChipSelect.fromJson,
+    );
     FormFieldRegistry.register<FileUpload>('fileUpload', buildFileUpload);
+
+    _registerCoreAliases();
 
     // Register built-in compound fields with custom layouts
     _registerNameField();

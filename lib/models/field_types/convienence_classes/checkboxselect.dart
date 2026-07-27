@@ -1,4 +1,5 @@
 import 'package:championforms/models/field_builder_context.dart';
+import 'package:championforms/core/field_json.dart';
 import 'package:championforms/models/field_condition.dart';
 import 'package:championforms/models/field_types/optionselect.dart';
 import 'package:championforms/models/multiselect_option.dart';
@@ -36,6 +37,39 @@ class CheckboxSelect extends OptionSelect {
     super.fieldBackground,
     Widget Function(FieldBuilderContext)? fieldBuilder,
   }) : super(fieldBuilder: fieldBuilder ?? checkboxFieldBuilder);
+
+  /// Builds a [CheckboxSelect] from its JSON map.
+  ///
+  /// Registered for the type names `checkboxSelect` and `checkbox`. Both are
+  /// this class, and `multiselect` is what separates them: `checkbox` defaults
+  /// to a single-select group (ticking one clears the others), `checkboxSelect`
+  /// to a multi-select. An explicit `"multiselect"` in the document wins either
+  /// way.
+  ///
+  /// Recognised keys are the same as [OptionSelect.fromJson].
+  factory CheckboxSelect.fromJson(Map<String, dynamic> json) {
+    final options = FieldJson.options(json);
+    return CheckboxSelect(
+      id: FieldJson.id(json),
+      title: FieldJson.string(json, 'title'),
+      description: FieldJson.string(json, 'description'),
+      options: options,
+      multiselect: FieldJson.boolean(
+        json,
+        'multiselect',
+        fallback: FieldJson.type(json) == 'checkboxSelect',
+      ),
+      defaultValue: FieldJson.defaultSelection(json, options),
+      caseSensitiveDefaultValue:
+          FieldJson.boolean(json, 'caseSensitiveDefaultValue', fallback: true),
+      disabled: FieldJson.boolean(json, 'disabled'),
+      hideField: FieldJson.boolean(json, 'hideField'),
+      requestFocus: FieldJson.boolean(json, 'requestFocus'),
+      validateLive: FieldJson.boolean(json, 'validateLive'),
+      validators: FieldJson.validators(json),
+      conditional: FieldJson.conditional(json),
+    );
+  }
 
   @override
   CheckboxSelect copyWith({

@@ -39,11 +39,21 @@ void main() {
       expect(FormFieldRegistry.typeForName('address'), AddressField);
     });
 
-    test('nameForType is the inverse of typeForName', () {
+    test('every registered name resolves, and its type has a canonical name',
+        () {
+      // Not a strict inverse: aliases mean several names can share a type
+      // (`email` and `textField` are both `TextField`). What must hold is that
+      // every name resolves, and that every type has exactly one canonical
+      // name which itself round-trips — otherwise serializing a field would
+      // produce whichever alias registered last.
       for (final name in FormFieldRegistry.registeredTypeNames.toList()) {
         final type = FormFieldRegistry.typeForName(name);
         expect(type, isNotNull, reason: 'no type for registered name $name');
-        expect(FormFieldRegistry.nameForType(type!), name);
+
+        final canonical = FormFieldRegistry.nameForType(type!);
+        expect(canonical, isNotNull,
+            reason: '$type (reached via "$name") has no canonical name');
+        expect(FormFieldRegistry.typeForName(canonical!), type);
       }
     });
 
