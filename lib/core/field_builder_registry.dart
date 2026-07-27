@@ -277,6 +277,23 @@ class FormFieldRegistry {
   /// Internal storage for compound field registrations indexed by field type.
   final Map<Type, CompoundFieldRegistration> _compoundRegistrations = {};
 
+  /// Reverse index: the `typeName` passed to [register] -> the `Type` it was
+  /// registered for.
+  ///
+  /// Without this map there is no path from a string in a serialized document
+  /// (`"textField"`) to a registered builder — [register] accepted the name but
+  /// only ever used it for a debug print, while every lookup was keyed by
+  /// [Type]. Any decoder living outside this package therefore had to hard-code
+  /// a switch over every field type, which defeats the point of a registry.
+  final Map<String, Type> _typesByName = {};
+
+  /// Forward index: `Type` -> the `typeName` it was registered under.
+  ///
+  /// Kept alongside [_typesByName] rather than derived from it, because
+  /// serializing a field needs the name for a type it is holding, and searching
+  /// the reverse map for every write would be O(n) per field.
+  final Map<Type, String> _namesByType = {};
+
   // ===========================================================================
   // NEW STATIC API (v0.6.0+)
   // ===========================================================================
@@ -348,6 +365,68 @@ class FormFieldRegistry {
   /// - [register] to register a builder
   static bool hasBuilderFor<T extends Field>() {
     return _instance._builders.containsKey(T);
+  }
+
+  // ===========================================================================
+  // TYPE NAME INDEX (v0.7.0+)
+  // ===========================================================================
+
+  /// Resolves the `typeName` a field type was registered under to its [Type].
+  ///
+  /// This is the entry point for anything that receives a field as *data* —
+  /// a form stored in a database row, a schema fetched from a server, a
+  /// document written by a visual builder. Such a document can only name a
+  /// field type as a string; this turns that string back into something the
+  /// registry can act on.
+  ///
+  /// Returns `null` if no field type has been registered under [typeName].
+  ///
+  /// ```dart
+  /// FormFieldRegistry.ensureInitialized();
+  /// FormFieldRegistry.typeForName('textField'); // TextField
+  /// FormFieldRegistry.typeForName('nope');      // null
+  /// ```
+  ///
+  /// See also:
+  /// - [nameForType] for the inverse
+  /// - [fieldFromJson] which uses this index to build a field from a map
+  static Type? typeForName(String typeName) => _instance._typesByName[typeName];
+
+  /// Returns the `typeName` [type] was registered under, or `null`.
+  ///
+  /// The inverse of [typeForName]. Useful when serializing: a writer holds a
+  /// `Field` and needs the stable string a reader will use to find it again.
+  ///
+  /// ```dart
+  /// FormFieldRegistry.nameForType(TextField); // 'textField'
+  /// ```
+  static String? nameForType(Type type) => _instance._namesByType[type];
+
+  /// Every `typeName` currently registered, in registration order.
+  ///
+  /// Includes compound field types registered through [registerCompound].
+  static Iterable<String> get registeredTypeNames =>
+      _instance._typesByName.keys;
+
+  /// Whether a builder is registered under the string [typeName].
+  ///
+  /// The string-keyed counterpart of [hasBuilderFor]. A decoder uses this to
+  /// tell "this document names a type I have never heard of" (a legible,
+  /// one-field failure) from "this document is malformed".
+  static bool hasBuilderForName(String typeName) =>
+      _instance._typesByName.containsKey(typeName);
+
+  /// Registers the built-in field builders if they have not been registered.
+  ///
+  /// The [Form] widget does this on its first build, which is enough for a
+  /// hand-written form but not for a decoder: anything that resolves a
+  /// `typeName` *before* a form is on screen — parsing a stored document,
+  /// validating a schema in a test — would find an empty registry. Calling this
+  /// is idempotent and cheap.
+  static void ensureInitialized() {
+    if (!_instance.initialized) {
+      _instance.registerCoreBuilders();
+    }
   }
 
   // ===========================================================================
@@ -447,7 +526,33 @@ class FormFieldRegistry {
     if (converters != null) {
       _converters[T] = converters;
     }
+    _indexTypeName<T>(typeName);
     flutter.debugPrint('Registered builder for type $T ($typeName)');
+  }
+
+  /// Records both directions of the `typeName` <-> `Type` index.
+  ///
+  /// Re-registering a type under a *different* name drops the old name, so the
+  /// index never answers a name the caller has since replaced. Registering two
+  /// different types under the same name is a programming error rather than a
+  /// configuration one — the second silently shadowing the first would make a
+  /// stored document decode to the wrong widget — so it warns loudly and the
+  /// last registration wins, matching how [_builders] itself behaves.
+  void _indexTypeName<T>(String typeName) {
+    final previousName = _namesByType[T];
+    if (previousName != null && previousName != typeName) {
+      _typesByName.remove(previousName);
+    }
+    final previousType = _typesByName[typeName];
+    if (previousType != null && previousType != T) {
+      flutter.debugPrint(
+        'Warning: type name "$typeName" was registered for $previousType and is '
+        'now being registered for $T. A serialized field naming "$typeName" '
+        'will decode as $T from here on.',
+      );
+    }
+    _typesByName[typeName] = T;
+    _namesByType[T] = typeName;
   }
 
   /// Internal implementation of compound field registration.
@@ -482,6 +587,7 @@ class FormFieldRegistry {
     if (converters != null) {
       _converters[T] = converters;
     }
+    _indexTypeName<T>(typeName);
 
     flutter.debugPrint('Registered compound field for type $T ($typeName)');
   }
