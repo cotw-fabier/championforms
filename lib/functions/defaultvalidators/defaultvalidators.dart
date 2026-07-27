@@ -168,6 +168,50 @@ class Validators {
     return EmailValidator.validate(value.trim());
   }
 
+  /// **Checks if a string value is a valid absolute `http`/`https` URL.**
+  ///
+  /// Deliberately stricter than `Uri.tryParse`, which accepts almost anything —
+  /// `Uri.tryParse('not a url')` succeeds and yields a relative reference. A
+  /// URL field is asking for somewhere a browser can go, so an absolute URL
+  /// with an http scheme and a host is the bar.
+  static bool isUrl(dynamic value) {
+    if (value is! String || value.trim().isEmpty) return false;
+    final uri = Uri.tryParse(value.trim());
+    if (uri == null) return false;
+    if (!uri.isAbsolute || uri.host.isEmpty) return false;
+    return uri.scheme == 'http' || uri.scheme == 'https';
+  }
+
+  /// **Checks if a value is `null`, empty, or a valid URL.**
+  static bool isUrlOrNull(dynamic value) {
+    if (value == null) return true;
+    if (value is String && value.trim().isEmpty) return true;
+    return isUrl(value);
+  }
+
+  /// **Checks if a string value looks like a phone number.**
+  ///
+  /// Format only, and intentionally permissive: 7 to 15 digits after stripping
+  /// spaces, dashes, dots, brackets and a leading `+`. 15 is the E.164 maximum
+  /// and 7 is the shortest national number in common use. Anything narrower
+  /// rejects real numbers somewhere in the world, and a form that will not
+  /// accept a person's actual phone number is worse than one that accepts a
+  /// typo — only the network can tell you whether a number is reachable.
+  static bool isPhone(dynamic value) {
+    if (value is! String || value.trim().isEmpty) return false;
+    final trimmed = value.trim();
+    if (!RegExp(r'^\+?[0-9 ().\-]+$').hasMatch(trimmed)) return false;
+    final digits = trimmed.replaceAll(RegExp(r'[^0-9]'), '');
+    return digits.length >= 7 && digits.length <= 15;
+  }
+
+  /// **Checks if a value is `null`, empty, or a valid phone number.**
+  static bool isPhoneOrNull(dynamic value) {
+    if (value == null) return true;
+    if (value is String && value.trim().isEmpty) return true;
+    return isPhone(value);
+  }
+
   // --- List Validators ---
 
   /// **Checks if a value is a non-empty list.**
