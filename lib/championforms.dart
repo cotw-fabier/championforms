@@ -78,6 +78,30 @@ export 'package:championforms/models/formresults.dart';
 // Export Functions to Get Errors
 export 'package:championforms/functions/geterrors.dart';
 
+// Export FormBuilderError.
+//
+// `FormResults.formErrors`, `FormController.findErrors`, `getErrors` and every
+// `rollUpErrors` layout builder all hand out `FormBuilderError`s — so it was
+// possible to *receive* one from the public API and impossible to *name* one
+// without a deep import into `models/`. Anything that wanted to hold the errors
+// in a variable, pass them to a helper, or write a typed test had to reach past
+// the barrel.
+//
+// Note there is a second, unrelated class of the same name in
+// `models/formcontroller/form_builder_error.dart` with a different shape. It is
+// unused and unexported; this is the one the whole package actually produces.
+export 'package:championforms/models/formbuildererrorclass.dart';
+
+// Export the serializable rule types (v0.7.0+).
+//
+// Together with `FormFieldRegistry.fieldFromJson` these are what let a form be
+// stored, versioned and edited as data rather than written as code.
+export 'package:championforms/models/field_condition.dart';
+export 'package:championforms/models/named_validator.dart';
+export 'package:championforms/core/validator_registry.dart';
+export 'package:championforms/core/field_json.dart';
+export 'package:championforms/core/field_builder_registry.dart';
+
 // Export Autocomplete Classes (includes CompleteOption, formerly AutoCompleteOption)
 export 'package:championforms/models/autocomplete/autocomplete_class.dart';
 export 'package:championforms/models/autocomplete/autocomplete_option_class.dart';
