@@ -3,7 +3,9 @@ import 'package:championforms/default_fields/checkboxselect.dart';
 import 'package:championforms/default_fields/chipselect.dart';
 import 'package:championforms/default_fields/fileupload.dart';
 import 'package:championforms/default_fields/optionselect.dart';
+import 'package:championforms/default_fields/radioselect.dart';
 import 'package:championforms/default_fields/textfield.dart';
+import 'package:championforms/models/field_types/convienence_classes/radioselect.dart';
 import 'package:championforms/models/field_types/compound_field_registration.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:flutter/material.dart' as flutter;
@@ -564,6 +566,10 @@ class FormFieldRegistry {
       'chips',
       ChipSelect.fromJson,
     );
+    FormFieldRegistry.registerJsonAlias<RadioSelect>(
+      'radio',
+      RadioSelect.fromJson,
+    );
   }
 
   // ===========================================================================
@@ -951,6 +957,11 @@ class FormFieldRegistry {
       'chipSelect',
       buildChipSelect,
       fromJson: ChipSelect.fromJson,
+    );
+    FormFieldRegistry.register<RadioSelect>(
+      'radioSelect',
+      buildRadioSelect,
+      fromJson: RadioSelect.fromJson,
     );
     FormFieldRegistry.register<FileUpload>('fileUpload', buildFileUpload);
 

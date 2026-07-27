@@ -55,6 +55,7 @@ export 'package:championforms/models/field_types/optionselect.dart';
 export 'package:championforms/models/field_types/fileupload.dart';
 export 'package:championforms/models/field_types/convienence_classes/checkboxselect.dart';
 export 'package:championforms/models/field_types/convienence_classes/chipselect.dart';
+export 'package:championforms/models/field_types/convienence_classes/radioselect.dart';
 
 // Export Compound Field Types
 export 'package:championforms/models/field_types/compound_field.dart';
