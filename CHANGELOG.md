@@ -5,6 +5,150 @@ All notable changes to ChampionForms will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-07-27
+
+### 🎉 Forms as data
+
+Everything in this release exists so a form can be **stored, versioned,
+diffed and edited as a document** instead of only written as Dart. A
+`Validator` is a closure and a visibility decision was a constructor
+argument, so neither could survive a database row, a diff between two
+versions of a form, a visual builder's node editor, or a trip to a server
+that needs to run the identical rule.
+
+**Nothing here is breaking.** Every addition is an optional parameter, a new
+class, or a new export. A hand-built form that passes closures is untouched,
+and the two styles mix freely in one form.
+
+### Added
+
+#### `typeName` → `Type` reverse index in `FormFieldRegistry`
+
+`register<T>(typeName, builder)` accepted a name and used it only for a debug
+print — the builder map was keyed by `Type`, so there was no path from
+`"textField"` in a document to a builder.
+
+```dart
+FormFieldRegistry.ensureInitialized();
+FormFieldRegistry.typeForName('textField');   // TextField
+FormFieldRegistry.nameForType(TextField);     // 'textField'
+FormFieldRegistry.hasBuilderForName('email'); // true
+FormFieldRegistry.registeredTypeNames;
+```
+
+`ensureInitialized()` is public because the `Form` widget registers the core
+builders on its first build, and a decoder runs before any form is on screen.
+
+#### Per-type `Field fromJson(Map)` factories
+
+```dart
+final field = FormFieldRegistry.fieldFromJson({
+  'id': 'email',
+  'type': 'email',
+  'title': 'Email',
+  'validators': ['required', {'name': 'maxLength', 'params': {'max': 254}}],
+  'conditional': {'rules': [{'fieldId': 'role', 'operator': 'isNotEmpty'}]},
+});
+```
+
+- `register` takes an optional `fromJson`; `registerJsonAlias<T>` adds extra
+  type names without changing the canonical one.
+- `TextField`, `OptionSelect`, `CheckboxSelect`, `ChipSelect` and the new
+  `RadioSelect` ship factories.
+- Type names recognised out of the box: `textField`, `text`, `textarea`,
+  `email`, `password`, `tel`, `url`, `number`, `optionSelect`, `select`,
+  `checkboxSelect`, `checkbox`, `chipSelect`, `chips`, `radioSelect`,
+  `radio`.
+- `FieldJson` holds readers for the properties every field has, so a custom
+  factory parses only what is specific to its own type.
+- An **unknown `type` returns null**; a malformed *known* field throws. A
+  document can outlive the build reading it, and one unfamiliar field must
+  not take a whole form down.
+
+#### Named-validator registry
+
+```dart
+ValidatorRegistry.ensureInitialized();
+ValidatorRegistry.register('evenNumber', (params) => Validator(...));
+
+const rule = NamedValidator('maxLength', params: {'max': 254});
+final validator = rule.resolve();   // an ordinary Validator
+```
+
+Built-ins: `required`, `notEmpty`, `listNotEmpty`, `email`, `url`, `tel`,
+`integer`, `number`, `regex`, `minLength`, `maxLength`, `lengthRange`, `min`,
+`max`, `oneOf`. Every one accepts a `reason` parameter and otherwise falls
+back to a message naming the constraint. Format validators pass on blank —
+`required` is what makes a field mandatory, and an `email` that also rejected
+empty would make every optional email field impossible to leave blank.
+
+#### Serializable conditional logic on `Field`
+
+```dart
+TextField(
+  id: 'team_size',
+  conditional: const FieldCondition(rules: [
+    ConditionRule(
+      fieldId: 'role',
+      operator: ConditionOperator.equals,
+      value: 'team',
+    ),
+  ]),
+)
+```
+
+`{match: all|any, action: show|hide, rules: [{fieldId, operator, value}]}`
+with `equals`, `notEquals`, `contains`, `startsWith`, `endsWith`, `isEmpty`,
+`isNotEmpty`, `gt`, `lt`. Evaluated by the controller against live values on
+every change.
+
+`FormController.isFieldHidden(field)` unions this with the existing
+`hideField` flag and is **the single question both the renderer and the
+validator now ask** — a field drawn but not validated silently drops an
+answer, and a field validated but not drawn shows an error next to nothing.
+
+#### `RadioSelect`
+
+A single-select group that renders as radio buttons.
+`CheckboxSelect(multiselect: false)` already behaved this way and looked like
+a set of ticks; the appearance is the only signal a person gets about what
+the control will let them do. `multiselect` is fixed to false, and tapping
+the selected option does not clear it.
+
+#### `Validators.isUrl` / `isUrlOrNull` / `isPhone` / `isPhoneOrNull`
+
+`isUrl` is stricter than `Uri.tryParse` (which accepts `'not a url'` as a
+relative reference): absolute, `http`/`https`, non-empty host. `isPhone` is
+deliberately permissive — 7 to 15 digits after stripping punctuation —
+because a form that will not accept a person's actual phone number is worse
+than one that accepts a typo.
+
+### Fixed
+
+- **`FormBuilderError` is now exported from the barrel.**
+  `FormResults.formErrors`, `FormController.findErrors`, `getErrors` and
+  every `rollUpErrors` layout builder hand one out, and
+  `controller.addError` takes one positionally — so it was possible to
+  receive one from the public API and impossible to name one without a deep
+  import into `models/`.
+
+- `FieldCondition`, `ConditionRule`, `NamedValidator`, `ValidatorRegistry`,
+  `FieldJson` and `FormFieldRegistry` are exported from
+  `package:championforms/championforms.dart`. `FormFieldRegistry` was
+  previously only on the *themes* barrel, which is not where anyone decoding
+  a document looks.
+
+### Notes for custom field authors
+
+`Field.conditional` is an optional constructor parameter and the abstract
+`Field.copyWith` signature is deliberately unchanged — adding a parameter
+there would invalidate every existing override. The built-in field types add
+it as an extra optional parameter on their own `copyWith` (which Dart
+permits) and carry it across. A custom field that wants `conditional` to
+survive a copy should do the same.
+
+---
+
 ## [0.6.0] - 2026-05-29
 
 ### 🎉 Major Release: Simplified Custom Field API
