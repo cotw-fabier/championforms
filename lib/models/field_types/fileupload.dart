@@ -3,6 +3,7 @@ import 'package:championforms/models/field_types/optionselect.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/models/field_builder_context.dart';
+import 'package:championforms/models/field_condition.dart';
 import 'package:championforms/models/themes.dart';
 import 'package:championforms/models/validatorclass.dart';
 import 'package:championforms/models/formresults.dart';
@@ -74,6 +75,7 @@ class FileUpload extends OptionSelect {
     super.description,
     super.disabled,
     super.hideField,
+    super.conditional,
     super.requestFocus,
     super.defaultValue = const [],
     super.caseSensitiveDefaultValue = true,
@@ -109,6 +111,7 @@ class FileUpload extends OptionSelect {
     String? description,
     bool? disabled,
     bool? hideField,
+    FieldCondition? conditional,
     bool? requestFocus,
     List<FieldOption>? defaultValue,
     bool? caseSensitiveDefaultValue,
@@ -152,6 +155,7 @@ class FileUpload extends OptionSelect {
       description: description ?? this.description,
       disabled: disabled ?? this.disabled,
       hideField: hideField ?? this.hideField,
+      conditional: conditional ?? this.conditional,
       requestFocus: requestFocus ?? this.requestFocus,
       defaultValue: defaultValue ?? this.defaultValue,
       caseSensitiveDefaultValue: caseSensitiveDefaultValue ?? this.caseSensitiveDefaultValue,

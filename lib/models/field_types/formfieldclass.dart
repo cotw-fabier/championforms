@@ -1,5 +1,6 @@
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/models/field_condition.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/field_types/formfieldbase.dart';
 import 'package:championforms/models/formresults.dart';
@@ -56,6 +57,40 @@ abstract class Field implements FieldBase {
 
   // Hide this field and don't include it at all in the outputs or validators. Helpful for building dynamic forms.
   final bool hideField;
+
+  /// Serializable show/hide logic evaluated against the form's live values.
+  ///
+  /// [hideField] is a decision made once, when the field is constructed. This
+  /// is a decision remade on every change, and — unlike a callback — it is
+  /// *data*, so it survives being written to a database row, diffed between two
+  /// versions of a form, and edited in a visual builder.
+  ///
+  /// A field this hides is not rendered **and is not validated**, exactly as
+  /// [hideField] already behaves: a required field behind a false condition
+  /// must never block a submission the person was never given a chance to
+  /// satisfy. `FormController.isFieldHidden` is where the two are combined, and
+  /// is what both the builder and `FormResults` consult.
+  ///
+  /// ```dart
+  /// TextField(
+  ///   id: 'team_size',
+  ///   conditional: const FieldCondition(rules: [
+  ///     ConditionRule(
+  ///       fieldId: 'role',
+  ///       operator: ConditionOperator.equals,
+  ///       value: 'team',
+  ///     ),
+  ///   ]),
+  /// )
+  /// ```
+  ///
+  /// Note for custom field authors: `copyWith` on the built-in field types
+  /// carries this across, but the abstract `copyWith` signature deliberately
+  /// does not declare it — adding a parameter there would break every existing
+  /// override. A custom field that wants `conditional` to survive a copy should
+  /// add an optional `FieldCondition? conditional` parameter to its own
+  /// `copyWith` and forward it.
+  final FieldCondition? conditional;
 
   // This field will ask for focus. Best to only have one per form.
   final bool requestFocus;
@@ -173,6 +208,7 @@ abstract class Field implements FieldBase {
     this.description,
     this.disabled = false,
     this.hideField = false,
+    this.conditional,
     this.requestFocus = false,
     this.validators,
     this.validateLive = false,

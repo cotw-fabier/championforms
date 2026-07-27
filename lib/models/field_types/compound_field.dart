@@ -101,6 +101,7 @@ abstract class CompoundField extends Field with TextFieldConverters {
     super.description,
     super.disabled,
     super.hideField,
+    super.conditional,
     this.rollUpErrors = false,
     super.theme,
     super.validators,

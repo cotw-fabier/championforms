@@ -243,9 +243,16 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
   List<flutter.Widget> _buildElementList(List<FormElement> elements) {
     List<flutter.Widget> output = [];
     for (final element in elements) {
+      // `isFieldHidden` is the union of the static `hideField` flag and the
+      // field's serializable `conditional` rules, evaluated against the
+      // controller's live values. The controller notifies on every value
+      // change and this widget rebuilds on that notification, so a condition
+      // takes effect on the next frame. Crucially it is the *same* question
+      // `FormResults` asks, so a field can never be drawn without being
+      // validated or validated without being drawn.
       if ((element is Row && element.hideField) ||
           (element is Column && element.hideField) ||
-          (element is Field && element.hideField)) {
+          (element is Field && widget.controller.isFieldHidden(element))) {
         continue;
       }
 

@@ -1,4 +1,5 @@
 import 'package:championforms/models/field_types/compound_field.dart';
+import 'package:championforms/models/field_condition.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/field_types/textfield.dart';
 import 'package:championforms/models/themes.dart';
@@ -92,6 +93,7 @@ class NameField extends CompoundField {
     super.description,
     super.disabled,
     super.hideField,
+    super.conditional,
     super.rollUpErrors,
     super.theme,
     super.validators,
@@ -108,6 +110,7 @@ class NameField extends CompoundField {
     String? description,
     bool? disabled,
     bool? hideField,
+    FieldCondition? conditional,
     bool? rollUpErrors,
     FormTheme? theme,
     List<Validator>? validators,
@@ -138,6 +141,7 @@ class NameField extends CompoundField {
       description: description ?? this.description,
       disabled: disabled ?? this.disabled,
       hideField: hideField ?? this.hideField,
+      conditional: conditional ?? this.conditional,
       rollUpErrors: rollUpErrors ?? this.rollUpErrors,
       theme: theme ?? this.theme,
       validators: validators ?? this.validators,

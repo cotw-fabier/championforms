@@ -1,4 +1,5 @@
 import 'package:championforms/models/field_builder_context.dart';
+import 'package:championforms/models/field_condition.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/multiselect_option.dart';
@@ -62,6 +63,7 @@ class OptionSelect extends Field {
     super.description,
     super.disabled,
     super.hideField,
+    super.conditional,
     super.requestFocus,
     this.defaultValue = const [],
     this.caseSensitiveDefaultValue = true,
@@ -87,6 +89,7 @@ class OptionSelect extends Field {
     String? description,
     bool? disabled,
     bool? hideField,
+    FieldCondition? conditional,
     bool? requestFocus,
     List<FieldOption>? defaultValue,
     bool? caseSensitiveDefaultValue,
@@ -122,6 +125,7 @@ class OptionSelect extends Field {
       description: description ?? this.description,
       disabled: disabled ?? this.disabled,
       hideField: hideField ?? this.hideField,
+      conditional: conditional ?? this.conditional,
       requestFocus: requestFocus ?? this.requestFocus,
       defaultValue: defaultValue ?? this.defaultValue,
       caseSensitiveDefaultValue:

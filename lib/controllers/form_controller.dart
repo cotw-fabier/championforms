@@ -669,6 +669,47 @@ class FormController extends ChangeNotifier {
     return Map.from(_fieldValues);
   }
 
+  // ===========================================================================
+  // CONDITIONAL VISIBILITY (v0.7.0+)
+  // ===========================================================================
+
+  /// Whether [field]'s [Field.conditional] is currently satisfied.
+  ///
+  /// A field with no condition is always visible. This ignores
+  /// [Field.hideField] — see [isFieldHidden], which is what callers normally
+  /// want.
+  ///
+  /// Evaluated against the controller's live values, so it changes as the
+  /// person types. Every value mutation notifies listeners, and the form
+  /// builder rebuilds on that notification, which is what makes a condition
+  /// take effect on the next frame rather than on the next submit.
+  bool isFieldVisible(Field field) {
+    final condition = field.conditional;
+    if (condition == null) return true;
+    return condition.isVisible(_fieldValues);
+  }
+
+  /// Whether [field] should be treated as absent from the form right now.
+  ///
+  /// The union of the static [Field.hideField] flag and the dynamic
+  /// [Field.conditional] rules, and **the single question both the renderer and
+  /// the validator ask**. Keeping it in one place is the point: a field that is
+  /// drawn but not validated silently drops an answer, and a field that is
+  /// validated but not drawn produces an error message next to nothing, with a
+  /// submit button that will not work and no way to find out why.
+  bool isFieldHidden(Field field) => field.hideField || !isFieldVisible(field);
+
+  /// Whether the field registered under [fieldId] is hidden.
+  ///
+  /// Returns `false` for an unknown id: a field the controller has never seen
+  /// cannot be hidden, and treating it as hidden would make a typo look like a
+  /// working condition.
+  bool isFieldIdHidden(String fieldId) {
+    final field = _fieldDefinitions[fieldId];
+    if (field == null) return false;
+    return isFieldHidden(field);
+  }
+
   /// Batch sets multiple field values at once.
   ///
   /// Useful for loading saved form data or pre-populating forms. Suppresses

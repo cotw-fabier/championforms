@@ -1,4 +1,5 @@
 import 'package:championforms/models/field_builder_context.dart';
+import 'package:championforms/models/field_condition.dart';
 import 'package:championforms/models/field_types/optionselect.dart';
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/models/themes.dart';
@@ -23,6 +24,7 @@ class CheckboxSelect extends OptionSelect {
     super.description,
     super.disabled,
     super.hideField,
+    super.conditional,
     super.requestFocus,
     super.defaultValue = const [],
     super.caseSensitiveDefaultValue = true,
@@ -48,6 +50,7 @@ class CheckboxSelect extends OptionSelect {
     String? description,
     bool? disabled,
     bool? hideField,
+    FieldCondition? conditional,
     bool? requestFocus,
     List<FieldOption>? defaultValue,
     bool? caseSensitiveDefaultValue,
@@ -83,6 +86,7 @@ class CheckboxSelect extends OptionSelect {
       description: description ?? this.description,
       disabled: disabled ?? this.disabled,
       hideField: hideField ?? this.hideField,
+      conditional: conditional ?? this.conditional,
       requestFocus: requestFocus ?? this.requestFocus,
       defaultValue: defaultValue ?? this.defaultValue,
       caseSensitiveDefaultValue: caseSensitiveDefaultValue ?? this.caseSensitiveDefaultValue,

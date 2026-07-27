@@ -474,8 +474,11 @@ class FormResults {
 
     // First pass: Collect all field values and definitions
     for (final field in finalFields) {
-      // Skip fields explicitly marked as hidden.
-      if (field.hideField) continue;
+      // Skip fields the form is not currently asking for — the static
+      // `hideField` flag or an unsatisfied `conditional`. A required field
+      // behind a false condition must never block a submission the person was
+      // never given a chance to satisfy.
+      if (controller.isFieldHidden(field)) continue;
 
       // Store the field definition, casting its type parameter to dynamic for the map.
       // The actual instance retains its specific type (e.g., Field<String>).
@@ -497,7 +500,7 @@ class FormResults {
     // Second pass: Run validation
     // Validate regular fields first, then compound fields
     for (final field in finalFields) {
-      if (field.hideField) continue;
+      if (controller.isFieldHidden(field)) continue;
 
       final rawValue = collectedResults[field.id];
 
@@ -578,7 +581,7 @@ class FormResults {
     Map<String, Field> definitions = {};
 
     for (final field in finalFields) {
-      if (field.hideField) continue;
+      if (controller.isFieldHidden(field)) continue;
 
       definitions[field.id] = field;
       final rawValue = controller.getFieldValue(field.id) ?? field.defaultValue;
