@@ -73,12 +73,17 @@ class FormController extends ChangeNotifier {
 
   FormController({
     String? id,
-    this.fields = const [],
+    List<Field> fields = const [],
     this.formErrors = const [],
     this.activeFields = const [],
     Map<String, List<Field>>? pageFields,
   })  : id = id ?? Uuid().v4(),
-        pageFields = pageFields ?? {};
+        pageFields = pageFields ?? {} {
+    // Historically this parameter was stored on a public `fields` property that
+    // nothing ever read, so `FormController(fields: [...])` registered nothing.
+    // Register them properly.
+    if (fields.isNotEmpty) addFields(fields, noNotify: true);
+  }
 
   // ===========================================================================
   // PUBLIC PROPERTIES
@@ -91,11 +96,13 @@ class FormController extends ChangeNotifier {
   /// in the application.
   final String id;
 
-  /// List of all field definitions linked to this controller.
-  ///
-  /// Contains all [Field] instances that have been associated with
-  /// this controller. Primarily used for initialization and bulk operations.
-  List<Field> fields;
+  /// All field definitions linked to this controller.
+  @Deprecated(
+    'Use registeredFields. This property was never populated by the form '
+    'widgets and never read by the library, so it always returned an empty '
+    'list. It now delegates to registeredFields. Will be removed in 1.0.0.',
+  )
+  List<Field> get fields => registeredFields;
 
   /// List of current validation errors in the form.
   ///
@@ -106,15 +113,49 @@ class FormController extends ChangeNotifier {
   /// Example: `[FormBuilderError(fieldId: 'email', reason: 'Invalid email')]`
   List<FormBuilderError> formErrors;
 
-  /// List of currently rendered field definitions.
+  /// Field definitions **currently rendered** in [Form] widgets.
   ///
-  /// Contains an updated list of [Field] objects currently rendered
-  /// in [Form] widgets. Automatically maintained by the form widget
-  /// lifecycle methods.
+  /// Maintained by the form widget lifecycle: filled when a [Form] mounts,
+  /// and **emptied when it is torn down**.
   ///
-  /// This differs from [fields] in that it only contains fields actively
-  /// being displayed, not all fields that have been registered.
+  /// Teardown is Flutter's decision, not yours. A [Form] inside a `ListView`
+  /// is disposed the moment it scrolls past the cache extent, and a wizard
+  /// step is disposed when you navigate off it. In both cases the fields drop
+  /// out of this list while their values remain untouched in the controller.
+  /// That makes this list a poor answer to "what is in my form" — it answers
+  /// "what is painted right now", which is a question about the screen.
+  ///
+  /// Use it for render introspection and debugging. To collect or validate
+  /// answers use [registeredFields] (the default for
+  /// [FormResults.getResults]) or [getPageFields].
   List<Field> activeFields;
+
+  /// Every field definition this controller knows about, in the order the
+  /// fields were first declared.
+  ///
+  /// This is the form's **schema**. A field enters this list when it is
+  /// *declared* — by a [Form] widget's `fields:` list, or by an explicit
+  /// [addFields] / [updateField] call — and leaves only when it is explicitly
+  /// withdrawn by [removeField] or [unregisterFields].
+  ///
+  /// It is deliberately **not** tied to what is on screen. An answer must not
+  /// disappear because a lazy list culled the widget that collected it.
+  /// Values have always outlived their widgets ([getFieldValue] returns them
+  /// either way); this list is what lets [FormResults] find them.
+  ///
+  /// This is the default field set for [FormResults.getResults] and
+  /// [FormResults.getResultsReadOnly].
+  ///
+  /// See also:
+  /// - [activeFields] for what is rendered *right now*
+  /// - [getPageFields] to scope results to one page of a multi-step form
+  List<Field> get registeredFields => List.unmodifiable(_fieldDefinitions.values);
+
+  /// The ids in [registeredFields], in declaration order.
+  ///
+  /// Lazy — prefer this over `registeredFields.map((f) => f.id)` when you only
+  /// need membership or iteration.
+  Iterable<String> get registeredFieldIds => _fieldDefinitions.keys;
 
   /// Map of field definitions organized by page name.
   ///
@@ -973,10 +1014,12 @@ class FormController extends ChangeNotifier {
   /// }
   /// ```
   ///
-  /// **Note:** This does not update [activeFields] or [pageFields]. Use
-  /// [removeActiveFields] for managing rendered fields.
+  /// This is the hard removal: the value goes too, and the field's text and
+  /// focus controllers are disposed. It also drops the field from
+  /// [activeFields] and [pageFields] so no stale definition survives.
   ///
   /// See also:
+  /// - [unregisterFields] to withdraw fields but keep their values
   /// - [updateField] to modify a field
   /// - [clearForm] to clear all field values
   void removeField(String fieldId) {
@@ -1000,7 +1043,73 @@ class FormController extends ChangeNotifier {
     // Clear errors for this field
     clearErrors(fieldId, noNotify: true);
 
+    // Drop it from the render-scoped and page-scoped lists too, so a stale
+    // definition can never be handed back out by getPageFields.
+    activeFields = activeFields.where((f) => f.id != fieldId).toList();
+    for (final page in pageFields.keys.toList()) {
+      pageFields[page] =
+          pageFields[page]!.where((f) => f.id != fieldId).toList();
+    }
+
     _safeNotifyListeners();
+  }
+
+  /// Withdraws field definitions from the form's schema, keeping their values.
+  ///
+  /// Called by [Form] when its `fields:` list stops declaring a field — an
+  /// explicit statement from the app that the field is no longer part of the
+  /// form. This is deliberately *not* called when a form widget is merely
+  /// disposed: Flutter decides when to unmount (a lazy list culling an
+  /// off-screen child, a route transition), the app decides what the form is.
+  ///
+  /// Values are kept by default so re-declaring a field restores the person's
+  /// answer. Pass `keepValues: false` to drop them, or use [removeField] for a
+  /// hard removal that also disposes the field's text and focus controllers.
+  ///
+  /// Removes the fields from [registeredFields], [activeFields] and every
+  /// entry in [pageFields], and clears their errors — a withdrawn field must
+  /// not keep a form invalid with nothing on screen to fix.
+  ///
+  /// **Parameters:**
+  /// - [fieldIds]: The ids to withdraw
+  /// - [keepValues]: Retain the values in the controller. Defaults to true.
+  /// - [noNotify]: If true, suppresses listener notification. Defaults to false.
+  ///
+  /// See also:
+  /// - [removeField] for a single hard removal including controller disposal
+  /// - [removeActiveFields] to only stop tracking a field as rendered
+  void unregisterFields(
+    List<String> fieldIds, {
+    bool keepValues = true,
+    bool noNotify = false,
+  }) {
+    if (fieldIds.isEmpty) return;
+    final ids = fieldIds.toSet();
+
+    for (final id in ids) {
+      _fieldDefinitions.remove(id);
+      _fieldStates.remove(id);
+      _fieldFocusStates.remove(id);
+      clearErrors(id, noNotify: true);
+
+      if (!keepValues) {
+        _fieldValues.remove(id);
+        final controller = _fieldControllers.remove(id);
+        if (controller is ChangeNotifier) {
+          controller.dispose();
+        } else if (controller is FocusNode) {
+          controller.dispose();
+        }
+      }
+    }
+
+    activeFields = activeFields.where((f) => !ids.contains(f.id)).toList();
+    for (final page in pageFields.keys.toList()) {
+      pageFields[page] =
+          pageFields[page]!.where((f) => !ids.contains(f.id)).toList();
+    }
+
+    if (!noNotify) _safeNotifyListeners();
   }
 
   /// Checks if a field definition exists in the controller.
