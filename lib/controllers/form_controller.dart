@@ -1572,11 +1572,17 @@ class FormController extends ChangeNotifier {
   // PUBLIC VALIDATION METHODS
   // ===========================================================================
 
-  /// Validates all active fields in the form.
+  /// Validates the whole form.
   ///
-  /// Runs all validators for every field in [activeFields] and updates the
-  /// [formErrors] list. This method is typically called before retrieving
-  /// form results to ensure all data is valid.
+  /// Runs the validators for every field in [registeredFields] and updates the
+  /// [formErrors] list. Typically called before retrieving form results to
+  /// ensure the data is valid.
+  ///
+  /// Skips hidden fields (clearing any error they were holding) and disabled
+  /// fields, matching what [FormResults.getResults] enforces. Note this walks
+  /// the registry rather than [activeFields], so a form that is not currently
+  /// mounted — scrolled out of a lazy list, or on a wizard step you have moved
+  /// past — is still validated rather than silently passing.
   ///
   /// **Returns:**
   /// True if the form has no validation errors, false otherwise.
@@ -1598,11 +1604,28 @@ class FormController extends ChangeNotifier {
   /// - [validateField] to validate a single field
   /// - [validatePage] to validate fields on a specific page
   bool validateForm() {
-    for (final field in activeFields) {
+    for (final field in registeredFields) {
+      if (!_shouldValidate(field)) continue;
       _validateField(field.id, notify: false);
     }
     _safeNotifyListeners();
     return formErrors.isEmpty;
+  }
+
+  /// Whether [field] is subject to validation right now, and clears the errors
+  /// of one that is not.
+  ///
+  /// Keeps the controller's own validation in step with [FormResults]: a
+  /// hidden field is not being asked, so it cannot be answered wrongly, and a
+  /// disabled field carries a rule the person has no way to act on. Neither
+  /// may hold a form invalid — and a field that errored while visible must not
+  /// keep that error once it goes away.
+  bool _shouldValidate(Field field) {
+    if (isFieldHidden(field)) {
+      clearErrors(field.id, noNotify: true);
+      return false;
+    }
+    return !field.disabled;
   }
 
   /// Quick check for whether the form currently has any validation errors.
@@ -1746,6 +1769,7 @@ class FormController extends ChangeNotifier {
     }
 
     for (final field in fieldsOnPage) {
+      if (!_shouldValidate(field)) continue;
       _validateField(field.id, notify: false);
     }
     _safeNotifyListeners();

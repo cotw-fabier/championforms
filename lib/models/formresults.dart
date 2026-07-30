@@ -455,13 +455,50 @@ class FormResults {
     required this.fieldDefinitions,
   });
 
+  /// Collects — and by default validates — the form's answers.
+  ///
+  /// With no scope this collects **every field registered with the
+  /// controller**: the form's schema, not whatever happens to be mounted. A
+  /// form inside a `ListView` that has scrolled out of the viewport still
+  /// reports its answers.
+  ///
+  /// Scope, in precedence order:
+  /// - [fields] — an explicit list of definitions;
+  /// - [pageName] — one page, via [FormController.getPageFields];
+  /// - neither — [FormController.registeredFields].
+  ///
+  /// Hidden fields are excluded at every scope, from both [results] and
+  /// [fieldDefinitions] — the form is not asking the question, so there is no
+  /// answer to report and no rule to enforce. "Hidden" means
+  /// [FormController.isFieldHidden]: a static `hideField`, or a `conditional`
+  /// that is not currently satisfied.
+  ///
+  /// Disabled fields are the opposite case: they *are* collected, because a
+  /// locked value the server supplied is still part of the answer, but their
+  /// validators do not run.
+  ///
+  /// When [checkForErrors] is false no validator runs and no controller state
+  /// is mutated; the returned errors are the controller's existing ones,
+  /// narrowed to the fields collected.
   factory FormResults.getResults({
     required FormController controller,
     bool checkForErrors = true, // Whether to run validation.
     List<Field>? fields, // Optional: Process only specific fields.
+    String? pageName, // Optional: Process only one page's fields.
   }) {
+    assert(fields == null || pageName == null,
+        'Pass either `fields` or `pageName` to scope results, not both.');
+
     // Determine the list of fields to process.
-    List<Field> finalFields = fields ?? controller.activeFields;
+    final List<Field> scope = fields ??
+        (pageName != null
+            ? controller.getPageFields(pageName)
+            : controller.registeredFields);
+
+    // Dedupe by id. A caller-supplied list may repeat a field, and validating
+    // one twice reports the same failure twice.
+    final Map<String, Field> deduped = {for (final f in scope) f.id: f};
+    final Iterable<Field> finalFields = deduped.values;
 
     // Initialize containers for results, definitions, and errors.
     Map<String, dynamic> collectedResults = {};
@@ -484,9 +521,13 @@ class FormResults {
       // The actual instance retains its specific type (e.g., Field<String>).
       definitions[field.id] = field;
 
-      // Retrieve the raw value from the controller.
-      // Use dynamic type hint. Fall back to the field's default value if controller returns null.
-      final rawValue = controller.getFieldValue(field.id) ?? field.defaultValue;
+      // Retrieve the raw value from the controller, falling back to the
+      // field's default. A caller may hand us a definition the controller
+      // never registered, and getFieldValue throws for an unknown id — that
+      // must not blow up the whole call.
+      final rawValue = controller.hasFieldDefinition(field.id)
+          ? (controller.getFieldValue(field.id) ?? field.defaultValue)
+          : field.defaultValue;
 
       // Store the raw value (which could be null) in the results map.
       collectedResults[field.id] = rawValue;
@@ -590,11 +631,13 @@ class FormResults {
   factory FormResults.getResultsReadOnly({
     required FormController controller,
     List<Field>? fields,
+    String? pageName,
   }) =>
       FormResults.getResults(
         controller: controller,
         checkForErrors: false,
         fields: fields,
+        pageName: pageName,
       );
 
   // --- Helper to get result and definition ---
