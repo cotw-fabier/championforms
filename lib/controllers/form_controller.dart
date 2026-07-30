@@ -506,11 +506,19 @@ class FormController extends ChangeNotifier {
     String pageName,
     List<Field> fields,
   ) {
-    if (pageFields.containsKey(pageName)) {
-      pageFields[pageName] = [...pageFields[pageName]!, ...fields];
-    } else {
-      pageFields[pageName] = fields;
+    // Merge by id rather than append. A form re-registers its page on every
+    // mount, so appending made a page's list grow without bound across
+    // navigations — and every duplicate got validated again, reporting the
+    // same failure two, four, six times. Last declaration wins; declaration
+    // order is preserved.
+    final merged = <String, Field>{
+      for (final field in pageFields[pageName] ?? const <Field>[])
+        field.id: field,
+    };
+    for (final field in fields) {
+      merged[field.id] = field;
     }
+    pageFields[pageName] = merged.values.toList();
   }
 
   /// Retrieves all field definitions for a specific page.
@@ -538,12 +546,21 @@ class FormController extends ChangeNotifier {
   ///
   /// See also:
   /// - [updatePageFields] to add fields to a page
+  /// Definitions are resolved through the controller's registry, so a page
+  /// never hands back a definition staler than [registeredFields] and never
+  /// hands back a field that has since been withdrawn.
   List<Field> getPageFields(String pageName) {
-    if (pageFields.containsKey(pageName)) {
-      return pageFields[pageName] ?? [];
-    } else {
-      return [];
+    final stored = pageFields[pageName];
+    if (stored == null) return const [];
+
+    final seen = <String>{};
+    final result = <Field>[];
+    for (final field in stored) {
+      if (!seen.add(field.id)) continue;
+      final live = _fieldDefinitions[field.id];
+      if (live != null) result.add(live);
     }
+    return result;
   }
 
   // ===========================================================================

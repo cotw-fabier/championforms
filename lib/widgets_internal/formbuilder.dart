@@ -60,12 +60,11 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
     }
 
     flutter.WidgetsBinding.instance.addPostFrameCallback((_) {
-      final allFieldDefs = _flattenAllFields(widget.fields);
-      _updateDefaults(allFieldDefs);
-      widget.controller.updateActiveFields(allFieldDefs);
-      if (widget.pageName != null) {
-        widget.controller.updatePageFields(widget.pageName!, allFieldDefs);
-      }
+      if (!mounted) return;
+      // _updateDefaults is the sole owner of registration: it registers the
+      // definitions, seeds defaults, and updates the active + page lists.
+      // It notifies once here so listeners see the fields appear.
+      _updateDefaults(_flattenAllFields(widget.fields), notify: true);
     });
   }
 
@@ -193,7 +192,14 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
     });
   }
 
-  void _updateDefaults(List<Field> fieldDefs) {
+  /// Registers [fieldDefs] with the controller, seeds their defaults, and
+  /// records them as active (and as part of this form's page, if named).
+  ///
+  /// [notify] fires a single listener notification once registration is
+  /// complete. It is on for the initial mount so listeners see the fields
+  /// appear, and off for no-op re-registrations so a rebuild cannot feed
+  /// itself through [_rebuildOnControllerUpdate].
+  void _updateDefaults(List<Field> fieldDefs, {bool notify = false}) {
     widget.controller.addFields(fieldDefs, noNotify: true);
     for (final field in fieldDefs) {
       if (!widget.controller.hasFieldValue(field.id) && field.defaultValue != null) {
@@ -201,11 +207,14 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
             .updateFieldValue(field.id, field.defaultValue, noNotify: true);
       }
     }
-    widget.controller.updateActiveFields(fieldDefs, noNotify: true);
-    if (widget.pageName != null && widget.pageName != "default") {
+    widget.controller.updateActiveFields(fieldDefs, noNotify: !notify);
+    // No special case for "default": Form passes a null pageName unless the
+    // caller names a page, so "default" only ever arrives if someone wrote it
+    // literally, and it should then behave like any other page name.
+    if (widget.pageName != null) {
       widget.controller.updatePageFields(widget.pageName!, fieldDefs);
     }
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   @override
