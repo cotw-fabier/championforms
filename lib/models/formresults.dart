@@ -497,6 +497,21 @@ class FormResults {
       }
     }
 
+    // Caller only wants the values. Run no validator, mutate no controller
+    // state, and report the errors the controller already holds — narrowed to
+    // the fields actually collected, so a scoped read reports a scoped answer.
+    if (!checkForErrors) {
+      final scopedErrors = controller.formErrors
+          .where((error) => definitions.containsKey(error.fieldId))
+          .toList();
+      return FormResults(
+        formErrors: scopedErrors,
+        errorState: scopedErrors.isNotEmpty,
+        results: collectedResults,
+        fieldDefinitions: definitions,
+      );
+    }
+
     // Second pass: Run validation
     // Validate regular fields first, then compound fields
     for (final field in finalFields) {
@@ -575,27 +590,12 @@ class FormResults {
   factory FormResults.getResultsReadOnly({
     required FormController controller,
     List<Field>? fields,
-  }) {
-    List<Field> finalFields = fields ?? controller.activeFields;
-    Map<String, dynamic> collectedResults = {};
-    Map<String, Field> definitions = {};
-
-    for (final field in finalFields) {
-      if (controller.isFieldHidden(field)) continue;
-
-      definitions[field.id] = field;
-      final rawValue = controller.getFieldValue(field.id) ?? field.defaultValue;
-      collectedResults[field.id] = rawValue;
-    }
-
-    // Return existing errors without running validation
-    return FormResults(
-      formErrors: controller.formErrors,
-      errorState: controller.formErrors.isNotEmpty,
-      results: collectedResults,
-      fieldDefinitions: definitions,
-    );
-  }
+  }) =>
+      FormResults.getResults(
+        controller: controller,
+        checkForErrors: false,
+        fields: fields,
+      );
 
   // --- Helper to get result and definition ---
   // Returns null if field not found
@@ -638,35 +638,46 @@ class FormResults {
     return null;
   }
 
+  /// The accessor for [id].
+  ///
+  /// If [id] was not collected this returns an *empty* accessor rather than
+  /// throwing, so a chain like `grab('x').asString()` always yields a value
+  /// (`""`, `false`, `[]` — whichever the converter's fallback is). That is
+  /// convenient and it is also silent: use [grabOrNull] or [hasField] when the
+  /// difference between "empty answer" and "no such field" matters.
   FieldResultAccessor grab(String id) {
     // Retrieve the potentially null value and definition from the maps.
     final value = results[id];
     final definition = fieldDefinitions[id];
 
-    // Check if the definition exists. If yes, the field was processed.
-    // Check if the definition exists.
     if (definition != null) {
-      // If yes, the field was processed and has a valid definition.
-      // Create the accessor, passing the (potentially null) value and the actual definition.
       return FieldResultAccessor._(
           id, value, definition, results, fieldDefinitions);
-    } else {
-      // The definition wasn't found for this id.
-      debugPrint(// Using debugPrint as this is Flutter code
-          "Debug in grab(): Field definition for '$id' not found. " +
-              "Returning a FieldResultAccessor with a dummy definition. " +
-              "It could be that the field wasn't displayed and not added to the controller" +
-              "So returning default empty value" +
-              "Available field definition keys: ${fieldDefinitions.keys.join(', ')}");
-
-      // Create the "dummy" definition.
-      final Field dummyDefinition = NullField(id: id);
-
-      // Create the accessor, passing null for the value (as it's an "empty" accessor
-      // due to missing definition) and the dummy definition.
-      return FieldResultAccessor._(
-          id, null, dummyDefinition, results, fieldDefinitions);
     }
+
+    debugPrint(
+      "Debug in grab(): no field '$id' in these results, so an empty value is "
+      "being returned. Either the id is misspelled, the field is hidden "
+      "(hideField, or a conditional that is not currently satisfied — hidden "
+      "fields are deliberately left out), the field is outside the scope this "
+      "call asked for (a `fields:` list or a `pageName:`), or it was never "
+      "declared on the controller. "
+      "Collected field ids: ${fieldDefinitions.keys.join(', ')}",
+    );
+
+    return FieldResultAccessor._(
+        id, null, NullField(id: id), results, fieldDefinitions);
+  }
+
+  /// The accessor for [id], or null if no such field was collected.
+  ///
+  /// The explicit counterpart to [grab]: use it when an absent field is a
+  /// distinct outcome from an empty one.
+  FieldResultAccessor? grabOrNull(String id) {
+    final definition = fieldDefinitions[id];
+    if (definition == null) return null;
+    return FieldResultAccessor._(
+        id, results[id], definition, results, fieldDefinitions);
   }
 
   /// Convenience method to check if a field definition exists for a given ID.
