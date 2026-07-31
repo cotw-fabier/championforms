@@ -854,6 +854,22 @@ class FormController extends ChangeNotifier {
     return _fieldValues.containsKey(fieldId);
   }
 
+  /// The stored value for [fieldId], or null if there is none.
+  ///
+  /// Unlike [getFieldValue] this does not require a registered definition and
+  /// never throws. Use it to read a field that may not be declared — during
+  /// the window before a [Form] finishes registering, or after a field has
+  /// been withdrawn — where the alternative is an exception or, worse, a
+  /// well-meaning "initialize it then" write that destroys the answer.
+  ///
+  /// See also:
+  /// - [getFieldValue] which requires a definition and applies the default
+  /// - [hasFieldValue] to distinguish a stored null from no value at all
+  T? getFieldValueOrNull<T>(String fieldId) {
+    final value = _fieldValues[fieldId];
+    return value is T ? value : null;
+  }
+
   /// Checks if a field definition exists in the controller.
   ///
   /// Returns true if the field has been registered via [addFields] or [addField].

@@ -204,11 +204,23 @@ class FieldBuilderContext {
 
     // Check if field definition exists before trying to get value
     if (!controller.hasFieldDefinition(fieldId)) {
-      // Field definition doesn't exist yet - initialize with default value
-      final defaultValue = controller.getFieldDefaultValue(fieldId);
+      // No definition. Two very different situations reach here: the widget
+      // built before the Form's post-frame registration (nothing stored yet,
+      // so seed the default), or the field has since been withdrawn from the
+      // schema while this widget is still mounted (an answer IS stored).
+      //
+      // Never seed over a stored value. createFieldValue(id, null) *deletes*,
+      // so treating the second case as "initialize me" silently destroyed the
+      // person's answer the moment the field left the fields: list.
+      if (controller.hasFieldValue(fieldId)) {
+        return controller.getFieldValueOrNull<T>(fieldId);
+      }
 
-      // Initialize silently (no notifications during initialization)
-      controller.createFieldValue(fieldId, defaultValue, noNotify: true);
+      final defaultValue = controller.getFieldDefaultValue(fieldId);
+      if (defaultValue != null) {
+        // Initialize silently (no notifications during initialization)
+        controller.createFieldValue(fieldId, defaultValue, noNotify: true);
+      }
 
       // Return default value with proper type casting
       if (defaultValue is T) {

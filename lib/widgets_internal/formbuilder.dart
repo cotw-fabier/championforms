@@ -69,8 +69,53 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
   }
 
   @override
+  void didUpdateWidget(covariant FormBuilderWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_rebuildOnControllerUpdate);
+      widget.controller.addListener(_rebuildOnControllerUpdate);
+      oldWidget.controller.removeActiveFields(
+        _flattenAllFields(oldWidget.fields),
+        noNotify: true,
+      );
+    }
+
+    final oldFields = _flattenAllFields(oldWidget.fields);
+    final newFields = _flattenAllFields(widget.fields);
+    final oldIds = oldFields.map((f) => f.id).toList();
+    final newIds = newFields.map((f) => f.id).toList();
+
+    // This runs on every parent rebuild, and _rebuildOnControllerUpdate calls
+    // setState on every controller notification — so an unchanged field list
+    // must do no registry work at all, or the two feed each other.
+    final sameShape = oldIds.length == newIds.length &&
+        Iterable<int>.generate(oldIds.length)
+            .every((i) => oldIds[i] == newIds[i]);
+    if (sameShape && oldWidget.controller == widget.controller) return;
+
+    // A field the widget no longer *declares* is withdrawn from the schema.
+    // Contrast dispose(), which only touches activeFields: changing the
+    // fields: list is the app stating that the form's shape changed, whereas
+    // unmounting is Flutter's decision and says nothing about the form.
+    final newIdSet = newIds.toSet();
+    final removed = oldIds.where((id) => !newIdSet.contains(id)).toList();
+    if (removed.isNotEmpty) {
+      widget.controller.unregisterFields(removed, noNotify: true);
+    }
+
+    // Re-register: picks up fields newly added to the list, which previously
+    // were never registered at all, and refreshes changed definitions.
+    _updateDefaults(newFields, notify: true);
+  }
+
+  @override
   void dispose() {
     widget.controller.removeListener(_rebuildOnControllerUpdate);
+    // Only activeFields is cleared. Definitions and values deliberately
+    // survive: Flutter unmounts widgets for its own reasons — a lazy list
+    // culling an off-screen child, a route transition — and an answer must not
+    // disappear because of one. See FormController.registeredFields.
     widget.controller.removeActiveFields(
       _flattenAllFields(widget.fields),
       noNotify: true,
