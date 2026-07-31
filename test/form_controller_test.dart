@@ -5,6 +5,7 @@ import 'package:championforms/models/field_types/convienence_classes/checkboxsel
 import 'package:championforms/models/multiselect_option.dart';
 import 'package:championforms/models/validatorclass.dart';
 import 'package:championforms/models/fieldstate.dart';
+import 'package:championforms/functions/defaultvalidators/defaultvalidators.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -530,6 +531,129 @@ void main() {
       controller.toggleMultiSelectValue('radio-style', toggleOff: ['c']);
       selected = controller.getFieldValue<List<FieldOption>>('radio-style');
       expect(selected?.isEmpty, isTrue);
+    });
+  });
+
+  group('registeredFields', () {
+    test('is unmodifiable', () {
+      final controller = FormController();
+      addTearDown(controller.dispose);
+      controller.addFields([TextField(id: 'a')]);
+
+      expect(
+        () => controller.registeredFields.add(TextField(id: 'b')),
+        throwsUnsupportedError,
+      );
+    });
+
+    test('the constructor actually registers its fields', () {
+      // It used to store them on a property nothing read, so this registered
+      // nothing at all and updateFieldValue on them threw.
+      final controller = FormController(fields: [TextField(id: 'a')]);
+      addTearDown(controller.dispose);
+
+      expect(controller.registeredFieldIds, ['a']);
+      controller.updateFieldValue('a', 'works');
+      expect(controller.getFieldValue<String>('a'), 'works');
+    });
+  });
+
+  group('unregisterFields', () {
+    test('keeps values by default and drops them on request', () {
+      final controller = FormController();
+      addTearDown(controller.dispose);
+      controller.addFields([TextField(id: 'a'), TextField(id: 'b')]);
+      controller.updateFieldValue('a', 'kept');
+      controller.updateFieldValue('b', 'dropped');
+
+      controller.unregisterFields(['a']);
+      expect(controller.registeredFieldIds, ['b']);
+      expect(controller.getFieldValueOrNull<String>('a'), 'kept');
+
+      controller.unregisterFields(['b'], keepValues: false);
+      expect(controller.getFieldValueOrNull<String>('b'), isNull);
+    });
+
+    test('clears errors so a withdrawn field cannot hold the form invalid', () {
+      final controller = FormController();
+      addTearDown(controller.dispose);
+      controller.addFields([
+        TextField(
+          id: 'a',
+          validators: [
+            Validator(
+              validator: Validators.stringIsNotEmpty,
+              reason: 'is required',
+            ),
+          ],
+        ),
+      ]);
+
+      expect(controller.validateForm(), isFalse);
+      expect(controller.formErrors, isNotEmpty);
+
+      controller.unregisterFields(['a']);
+      expect(controller.formErrors, isEmpty);
+      expect(controller.validateForm(), isTrue);
+    });
+  });
+
+  group('validateForm', () {
+    test('skips hidden fields and clears the errors they were holding', () {
+      final controller = FormController();
+      addTearDown(controller.dispose);
+      final required = [
+        Validator(
+          validator: Validators.stringIsNotEmpty,
+          reason: 'is required',
+        ),
+      ];
+
+      controller.addFields([TextField(id: 'a', validators: required)]);
+      expect(controller.validateForm(), isFalse);
+
+      // The same field, now hidden. A question the form has stopped asking
+      // cannot be answered wrongly.
+      controller.updateField(
+        TextField(id: 'a', validators: required, hideField: true),
+      );
+      expect(controller.validateForm(), isTrue);
+      expect(controller.formErrors, isEmpty);
+    });
+
+    test('skips disabled fields', () {
+      final controller = FormController();
+      addTearDown(controller.dispose);
+
+      controller.addFields([
+        TextField(
+          id: 'a',
+          disabled: true,
+          validators: [
+            Validator(
+              validator: Validators.stringIsNotEmpty,
+              reason: 'is required',
+            ),
+          ],
+        ),
+      ]);
+
+      expect(controller.validateForm(), isTrue,
+          reason: 'a rule the person cannot act on must not block them');
+    });
+  });
+
+  group('getFieldValueOrNull', () {
+    test('reads an unregistered field without throwing', () {
+      final controller = FormController();
+      addTearDown(controller.dispose);
+      controller.addFields([TextField(id: 'a')]);
+      controller.updateFieldValue('a', 'stored');
+      controller.unregisterFields(['a']);
+
+      expect(() => controller.getFieldValue<String>('a'), throwsArgumentError);
+      expect(controller.getFieldValueOrNull<String>('a'), 'stored');
+      expect(controller.getFieldValueOrNull<String>('never-existed'), isNull);
     });
   });
 }

@@ -50,12 +50,35 @@ abstract class Field implements FieldBase {
   @override
   final String? description;
 
-  // Is this field disabled?
+  /// Whether this field is rendered read-only.
+  ///
+  /// A disabled field is **still part of the form**: it is drawn, its value is
+  /// collected into `FormResults.results`, and it round-trips through
+  /// `grab()`. It is simply not editable, and its validators do not run — a
+  /// rule the person has no way to act on must not block their submission.
+  ///
+  /// This is *not* HTML's `disabled`, which drops the input from the
+  /// submission. The common case here is a value the form shows but owns
+  /// elsewhere — an account email, a plan tier, a record id — and that value
+  /// has to survive the round trip. To leave a field out of the results
+  /// entirely, use [hideField] or [conditional].
   final bool disabled;
 
   final FormTheme? theme;
 
-  // Hide this field and don't include it at all in the outputs or validators. Helpful for building dynamic forms.
+  /// Whether to leave this field out of the form entirely.
+  ///
+  /// A hidden field is not drawn, not collected, and not validated — it is
+  /// absent from `results` and `fieldDefinitions` both. The form is not asking
+  /// the question, so there is no answer to report and no rule to enforce; a
+  /// required field behind a false condition must never block a submission the
+  /// person was never given the chance to satisfy.
+  ///
+  /// The field stays registered with the controller
+  /// (`FormController.registeredFields`) and keeps its value, so unhiding it
+  /// restores the answer. Together with [conditional] this is the only
+  /// mechanism for "not part of this submission" — see [disabled] for the
+  /// shown-but-locked case.
   final bool hideField;
 
   /// Serializable show/hide logic evaluated against the form's live values.

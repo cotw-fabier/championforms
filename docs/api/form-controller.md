@@ -69,7 +69,7 @@ final controller = form.FormController(id: "userProfileForm");
 
 **Parameters:**
 - `id` (String?, optional): Unique identifier for the controller. Auto-generated if not provided.
-- `fields` (List<Field>, optional): Initial field definitions. Rarely used; fields are typically added via the `Form` widget.
+- `fields` (List<Field>, optional): Initial field definitions, registered immediately. Rarely used; fields are typically added via the `Form` widget. (Before 0.7.0 this parameter registered nothing at all.) The matching `controller.fields` property is deprecated — read `registeredFields`.
 - `formErrors` (List<FormBuilderError>, optional): Initial errors. Rarely used.
 - `activeFields` (List<Field>, optional): Currently rendered fields. Managed automatically by `Form` widget.
 - `pageFields` (Map<String, List<Field>>?, optional): Page groupings. Managed automatically.
@@ -733,7 +733,9 @@ if (focused != null) {
 
 ### validateForm()
 
-Validates all active fields in the form. Runs all validators for every field in `activeFields` and updates the `formErrors` list.
+Validates the whole form. Runs the validators for every field in `registeredFields` and updates the `formErrors` list.
+
+Skips hidden fields (clearing any error they were holding) and disabled fields, matching what `FormResults.getResults` enforces. It walks the registry rather than `activeFields`, so a form that is not currently mounted — scrolled out of a lazy list, or on a wizard step you have moved past — is still validated rather than passing vacuously.
 
 **Method Signature:**
 ```dart
@@ -1426,11 +1428,49 @@ if (state == FieldState.error) {
 
 ---
 
+## Registered Fields
+
+### registeredFields Property
+
+The form's **schema**: every field definition this controller knows about, in
+the order the fields were first declared.
+
+**Property:**
+```dart
+List<Field> get registeredFields   // unmodifiable
+Iterable<String> get registeredFieldIds
+```
+
+**What it contains:**
+- Every field declared by a `Form`'s `fields:` list, or by `addFields` / `updateField`
+- On screen or not — it is deliberately not tied to the widget tree
+
+**When it updates:**
+- A field enters when it is **declared**
+- A field leaves only when it is **withdrawn**, by `removeField` or `unregisterFields`
+
+**Use cases:**
+- Collecting or validating answers — this is the default field set for
+  `FormResults.getResults` and `validateForm()`
+- Reading a form that is not currently mounted
+
+```dart
+final ids = controller.registeredFieldIds.toList();
+
+// Explicitly ask for the whole form (this is also the default).
+final results = FormResults.getResults(
+  controller: controller,
+  fields: controller.registeredFields,
+);
+```
+
+---
+
 ## Active Fields
 
 ### activeFields Property
 
-Contains the list of currently rendered field definitions. Automatically maintained by the `Form` widget lifecycle methods.
+Field definitions **currently rendered**. Automatically maintained by the `Form` widget lifecycle methods.
 
 **Property:**
 ```dart
@@ -1439,16 +1479,26 @@ List<Field> activeFields
 
 **What it contains:**
 - Field objects currently being displayed in `Form` widgets
-- Differs from `fields` which contains all registered fields
+- Differs from `registeredFields`, which is every declared field regardless of what is painted
 
 **When it updates:**
 - When a `Form` widget builds
-- When a `Form` widget is torn down
+- **When a `Form` widget is torn down — it empties**
+
+> ⚠️ **Teardown is Flutter's decision, not yours.** A `Form` inside a
+> `ListView` is disposed the moment it scrolls past the cache extent, and a
+> wizard step is disposed when you navigate off it. In both cases its fields
+> leave this list while their values sit untouched in the controller. That
+> makes `activeFields` a poor answer to "what is in my form" — it answers
+> "what is painted right now", which is a question about the screen.
+>
+> To collect or validate answers use `registeredFields` (the default) or
+> `getPageFields`. Reading results from `activeFields` is how a form inside a
+> scrolling list silently returns empty values.
 
 **Use cases:**
-- Validating only currently visible fields
 - Debugging which fields are rendered
-- Conditional logic based on active form state
+- Render introspection
 
 **Example:**
 
@@ -1460,6 +1510,39 @@ if (controller.activeFields.isNotEmpty) {
 
 // Get list of active field IDs
 final activeIds = controller.activeFields.map((f) => f.id).toList();
+```
+
+---
+
+## Withdrawing Fields
+
+### unregisterFields Method
+
+Withdraws fields from the schema, keeping their values by default so
+re-declaring one restores the person's answer.
+
+```dart
+void unregisterFields(
+  List<String> fieldIds, {
+  bool keepValues = true,
+  bool noNotify = false,
+})
+```
+
+Removes the fields from `registeredFields`, `activeFields` and every
+`pageFields` entry, and clears their errors — a withdrawn field must not hold a
+form invalid with nothing on screen to fix.
+
+Call it when a field is genuinely gone. A `Form` merely dropping a field from
+its `fields:` list does **not** withdraw it: a wizard swaps one form's list per
+step, so "no longer listed" cannot be told apart from "you are on a later
+page". Prefer `conditional` / `hideField`, which keep the field declared while
+excluding it from results and validation.
+
+```dart
+controller.unregisterFields(['optional-note']);
+controller.unregisterFields(['optional-note'], keepValues: false);
+controller.removeField('optional-note');  // hard removal, disposes controllers
 ```
 
 ---

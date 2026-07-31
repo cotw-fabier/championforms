@@ -66,13 +66,50 @@ final results = FormResults.getResults(controller: controller);
 FormResults.getResults({
   required FormController controller,  // The form controller managing state
   bool checkForErrors = true,          // Whether to run validation
-  List<Field>? fields,                 // Optional: Process only specific fields
+  List<Field>? fields,                 // Optional: process only these fields
+  String? pageName,                    // Optional: process only this page
 })
 ```
 
+### Scoping results
+
+With no scope, `getResults` collects **every field registered with the
+controller** — the form's schema, not whatever happens to be mounted. A form
+inside a `ListView` that has scrolled out of the viewport still reports its
+answers.
+
+Scope, in precedence order:
+
+```dart
+FormResults.getResults(controller: c);                         // the whole form
+FormResults.getResults(controller: c, pageName: 'step-1');     // one page
+FormResults.getResults(controller: c, fields: [...]);          // an exact list
+FormResults.getResults(controller: c, fields: c.activeFields); // only what is on screen
+```
+
+Passing both `fields:` and `pageName:` is an error.
+
+> Before 0.7.0 the default was `controller.activeFields`, so a form that had
+> been culled by a lazy list or navigated past silently returned empty values.
+> See [MIGRATION-0.7.0](../migrations/MIGRATION-0.7.0.md).
+
+### Hidden and disabled fields
+
+| | in `results` | validated |
+|---|---|---|
+| `hideField: true`, or an unsatisfied `conditional` | no | no |
+| `disabled: true` | **yes** | no |
+| everything else | yes | yes |
+
+Hidden fields are excluded from `results` **and** `fieldDefinitions`, at every
+scope: the form is not asking the question, so there is no answer to report and
+no rule to enforce. Disabled fields are the opposite case — a value the form
+shows but owns elsewhere still has to round-trip, so it is collected, but a
+rule the person cannot act on is not enforced.
+
 ### What Happens When You Call getResults()
 
-1. **Field Collection**: Gathers all active fields from the controller
+1. **Field Collection**: Gathers the scoped fields (the whole form by default), skipping hidden ones
 2. **Value Retrieval**: Extracts current values for each field
 3. **Validation Execution**: Runs validators on all fields (if `checkForErrors` is true)
 4. **Error Aggregation**: Collects validation failures

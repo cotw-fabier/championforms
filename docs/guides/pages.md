@@ -222,7 +222,10 @@ widget.controller.updatePageFields(widget.pageName!, allFieldDefs);
 
 - You don't need to manually register pages
 - Fields are automatically added to the page when the Form widget builds
-- If you navigate away and back, fields are re-registered (idempotent)
+- If you navigate away and back, fields are re-registered — registration merges
+  by field id, so revisiting a page any number of times leaves its list
+  unchanged (before 0.7.0 the list grew on every visit, and each duplicate was
+  validated again, reporting one failure as several)
 
 ### Manual Page Management
 
@@ -599,11 +602,18 @@ Pages provide flexible result access patterns.
 
 ### Single Page Results
 
-Get results for a specific page only:
+Get results for a specific page only — this works whether or not that page is
+currently on screen:
 
 ```dart
 // Get results for step-1 only
 final page1Results = form.FormResults.getResults(
+  controller: controller,
+  pageName: 'step-1',
+);
+
+// Equivalent, and what you had to write before 0.7.0:
+final sameThing = form.FormResults.getResults(
   controller: controller,
   fields: controller.getPageFields('step-1'),
 );
@@ -626,7 +636,13 @@ if (!page1Results.errorState) {
 
 ### All Results at Once
 
-Get results for all fields across all pages:
+Get results for all fields across all pages — including pages that are not
+currently mounted, which is what you want for a final submit:
+
+> ⚠️ Before 0.7.0 this call was scoped to whichever page happened to be mounted,
+> because it defaulted to `controller.activeFields`. It now collects the whole
+> form, and validates it. If you were relying on that implicit scoping, name the
+> page instead — see [Single Page Results](#single-page-results).
 
 ```dart
 // Get all results (validates entire form by default)

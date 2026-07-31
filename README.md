@@ -339,7 +339,8 @@ The controller is the heart of state management.
 *   **Page Management:**
     *   Fields can be assigned to a page using the `pageName` property on `form.Form`.
     *   `controller.getPageFields("pageName");` retrieves the `form.Field` list for that page. Useful for partial validation or results.
-*   **Active Fields:** `controller.activeFields` contains the list of `form.Field` currently rendered by linked `form.Form` widgets.
+*   **Registered Fields:** `controller.registeredFields` is the form's schema — every `form.Field` declared on the controller, on screen or not. This is what `FormResults.getResults` collects by default.
+*   **Active Fields:** `controller.activeFields` contains only the `form.Field`s *currently rendered* by linked `form.Form` widgets. It empties when a form is torn down — including when a `ListView` culls it off-screen — so don't read results from it.
 
 ## Field Types
 

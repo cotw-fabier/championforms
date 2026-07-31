@@ -990,8 +990,10 @@ controller.clearErrors("email");
 Clear all errors:
 
 ```dart
-// Clear errors for all fields
-for (final field in controller.activeFields) {
+// Clear errors for all fields.
+// registeredFields, not activeFields: a form that has scrolled out of a lazy
+// list is no longer "active", and its errors still need clearing.
+for (final field in controller.registeredFields) {
   controller.clearErrors(field.id);
 }
 ```

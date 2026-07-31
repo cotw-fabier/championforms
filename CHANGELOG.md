@@ -16,9 +16,137 @@ argument, so neither could survive a database row, a diff between two
 versions of a form, a visual builder's node editor, or a trip to a server
 that needs to run the identical rule.
 
-**Nothing here is breaking.** Every addition is an optional parameter, a new
-class, or a new export. A hand-built form that passes closures is untouched,
-and the two styles mix freely in one form.
+**Nothing in the forms-as-data work is breaking.** Every addition there is an
+optional parameter, a new class, or a new export. A hand-built form that passes
+closures is untouched, and the two styles mix freely in one form.
+
+The release also fixes how `FormResults` decides *which* fields to collect, and
+that part does change behavior — see Breaking below.
+
+### Breaking
+
+#### `getResults` collects the whole form, not just what is mounted
+
+`FormResults.getResults` and `getResultsReadOnly` defaulted to
+`controller.activeFields`, which is render-scoped: filled when a `Form` mounts,
+emptied when it is torn down. Teardown is Flutter's decision, not the app's.
+Put a `Form` inside a `ListView` and scroll it away and the list culls the
+element, the fields drop out, and `grab('title').asString()` starts returning
+`""` — while `controller.getFieldValue('title')` still returns the answer,
+because values and definitions were never discarded. It looked intermittent,
+because `EditableText` pins itself alive while focused, so the loss only
+appeared once focus left the field.
+
+Both now default to `FormController.registeredFields`: every field declared on
+the controller, on screen or not. `docs/guides/pages.md` has described this all
+along ("All Results at Once — all fields across all pages"); it is now true.
+
+Scope is explicit, in precedence order:
+
+```dart
+FormResults.getResults(controller: c);                        // the whole form
+FormResults.getResults(controller: c, pageName: 'step-1');    // one page
+FormResults.getResults(controller: c, fields: [...]);         // an exact list
+FormResults.getResults(controller: c, fields: c.activeFields); // pre-0.7.0
+```
+
+A multi-page form that leaned on `activeFields` to scope results to the mounted
+step should name its page. If it prepopulates every page up front with
+`addFields`, the unscoped call now sees all of them.
+
+#### `validateForm()` validates the whole form
+
+Same root cause, worse symptom: it iterated `activeFields`, so a form that had
+scrolled out of view validated nothing and returned `true`, and a submit
+guarded by `if (controller.validateForm())` sailed through unchecked. It now
+walks `registeredFields`, and skips hidden and disabled fields so that
+controller-driven and `FormResults`-driven validation agree. A field that
+errored while visible has that error cleared when it goes away.
+
+#### `checkForErrors: false` is honored
+
+It was declared, documented in four places, and never read — every call ran
+every validator and wrote through to `clearErrors`/`addError`. Anyone passing
+`false` for a side-effect-free read did not have one. It now short-circuits
+before validation.
+
+Relatedly, `getResultsReadOnly` reports errors **scoped to the fields it
+collected** rather than the controller's whole-form list, so a read scoped to
+one field no longer reports `errorState: true` because some other field is
+invalid.
+
+#### `FormController.fields` is deprecated
+
+It was assigned once in the constructor and never read or written anywhere in
+the package, so `FormController(fields: [...])` registered nothing at all. The
+property is now a deprecated getter over `registeredFields`, and the
+constructor parameter actually registers.
+
+### Added
+
+#### `FormController.registeredFields`
+
+The form's schema: every field definition the controller knows about, in
+declaration order. A field enters when it is *declared* — by a `Form`'s
+`fields:` list or an explicit `addFields`/`updateField` — and leaves only when
+it is withdrawn by `removeField` or the new `unregisterFields`. Mounting and
+unmounting say nothing about it.
+
+`activeFields` keeps its meaning — what is painted right now — and its
+documentation now says outright that it empties on teardown.
+
+`registeredFieldIds` is the lazy id-only companion.
+
+#### `FormController.unregisterFields`
+
+Withdraws fields from the schema, keeping their values by default so
+re-declaring one restores the person's answer. Prunes `activeFields` and every
+`pageFields` entry, and clears the fields' errors — a withdrawn field must not
+hold a form invalid with nothing on screen to fix. `removeField` remains the
+hard removal that also disposes controllers.
+
+#### `FormController.getFieldValueOrNull`
+
+Reads a field that may not be declared, without throwing and without writing.
+`getFieldValue` throws for an unregistered id, which pushed callers toward an
+"initialize it then" write that could destroy a stored value.
+
+#### `pageName:` on both `FormResults` factories
+
+`getResults(controller: c, pageName: 'step-1')` replaces the longer
+`fields: c.getPageFields('step-1')`.
+
+#### `FormResults.grabOrNull`
+
+`grab` returns an empty accessor for an id it did not collect, so a chain like
+`grab('x').asString()` can never throw — convenient, and silent. `grabOrNull`
+is the explicit counterpart for when absent and empty are different outcomes.
+`grab`'s own diagnostic no longer blames "the field wasn't displayed"; it names
+the real possibilities.
+
+### Fixed
+
+- **Page field lists no longer grow on every mount.** A named page was
+  registered twice per mount and `updatePageFields` appended without dedupe, so
+  a page's list grew every time its form remounted; `getPageFields` handed the
+  same field back repeatedly and each duplicate was validated again, reporting
+  one failure as several. It now merges by id, and `getPageFields` resolves
+  through the registry so a page can never return a stale or withdrawn
+  definition.
+- **A field added to a live `fields:` list is registered.** There was no
+  `didUpdateWidget`, so registration only ever happened in the initial
+  post-frame callback and a field added later was invisible to the controller —
+  `updateFieldValue` on it threw. Fields *removed* from the list are
+  deliberately not withdrawn: a wizard swaps one `Form`'s list per step, so
+  "no longer listed" cannot be told apart from "you are on a later page". Use
+  `unregisterFields`, or express it with `conditional`/`hideField`.
+- **A field withdrawn from the schema keeps its value.** A still-mounted field
+  widget would find no definition, take `FieldBuilderContext.getValue`'s
+  "initialize it" branch, and call `createFieldValue` with a null default —
+  which deletes. It no longer seeds over a stored value.
+- `removeField` now also prunes `activeFields` and `pageFields`.
+- `"default"` is treated as an ordinary page name; the two registration call
+  sites used to disagree about it.
 
 ### Added
 
