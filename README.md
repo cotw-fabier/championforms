@@ -49,6 +49,8 @@ A declarative Flutter form builder focusing on clean structure, easy validation,
 *   **Controller Interaction:** Programmatically update field values (`updateTextFieldValue`, `toggleMultiSelectValue`) and clear selections (`removeMultiSelectOptions`).
 *   **🆕 Compound Fields:** Create reusable composite fields (like `form.NameField`, `form.AddressField`) that group multiple sub-fields with custom layouts. Sub-fields act as independent fields with automatic ID prefixing.
 *   **🆕 Simplified Custom Fields (v0.6.0+):** Create custom fields with 60-70% less boilerplate using `StatefulFieldWidget` and `FieldBuilderContext`.
+*   **🆕 Field Emphasis Colors (v0.7.0+):** Highlight a required or dangerous field with `colors: form.FieldColors.destructive` — it renders in the error palette while empty and unfocused. See [Field Emphasis Colors](#field-emphasis-colors).
+*   **🆕 Validation Wiggle (v0.7.0+):** Fields automatically wiggle when they enter a validation-error state. Visibility-gated, respects reduce-motion, and togglable app-wide. See [Validation Wiggle](#validation-wiggle).
 
 ## What's New
 
@@ -489,6 +491,60 @@ void main() {
 4. Package hard-coded default (`true` for the flags, `null` for the config)
 
 Field-level values always win, so individual fields can opt back in or out regardless of the global default — including on password fields, if a consumer really wants spellcheck enabled there. Semantic named constructors (`.email`, `.password`, `.url`, etc.) always opt out automatically since they hold structured data.
+
+## Field Emphasis Colors
+
+Every base-library field accepts a `colors` parameter to draw attention to a
+required or dangerous field *before* the user interacts with it. Setting
+`colors: form.FieldColors.destructive` renders the field in the theme's **error
+palette while it is empty and unfocused**. As soon as the field gains focus
+and/or is filled it reverts to normal styling, and a real validation error
+always takes precedence.
+
+```dart
+form.TextField(
+  id: 'delete_confirm',
+  textFieldTitle: 'Type DELETE to confirm',
+  colors: form.FieldColors.destructive, // error palette until focused/filled
+)
+```
+
+`form.FieldColors` is an enum with two values — `normal` (the default) and
+`destructive`. Because the default is `normal`, adding `colors` to a field is
+purely opt-in and non-breaking.
+
+## Validation Wiggle
+
+When a field transitions into a real validation-error state — on submit via
+`form.FormResults.getResults()` or on live/on-blur validation — it plays a
+subtle horizontal "wiggle" to draw the eye. This is **automatic and
+library-level**; no per-field wiring is required.
+
+- **Visibility-gated:** an on-screen field wiggles immediately; a field
+  scrolled off screen defers its wiggle until it scrolls into view (playing a
+  beat after it settles), so users see it wiggle as they scroll to it.
+- **Respects reduce-motion:** honors the OS "reduce motion" accessibility
+  setting and skips the animation when it is enabled.
+
+Toggle it per field with the nullable `animateValidationErrors` parameter, or
+app-wide via the `FormFieldDefaults` singleton (default `true`):
+
+```dart
+import 'package:championforms/championforms_themes.dart';
+
+void main() {
+  // Disable validation wiggle everywhere
+  FormFieldDefaults.instance.animateValidationErrors = false;
+  runApp(MyApp());
+}
+
+// Or per field:
+form.TextField(id: 'note', animateValidationErrors: false)
+```
+
+Resolution order (first non-null wins): field-level explicit value →
+`FormFieldDefaults.instance.animateValidationErrors` → package default
+(`true`).
 
 ## Getting Results
 

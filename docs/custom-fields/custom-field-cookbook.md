@@ -209,6 +209,75 @@ MyField copyWith({
 }
 ```
 
+### Forwarding `colors` and `animateValidationErrors` (v0.7.0+)
+
+v0.7.0 added two behavior/emphasis properties to the base `Field`:
+
+- `colors: FieldColors` — field emphasis palette. Defaults to
+  `FieldColors.normal`; set `FieldColors.destructive` to render the field in
+  the theme's error palette while it is empty and unfocused (to flag a
+  required or dangerous field before interaction).
+- `animateValidationErrors: bool?` — nullable per-field toggle for the
+  automatic validation "wiggle" animation. `null` falls through to
+  `FormFieldDefaults.instance.animateValidationErrors` (default `true`).
+
+**Omitting these from your custom field is NON-BREAKING.** The base `Field`
+defaults `colors` to `FieldColors.normal`, so existing custom fields keep
+compiling and behaving exactly as before. Adding them is **opt-in**: forward
+them through your constructor and `copyWith` so the emphasis palette (and the
+resolved animation flag) propagate correctly when the field is cloned — for
+example when a compound field prefixes and copies its sub-fields.
+
+To participate, add both to your constructor's `super` call and to `copyWith`:
+
+**Before (v0.6.0 custom field — still compiles):**
+
+```dart
+CustomField copyWith({
+  String? id,
+  // ... other properties
+  String? customProperty,
+}) {
+  return CustomField(
+    id: id ?? this.id,
+    // ... other properties
+    customProperty: customProperty ?? this.customProperty,
+  );
+}
+```
+
+**After (opt in to emphasis + animation propagation):**
+
+```dart
+class CustomField extends form.Field {
+  CustomField({
+    required super.id,
+    // ... other super properties
+    super.colors,                    // FieldColors? (defaults to normal in base)
+    super.animateValidationErrors,   // bool?
+    this.customProperty = '',
+  });
+
+  @override
+  CustomField copyWith({
+    String? id,
+    // ... other properties
+    form.FieldColors? colors,
+    bool? animateValidationErrors,
+    String? customProperty,
+  }) {
+    return CustomField(
+      id: id ?? this.id,
+      // ... other properties
+      colors: colors ?? this.colors,
+      animateValidationErrors:
+          animateValidationErrors ?? this.animateValidationErrors,
+      customProperty: customProperty ?? this.customProperty,
+    );
+  }
+}
+```
+
 ### Note for StatefulFieldWidget Users
 
 If you're only creating custom widgets using `StatefulFieldWidget` (as shown in the examples below), you **don't need** to implement `copyWith`. The requirement only applies when extending the `Field` class directly.

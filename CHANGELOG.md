@@ -275,6 +275,80 @@ it as an extra optional parameter on their own `copyWith` (which Dart
 permits) and carry it across. A custom field that wants `conditional` to
 survive a copy should do the same.
 
+### Added — field emphasis colors and validation wiggle
+
+Two additive, non-breaking enhancements for drawing the user's eye to fields
+that need attention: **field emphasis colors** and an **automatic validation
+wiggle** animation. Neither requires changes to existing forms.
+
+#### Field Emphasis Colors
+
+**Every base-library field now accepts a `colors` parameter** that renders a
+field in the theme's ERROR palette *while it is empty and unfocused*, to draw
+attention to a required or dangerous field before the user interacts with it.
+The field reverts to normal styling as soon as it gains focus and/or is
+filled, and a real validation error always takes precedence.
+
+- `colors: FieldColors` — new enum `form.FieldColors { normal, destructive }`.
+  Package default: `FieldColors.normal`. Set `FieldColors.destructive` to
+  emphasize a field.
+
+```dart
+form.TextField(
+  id: 'delete_confirm',
+  textFieldTitle: 'Type DELETE to confirm',
+  colors: form.FieldColors.destructive, // error palette until focused/filled
+)
+```
+
+Because the base `Field` defaults `colors` to `FieldColors.normal`, existing
+fields and custom field subclasses keep working unchanged. Custom fields that
+extend `Field`/`OptionSelect`/etc. can opt in by forwarding `colors` through
+their constructor and `copyWith` — see the
+[Custom Field Cookbook](docs/custom-fields/custom-field-cookbook.md#required-implementing-copywith-for-custom-field-classes).
+
+#### Automatic Validation Wiggle
+
+**Fields now play a subtle horizontal "wiggle" when they transition into a
+real validation-error state** — both on submit (via
+`form.FormResults.getResults()`) and on live/on-blur validation. This is
+automatic and library-level; no per-field wiring is required.
+
+- **Visibility-gated:** an on-screen field wiggles immediately; a field that is
+  scrolled off screen defers its wiggle until it scrolls into view (playing a
+  beat after it settles), so users see the wiggle as they scroll to the
+  offending field. Powered by the new internal
+  `ChampionVisibilityDetector` utility
+  (`lib/widgets_internal/visibility/champion_visibility_detector.dart`).
+- **Respects reduce-motion:** honors the OS "reduce motion" accessibility
+  setting and skips the animation when it is enabled.
+
+**New nullable `form.Field` parameter** (`null` falls through to the global
+default):
+
+- `animateValidationErrors: bool?` — toggle the wiggle per field.
+
+**New `FormFieldDefaults` default:**
+
+- `animateValidationErrors: bool` (default `true`) — flip app-wide at startup:
+
+```dart
+import 'package:championforms/championforms_themes.dart';
+
+void main() {
+  FormFieldDefaults.instance.animateValidationErrors = false;
+  runApp(MyApp());
+}
+```
+
+Resolution order (first non-null wins): field-level explicit value →
+`FormFieldDefaults.instance.animateValidationErrors` → package default
+(`true`).
+
+Both features are non-breaking: `colors` defaults to `FieldColors.normal` and
+`animateValidationErrors` defaults to `true` (reduce-motion aware), so existing
+forms render and behave exactly as before unless they opt in.
+
 ---
 
 ## [0.6.0] - 2026-05-29
@@ -884,6 +958,7 @@ Form(
 
 ---
 
+[0.7.0]: https://github.com/fabier/championforms/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/fabier/championforms/compare/v0.5.3...v0.6.0
 [0.5.3]: https://github.com/fabier/championforms/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/fabier/championforms/compare/v0.5.1...v0.5.2

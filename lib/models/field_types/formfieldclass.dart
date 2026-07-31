@@ -1,5 +1,6 @@
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/models/field_colors.dart';
 import 'package:championforms/models/field_condition.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/field_types/formfieldbase.dart';
@@ -65,6 +66,19 @@ abstract class Field implements FieldBase {
   final bool disabled;
 
   final FormTheme? theme;
+
+  /// Emphasis/role for this field's color palette, independent of its runtime
+  /// state. Defaults to [FieldColors.normal]. Set to [FieldColors.destructive]
+  /// to render the field in the error palette while it is empty and unfocused.
+  final FieldColors colors;
+
+  /// Whether this field plays the validation "wiggle" animation on a
+  /// validation failure.
+  ///
+  /// Nullable: `null` (the default) means fall through to
+  /// `FormFieldDefaults.instance.animateValidationErrors`. Set `true`/`false`
+  /// to explicitly override the app-wide default for this field.
+  final bool? animateValidationErrors;
 
   /// Whether to leave this field out of the form entirely.
   ///
@@ -194,6 +208,14 @@ abstract class Field implements FieldBase {
   ///   );
   /// }
   /// ```
+  ///
+  /// NOTE: `colors` and `animateValidationErrors` are intentionally NOT declared
+  /// on this abstract signature. Base-library fields add them to their own
+  /// concrete `copyWith` overrides (a valid override may add extra optional named
+  /// parameters), but keeping them off the abstract keeps existing external
+  /// custom-field `copyWith` overrides valid — adding them here would force every
+  /// custom subclass to declare the new parameters, which would be a breaking
+  /// change. See CLAUDE.md "Field emphasis colors".
   Field copyWith({
     String? id,
     Widget? icon,
@@ -227,6 +249,8 @@ abstract class Field implements FieldBase {
     required this.id,
     this.icon,
     this.theme,
+    this.colors = FieldColors.normal,
+    this.animateValidationErrors,
     this.title,
     this.description,
     this.disabled = false,

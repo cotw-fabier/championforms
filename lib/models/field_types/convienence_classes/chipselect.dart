@@ -1,5 +1,6 @@
 import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/core/field_json.dart';
+import 'package:championforms/models/field_colors.dart';
 import 'package:championforms/models/field_condition.dart';
 import 'package:championforms/models/field_types/optionselect.dart';
 import 'package:championforms/models/multiselect_option.dart';
@@ -35,6 +36,8 @@ class ChipSelect extends OptionSelect {
     super.onChange,
     super.fieldLayout,
     super.fieldBackground,
+    super.colors,
+    super.animateValidationErrors,
     Widget Function(FieldBuilderContext)? fieldBuilder,
   }) : super(fieldBuilder: fieldBuilder ?? checkboxFieldBuilder);
 
@@ -71,6 +74,8 @@ class ChipSelect extends OptionSelect {
     Widget? leading,
     Widget? trailing,
     FormTheme? theme,
+    FieldColors? colors,
+    bool? animateValidationErrors,
     String? title,
     String? description,
     bool? disabled,
@@ -107,6 +112,9 @@ class ChipSelect extends OptionSelect {
       leading: leading ?? this.leading,
       trailing: trailing ?? this.trailing,
       theme: theme ?? this.theme,
+      colors: colors ?? this.colors,
+      animateValidationErrors:
+          animateValidationErrors ?? this.animateValidationErrors,
       title: title ?? this.title,
       description: description ?? this.description,
       disabled: disabled ?? this.disabled,

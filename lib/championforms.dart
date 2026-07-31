@@ -65,6 +65,9 @@ export 'package:championforms/default_fields/address_field.dart';
 // Export FieldOption (formerly MultiselectOption)
 export 'package:championforms/models/multiselect_option.dart';
 
+// Export Field Colors (emphasis/role palette)
+export 'package:championforms/models/field_colors.dart';
+
 // Export Layout Classes
 export 'package:championforms/models/field_types/row.dart';
 export 'package:championforms/models/field_types/column.dart';

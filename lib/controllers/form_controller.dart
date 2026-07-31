@@ -2,6 +2,7 @@
 
 import 'dart:async';
 
+import 'package:championforms/models/field_colors.dart';
 import 'package:championforms/models/field_types/optionselect.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
@@ -112,6 +113,15 @@ class FormController extends ChangeNotifier {
   ///
   /// Example: `[FormBuilderError(fieldId: 'email', reason: 'Invalid email')]`
   List<FormBuilderError> formErrors;
+
+  /// Monotonic counter that increments whenever a field newly registers a
+  /// validation error.
+  ///
+  /// Watched by [FieldWiggleAnimator] so it can trigger a wiggle animation on
+  /// both submit-time and live validation. Consumers should treat this as an
+  /// opaque tick value; only the fact that it changed is meaningful.
+  int get validationFailureTick => _validationFailureTick;
+  int _validationFailureTick = 0;
 
   /// Field definitions **currently rendered** in [Form] widgets.
   ///
@@ -945,6 +955,11 @@ class FormController extends ChangeNotifier {
     } else {
       _fieldValues.remove(id);
     }
+
+    // Recalculate the field's state so value-driven states (e.g. the
+    // destructive "empty" look) refresh promptly when content changes.
+    // This only mutates the internal state map; notification is handled below.
+    _updateFieldState(id);
 
     if (triggerCallbacks && oldValue != newValue) {
       final fieldDef = _fieldDefinitions[id];
@@ -2050,6 +2065,7 @@ class FormController extends ChangeNotifier {
         e.validatorPosition == error.validatorPosition);
     if (!exists) {
       formErrors = [error, ...formErrors];
+      _validationFailureTick++;
       _updateFieldState(error.fieldId);
       if (!noNotify) {
         _safeNotifyListeners();
@@ -2439,6 +2455,7 @@ class FormController extends ChangeNotifier {
     if (currentFieldErrors.isNotEmpty) {
       formErrors = [...currentFieldErrors, ...formErrors];
       errorsChanged = true;
+      _validationFailureTick++;
     }
 
     if (errorsChanged) {
@@ -2478,13 +2495,42 @@ class FormController extends ChangeNotifier {
     } else if (hasErrors) {
       newState = FieldState.error;
     } else if (isFocused) {
+      // Focus turns the destructive look off.
       newState = FieldState.active;
+    } else if (fieldDef.colors == FieldColors.destructive &&
+        _isFieldEmpty(fieldId)) {
+      newState = FieldState.destructive;
     } else {
+      // A filled destructive field falls back to normal.
       newState = FieldState.normal;
     }
 
     if (oldState != newState) {
       _fieldStates[fieldId] = newState;
     }
+  }
+
+  /// Determines whether [fieldId] currently has meaningful content.
+  ///
+  /// Uses the field's effective current value (the stored value if present,
+  /// otherwise the field definition's `defaultValue`) and applies type-aware
+  /// emptiness rules. Defensive: never throws.
+  ///
+  /// Returns `true` (empty) when:
+  /// - the effective value is `null`
+  /// - a `String` value trims to empty
+  /// - an `Iterable` value (e.g. multiselect `List<FieldOption>` or file lists)
+  ///   is empty
+  ///
+  /// Returns `false` for any other non-null value (bool, number, object).
+  bool _isFieldEmpty(String fieldId) {
+    final dynamic value = _fieldValues.containsKey(fieldId)
+        ? _fieldValues[fieldId]
+        : _fieldDefinitions[fieldId]?.defaultValue;
+
+    if (value == null) return true;
+    if (value is String) return value.trim().isEmpty;
+    if (value is Iterable) return value.isEmpty;
+    return false;
   }
 }

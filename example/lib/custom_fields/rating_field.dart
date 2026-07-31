@@ -62,6 +62,10 @@ class RatingField extends Field {
     super.theme,
     super.fieldLayout,
     super.fieldBackground,
+    // New base params: emphasis color and per-field wiggle override.
+    // Forwarded to super so custom fields stay non-breaking.
+    super.colors = form.FieldColors.normal,
+    super.animateValidationErrors,
     this.maxStars = 5,
     this.allowHalfStars = false,
     this.defaultValue,
@@ -95,6 +99,8 @@ class RatingField extends Field {
       Widget renderedField,
     )? fieldBackground,
     Widget? icon,
+    form.FieldColors? colors,
+    bool? animateValidationErrors,
     int? maxStars,
     bool? allowHalfStars,
     int? defaultValue,
@@ -113,6 +119,9 @@ class RatingField extends Field {
       theme: theme ?? this.theme,
       fieldLayout: fieldLayout ?? this.fieldLayout,
       fieldBackground: fieldBackground ?? this.fieldBackground,
+      colors: colors ?? this.colors,
+      animateValidationErrors:
+          animateValidationErrors ?? this.animateValidationErrors,
       maxStars: maxStars ?? this.maxStars,
       allowHalfStars: allowHalfStars ?? this.allowHalfStars,
       defaultValue: defaultValue ?? this.defaultValue,

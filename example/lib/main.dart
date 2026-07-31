@@ -5,6 +5,7 @@ import 'package:championforms/championforms_themes.dart';
 import 'package:flutter/material.dart';
 import 'custom_fields/rating_field.dart';
 import 'pages/compound_fields_demo.dart';
+import 'pages/emphasis_and_wiggle_demo.dart';
 
 void main() {
   // --- Register Custom Fields ---
@@ -437,6 +438,55 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                         Icon(Icons.arrow_forward_ios,
                             color: Colors.blue.shade700),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // --- Emphasis & Wiggle Demo Banner ---
+              Card(
+                color: Colors.orange.shade50,
+                margin: const EdgeInsets.only(bottom: 20),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const EmphasisAndWiggleDemo(),
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.vibration,
+                            size: 40, color: Colors.orange.shade700),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '✨ NEW: Emphasis Colors & Validation Wiggle',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange.shade900,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Destructive field emphasis and wiggle-on-error!',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.orange.shade700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.arrow_forward_ios,
+                            color: Colors.orange.shade700),
                       ],
                     ),
                   ),

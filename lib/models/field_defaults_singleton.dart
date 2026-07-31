@@ -149,6 +149,23 @@ class FormFieldDefaults {
   /// Package default: `false`.
   bool submitOnEnter = false;
 
+  /// Default for a field's validation "wiggle" animation when a field doesn't
+  /// specify a value via `Field.animateValidationErrors`.
+  ///
+  /// Controls whether fields play a brief horizontal shake when their
+  /// validation registers an error, drawing the user's eye to the failing
+  /// field. Applies app-wide unless a field overrides it.
+  ///
+  /// Set to `false` to disable for the whole app (e.g. for accessibility,
+  /// reduced-motion preferences, or stylistic reasons):
+  ///
+  /// ```dart
+  /// FormFieldDefaults.instance.animateValidationErrors = false;
+  /// ```
+  ///
+  /// Package default: `true`.
+  bool animateValidationErrors = true;
+
   /// Resets all behavior defaults to the package baselines.
   void reset() {
     spellCheck = true;
@@ -158,5 +175,6 @@ class FormFieldDefaults {
     textCapitalization = TextCapitalization.sentences;
     submitOnControlEnter = false;
     submitOnEnter = false;
+    animateValidationErrors = true;
   }
 }

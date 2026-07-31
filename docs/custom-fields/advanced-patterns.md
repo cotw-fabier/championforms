@@ -6,10 +6,11 @@ Advanced patterns and techniques for creating sophisticated custom fields in Cha
 
 1. [Field Subclassing: Extending Existing Field Types](#field-subclassing-extending-existing-field-types)
    - [Required: Implementing copyWith](#required-implementing-copywith)
-2. [Visual Error Indication Patterns](#visual-error-indication-patterns)
-3. [Complex Value Storage Strategies](#complex-value-storage-strategies)
-4. [Multi-Field Coordination](#multi-field-coordination)
-5. [Performance Optimization Techniques](#performance-optimization-techniques)
+2. [Compound Fields: Cascading Emphasis to Sub-Fields](#compound-fields-cascading-emphasis-to-sub-fields)
+3. [Visual Error Indication Patterns](#visual-error-indication-patterns)
+4. [Complex Value Storage Strategies](#complex-value-storage-strategies)
+5. [Multi-Field Coordination](#multi-field-coordination)
+6. [Performance Optimization Techniques](#performance-optimization-techniques)
 
 ---
 
@@ -339,6 +340,100 @@ Start from `form.Field` when:
 - You need custom converters that don't match any existing type
 - The parent type's behavior would be confusing
 - You want maximum flexibility
+
+---
+
+## Compound Fields: Cascading Emphasis to Sub-Fields
+
+`CompoundField` (the base for `NameField`, `AddressField`, and your own
+composite fields) participates in the v0.7.0 emphasis and animation system out
+of the box. Its constructor forwards both `colors` and
+`animateValidationErrors` straight to its `super` (the base `Field`):
+
+```dart
+abstract class CompoundField extends Field with TextFieldConverters {
+  CompoundField({
+    required super.id,
+    super.title,
+    // ...
+    super.colors,                  // FieldColors, defaults to normal
+    super.animateValidationErrors, // bool?
+    // ...
+  });
+
+  List<Field> buildSubFields();
+}
+```
+
+This means a compound field itself honors emphasis and the validation wiggle
+just like any other field — no extra work required.
+
+### Cascading emphasis down to sub-fields
+
+By default the compound field's `colors` value applies to the compound field
+as a whole; it does **not** automatically flow into the individual sub-fields
+returned by `buildSubFields()`. If you want the emphasis palette to cascade so
+that every sub-field also renders in the destructive palette while empty and
+unfocused, pass the compound field's own `colors` down when you construct each
+sub-field:
+
+```dart
+class ConfirmAddressField extends form.CompoundField {
+  ConfirmAddressField({
+    required super.id,
+    super.title,
+    super.colors,                  // e.g. FieldColors.destructive
+    super.animateValidationErrors,
+  });
+
+  @override
+  List<form.Field> buildSubFields() {
+    return [
+      form.TextField(
+        id: 'street',
+        textFieldTitle: 'Street',
+        colors: colors,                                 // cascade emphasis
+        animateValidationErrors: animateValidationErrors, // cascade toggle
+      ),
+      form.TextField(
+        id: 'city',
+        textFieldTitle: 'City',
+        colors: colors,
+        animateValidationErrors: animateValidationErrors,
+      ),
+      form.TextField(
+        id: 'zip',
+        textFieldTitle: 'ZIP',
+        colors: colors,
+        animateValidationErrors: animateValidationErrors,
+      ),
+    ];
+  }
+
+  @override
+  ConfirmAddressField copyWith({
+    String? id,
+    String? title,
+    form.FieldColors? colors,
+    bool? animateValidationErrors,
+    // ... other Field properties
+  }) {
+    return ConfirmAddressField(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      colors: colors ?? this.colors,
+      animateValidationErrors:
+          animateValidationErrors ?? this.animateValidationErrors,
+    );
+  }
+}
+```
+
+Because `colors` and `animateValidationErrors` are read from the compound
+field's own properties inside `buildSubFields()`, the author has full control:
+forward them for a uniform emphasis across the whole compound field, forward
+them to only some sub-fields, or omit them entirely so sub-fields keep their
+own (normal) defaults.
 
 ---
 

@@ -1,3 +1,4 @@
+import 'package:championforms/models/field_colors.dart';
 import 'package:championforms/models/field_types/compound_field.dart';
 import 'package:championforms/models/field_condition.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
@@ -96,6 +97,8 @@ class NameField extends CompoundField {
     super.conditional,
     super.rollUpErrors,
     super.theme,
+    super.colors,
+    super.animateValidationErrors,
     super.validators,
     super.validateLive,
     super.onSubmit,
@@ -113,6 +116,8 @@ class NameField extends CompoundField {
     FieldCondition? conditional,
     bool? rollUpErrors,
     FormTheme? theme,
+    FieldColors? colors,
+    bool? animateValidationErrors,
     List<Validator>? validators,
     bool? validateLive,
     Function(FormResults results)? onSubmit,
@@ -144,6 +149,9 @@ class NameField extends CompoundField {
       conditional: conditional ?? this.conditional,
       rollUpErrors: rollUpErrors ?? this.rollUpErrors,
       theme: theme ?? this.theme,
+      colors: colors ?? this.colors,
+      animateValidationErrors:
+          animateValidationErrors ?? this.animateValidationErrors,
       validators: validators ?? this.validators,
       validateLive: validateLive ?? this.validateLive,
       onSubmit: onSubmit ?? this.onSubmit,
