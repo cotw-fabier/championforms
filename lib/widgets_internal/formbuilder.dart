@@ -94,18 +94,28 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
             .every((i) => oldIds[i] == newIds[i]);
     if (sameShape && oldWidget.controller == widget.controller) return;
 
-    // A field the widget no longer *declares* is withdrawn from the schema.
-    // Contrast dispose(), which only touches activeFields: changing the
-    // fields: list is the app stating that the form's shape changed, whereas
-    // unmounting is Flutter's decision and says nothing about the form.
+    // Fields this widget no longer renders leave activeFields — that list
+    // tracks what is on screen, and dispose() is not the only way to leave it.
     final newIdSet = newIds.toSet();
-    final removed = oldIds.where((id) => !newIdSet.contains(id)).toList();
-    if (removed.isNotEmpty) {
-      widget.controller.unregisterFields(removed, noNotify: true);
+    final noLongerRendered =
+        oldFields.where((f) => !newIdSet.contains(f.id)).toList();
+    if (noLongerRendered.isNotEmpty) {
+      widget.controller.removeActiveFields(noLongerRendered, noNotify: true);
     }
 
-    // Re-register: picks up fields newly added to the list, which previously
-    // were never registered at all, and refreshes changed definitions.
+    // Register what is declared now. This picks up fields newly added to a
+    // live list — which were previously never registered at all, so
+    // updateFieldValue on one threw — and refreshes changed definitions.
+    //
+    // Fields that have dropped OUT of the list are deliberately NOT withdrawn.
+    // A wizard swaps one Form's fields: list per step (see the multi-page
+    // guide), and Flutter reuses the State, so "no longer in the list" is
+    // indistinguishable here from "you are on a later page". Withdrawing would
+    // silently delete every step the person already filled in. Call
+    // FormController.unregisterFields explicitly when a field is genuinely
+    // gone, or — better — express the change with `conditional` / `hideField`,
+    // which keeps the field declared while excluding it from results and
+    // validation.
     _updateDefaults(newFields, notify: true);
   }
 

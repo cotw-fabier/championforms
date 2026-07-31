@@ -1,14 +1,16 @@
 // A Form whose `fields:` list changes while it stays mounted.
 //
-// Before didUpdateWidget existed, registration only ever happened in the
-// initState post-frame callback, so this was broken in both directions: a
-// field added to a live list was never registered at all, and a field removed
-// lingered in the registry forever. The second half only became visible once
-// the registry started backing getResults.
+// Registration used to happen only in the initState post-frame callback, so a
+// field added to a live list was never registered at all and updateFieldValue
+// on it threw. didUpdateWidget fixes that.
 //
-// The rule: withdraw on undeclare, never on unmount. Changing the fields: list
-// is the app saying the form's shape changed. Unmounting is Flutter's
-// decision and says nothing about the form.
+// Removal is deliberately NOT automatic. A wizard swaps one Form's fields:
+// list per step and Flutter reuses the State, so "no longer in the list" is
+// indistinguishable from "you are on a later page" — withdrawing would delete
+// steps the person already filled in. Withdrawal is explicit
+// (FormController.unregisterFields) or, idiomatically, unnecessary:
+// `conditional` / `hideField` keep a field declared while excluding it from
+// results and validation.
 
 import 'package:championforms/championforms.dart' as form;
 import 'package:flutter/material.dart';
@@ -72,7 +74,8 @@ void main() {
     );
   });
 
-  testWidgets('a field removed from a live list is withdrawn', (tester) async {
+  testWidgets('a field removed from a live list stays registered',
+      (tester) async {
     final controller = form.FormController();
     var showOptional = true;
     late VoidCallback rebuild;
@@ -92,15 +95,29 @@ void main() {
     rebuild();
     await settle(tester);
 
+    // Not withdrawn: a widget dropping a field from its list is not a
+    // statement that the field is gone. This is what keeps a wizard's earlier
+    // steps alive when it swaps one Form's fields per step.
+    expect(controller.registeredFieldIds, ['title', 'optional']);
+    expect(
+      form.FormResults.getResults(controller: controller)
+          .grab('optional')
+          .asString(),
+      'x',
+    );
+
+    // Explicit withdrawal is there for when the app really means it.
+    controller.unregisterFields(['optional']);
     expect(controller.registeredFieldIds, ['title']);
     expect(
       form.FormResults.getResults(controller: controller).hasField('optional'),
       isFalse,
     );
+    await settle(tester);
   });
 
-  testWidgets('a withdrawn field keeps its value, so re-declaring it restores '
-      'the answer', (tester) async {
+  testWidgets('an explicitly withdrawn field keeps its value, so re-declaring '
+      'it restores the answer', (tester) async {
     final controller = form.FormController();
     var showOptional = true;
     late VoidCallback rebuild;
@@ -121,6 +138,8 @@ void main() {
     showOptional = false;
     rebuild();
     await tester.pumpAndSettle();
+    controller.unregisterFields(['optional']);
+    await tester.pumpAndSettle();
     expect(controller.registeredFieldIds, isNot(contains('optional')));
 
     showOptional = true;
@@ -136,7 +155,7 @@ void main() {
     );
   });
 
-  testWidgets("a withdrawn field's errors are cleared so the form can submit",
+  testWidgets("an explicitly withdrawn field's errors are cleared",
       (tester) async {
     final controller = form.FormController();
     var showOptional = true;
@@ -167,6 +186,7 @@ void main() {
 
     showOptional = false;
     rebuild();
+    controller.unregisterFields(['optional']);
     await settle(tester);
 
     expect(controller.formErrors, isEmpty,
