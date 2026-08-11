@@ -5,6 +5,16 @@ All notable changes to ChampionForms will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-08-11
+
+### Fixed
+
+- `requestFocus: true` is now honored by text, option-select, and file-upload
+  fields. Previously only the multiselect family (checkbox/radio/chip/dropdown)
+  acted on the flag; `StatefulFieldWidget`-based fields silently ignored it.
+  The shared field state now requests focus on the field's managed `FocusNode`
+  in a post-frame callback after first mount.
+
 ## [0.7.0] - 2026-07-27
 
 ### 🎉 Forms as data

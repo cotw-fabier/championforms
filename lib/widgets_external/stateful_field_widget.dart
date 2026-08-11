@@ -269,6 +269,19 @@ class _StatefulFieldWidgetState extends State<StatefulFieldWidget> {
     // Setup focus tracking (must happen before controller listener)
     _setupFocusTracking();
 
+    // Honor the field's requestFocus flag. The multiselect family
+    // (checkbox/radio/chip/dropdown) handles this itself inside
+    // MultiselectWidget; StatefulFieldWidget-based fields (text,
+    // option-select, file-upload) previously ignored the flag entirely.
+    // Post-frame so first layout completes before focus (and any resulting
+    // scroll/keyboard) kicks in.
+    if (widget.context.field.requestFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _managedFocusNode?.requestFocus();
+      });
+    }
+
     // Listen to controller updates
     widget.context.controller.addListener(_onControllerUpdate);
   }
