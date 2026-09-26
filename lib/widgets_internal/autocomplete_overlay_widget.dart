@@ -258,6 +258,7 @@ class _AutocompleteWrapperState
 
       if (shouldShow) {
         _removeOverlay(requestFocus: false);
+        _createAutoCompleteItemFocusNodes();
         _overlayEntry = _createOverlayEntry();
         Overlay.of(context).insert(_overlayEntry!);
       } else {
@@ -280,6 +281,26 @@ class _AutocompleteWrapperState
         }
       });
     }
+  }
+
+  /// Creates one focus node per current option (for keyboard navigation).
+  ///
+  /// Called once each time the overlay is (re)inserted, never from the
+  /// overlay's builder: an [OverlayEntry] rebuilds whenever its [Overlay]
+  /// does (e.g. when the TextField's own selection overlay changes on blur),
+  /// and recreating the nodes there disposed the option that had just taken
+  /// focus, bouncing focus straight back to the field.
+  void _createAutoCompleteItemFocusNodes() {
+    _disposeAutoCompleteItemFocusNodes();
+    _autoCompleteItemFocusNodes = List.generate(
+      _autoCompleteOptions.length,
+      (index) {
+        final node = FocusNode();
+        // Add focus listener for screen reader announcements
+        _addFocusListenerForAnnouncement(node, index);
+        return node;
+      },
+    );
   }
 
   /// Disposes all autocomplete item focus nodes and clears the list.
@@ -451,18 +472,6 @@ class _AutocompleteWrapperState
 
     return OverlayEntry(
       builder: (context) {
-        // Recreate autocomplete item focus nodes
-        _disposeAutoCompleteItemFocusNodes();
-        _autoCompleteItemFocusNodes = List.generate(
-          _autoCompleteOptions.length,
-          (index) {
-            final node = FocusNode();
-            // Add focus listener for screen reader announcements
-            _addFocusListenerForAnnouncement(node, index);
-            return node;
-          },
-        );
-
         return Positioned(
           width: size.width,
           height: height,
