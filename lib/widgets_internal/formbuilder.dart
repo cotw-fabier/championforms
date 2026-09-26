@@ -1,15 +1,12 @@
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/core/field_builder_registry.dart';
 import 'package:championforms/functions/gather_child_errors.dart';
-import 'package:championforms/models/colorscheme.dart';
-import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/field_types/column.dart';
 import 'package:championforms/models/field_types/compound_field.dart';
 import 'package:championforms/models/field_types/row.dart';
-import 'package:championforms/models/field_defaults_singleton.dart';
-import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/themes.dart';
-import 'package:championforms/widgets_internal/field_wiggle_animator.dart';
+import 'package:championforms/widgets_external/field_view.dart';
+import 'package:championforms/widgets_internal/field_render_helpers.dart';
 import 'package:championforms/widgets_external/form_wrappers/simple_wrapper.dart';
 import 'package:flutter/material.dart' as flutter;
 import 'package:flutter/scheduler.dart';
@@ -148,8 +145,7 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
         // Add the compound field itself (for validation)
         flatList.add(element);
         // Expand compound field into sub-fields
-        final subFields = _expandCompoundField(element);
-        flatList.addAll(subFields);
+        flatList.addAll(expandCompoundField(element));
       } else if (element is Field) {
         flatList.add(element);
       } else if (element is Row) {
@@ -161,85 +157,6 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
       }
     }
     return flatList;
-  }
-
-  /// Expands a compound field into its prefixed sub-fields.
-  ///
-  /// Applies ID prefixing, theme propagation, and disabled state propagation
-  /// to all sub-fields.
-  ///
-  /// **Parameters:**
-  /// - [compoundField]: The compound field to expand
-  ///
-  /// **Returns:**
-  /// List of sub-fields with prefixed IDs and propagated state
-  List<Field> _expandCompoundField(CompoundField compoundField) {
-    // Get the registration for this compound field type
-    final registration = FormFieldRegistry.instance
-        .getCompoundRegistrationByType(compoundField.runtimeType);
-
-    if (registration == null) {
-      flutter.debugPrint(
-        'Warning: No registration found for compound field type ${compoundField.runtimeType}. '
-        'Treating as empty field.',
-      );
-      return [];
-    }
-
-    // Build sub-fields using the registration builder
-    final subFields = registration.subFieldsBuilder(compoundField);
-
-    // Apply ID prefixing and state propagation
-    final processedSubFields = <Field>[];
-    for (final subField in subFields) {
-      // Apply ID prefixing
-      final prefixedId = _prefixSubFieldId(compoundField.id, subField.id);
-
-      // Create a new field instance with prefixed ID and propagated state
-      final processedField = _applyStateToSubField(
-        subField,
-        prefixedId,
-        compoundField.theme,
-        compoundField.disabled,
-      );
-
-      processedSubFields.add(processedField);
-    }
-
-    return processedSubFields;
-  }
-
-  /// Generates a prefixed sub-field ID following the pattern:
-  /// `{compoundId}_{subFieldId}`
-  ///
-  /// If the subFieldId already starts with the compound ID prefix,
-  /// it is returned as-is to avoid double-prefixing.
-  String _prefixSubFieldId(String compoundId, String subFieldId) {
-    if (subFieldId.startsWith('${compoundId}_')) {
-      return subFieldId;
-    }
-    return '${compoundId}_$subFieldId';
-  }
-
-  /// Applies theme and disabled state from compound field to sub-field.
-  ///
-  /// Creates a new field instance with:
-  /// - Prefixed ID
-  /// - Compound field's theme (if sub-field doesn't have its own)
-  /// - Compound field's disabled state (if compound is disabled)
-  ///
-  /// Uses the copyWith pattern implemented by all Field subclasses.
-  Field _applyStateToSubField(
-    Field subField,
-    String prefixedId,
-    FormTheme? compoundTheme,
-    bool compoundDisabled,
-  ) {
-    return subField.copyWith(
-      id: prefixedId,
-      theme: subField.theme ?? compoundTheme,
-      disabled: compoundDisabled || subField.disabled,
-    );
   }
 
   bool _rebuildScheduled = false;
@@ -345,11 +262,14 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
         continue;
       }
 
-      if (element is CompoundField) {
-        // Build compound field with layout
-        output.add(_buildCompoundField(element));
-      } else if (element is Field) {
-        output.add(_buildFormField(element));
+      if (element is Field) {
+        // Plain and compound fields alike: FieldView is the one render path.
+        output.add(FieldView(
+          controller: widget.controller,
+          field: element,
+          theme: widget.theme,
+          fieldPadding: widget.fieldPadding,
+        ));
       } else if (element is Row) {
         output.add(_buildRow(element));
       } else if (element is Column) {
@@ -358,132 +278,6 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
       }
     }
     return output;
-  }
-
-  /// Builds a compound field widget with its sub-fields.
-  ///
-  /// This method:
-  /// 1. Looks up the compound field registration
-  /// 2. Generates sub-fields with proper ID prefixing and state propagation
-  /// 3. Builds each sub-field widget
-  /// 4. Optionally collects errors if rollUpErrors is true
-  /// 5. Calls the layout builder (custom or default) to arrange sub-fields
-  flutter.Widget _buildCompoundField(CompoundField compoundField) {
-    // Get the registration for this compound field type
-    final registration = FormFieldRegistry.instance
-        .getCompoundRegistrationByType(compoundField.runtimeType);
-
-    if (registration == null) {
-      flutter.debugPrint(
-        'Error: No registration found for compound field type ${compoundField.runtimeType}',
-      );
-      return flutter.Container(
-        padding: const flutter.EdgeInsets.all(8),
-        color: flutter.Colors.red.withValues(alpha: 0.1),
-        child: flutter.Text(
-          'Error: Compound field ${compoundField.runtimeType} not registered',
-          style: const flutter.TextStyle(color: flutter.Colors.red, fontSize: 12),
-        ),
-      );
-    }
-
-    // Generate sub-fields with proper ID prefixing
-    final subFields = registration.subFieldsBuilder(compoundField);
-    final processedSubFields = <Field>[];
-
-    for (final subField in subFields) {
-      // Apply ID prefixing
-      final prefixedId = _prefixSubFieldId(compoundField.id, subField.id);
-
-      // Create field with propagated state
-      final processedField = _applyStateToSubField(
-        subField,
-        prefixedId,
-        compoundField.theme,
-        compoundField.disabled,
-      );
-
-      processedSubFields.add(processedField);
-    }
-
-    // Build widgets for each sub-field
-    final subFieldWidgets = processedSubFields
-        .map((subField) => _buildFormField(subField))
-        .toList();
-
-    // Collect errors if rollUpErrors is enabled
-    List<FormBuilderError>? errors;
-    if (registration.rollUpErrors || compoundField.rollUpErrors) {
-      errors = [];
-
-      // Collect errors from the compound field ID itself (where validators store errors)
-      errors.addAll(widget.controller.findErrors(compoundField.id));
-
-      // Also collect errors from individual sub-field IDs (if any)
-      for (final subField in processedSubFields) {
-        errors.addAll(widget.controller.findErrors(subField.id));
-      }
-
-      // Only pass errors if there are any
-      if (errors.isEmpty) {
-        errors = null;
-      }
-    }
-
-    // Resolve theme for the compound field
-    final mergedTheme = (compoundField.theme != null)
-        ? widget.theme.copyWith(theme: compoundField.theme)
-        : widget.theme;
-
-    // Get field state
-    final fieldState = widget.controller.getFieldState(compoundField.id);
-
-    // Determine colors based on state
-    final FieldColorScheme fieldColors;
-    switch (fieldState) {
-      case FieldState.error:
-        fieldColors = mergedTheme.errorColorScheme!;
-        break;
-      case FieldState.disabled:
-        fieldColors = mergedTheme.disabledColorScheme!;
-        break;
-      case FieldState.active:
-        fieldColors = mergedTheme.activeColorScheme!;
-        break;
-      case FieldState.destructive:
-        fieldColors = mergedTheme.errorColorScheme!;
-        break;
-      case FieldState.normal:
-        fieldColors = mergedTheme.colorScheme!;
-        break;
-    }
-
-    // Create FieldBuilderContext for the compound field
-    final fieldBuilderContext = FieldBuilderContext(
-      field: compoundField,
-      controller: widget.controller,
-      theme: mergedTheme,
-      state: fieldState,
-      colors: fieldColors,
-    );
-
-    // Use custom layout builder or default
-    final layoutBuilder =
-        registration.layoutBuilder ?? CompoundField.buildDefaultCompoundLayout;
-
-    final flutter.Widget built =
-        layoutBuilder(fieldBuilderContext, subFieldWidgets, errors);
-
-    final bool animateErrors = compoundField.animateValidationErrors ??
-        FormFieldDefaults.instance.animateValidationErrors;
-
-    return animateErrors
-        ? FieldWiggleAnimator(
-            controller: widget.controller,
-            fieldId: compoundField.id,
-            child: built,
-          )
-        : built;
   }
 
   flutter.Widget _buildRow(Row row) {
@@ -606,72 +400,5 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
       }
     }
     return layout;
-  }
-
-  flutter.Widget _buildFormField(Field field) {
-    final mergedTheme = (field.theme != null)
-        ? widget.theme.copyWith(theme: field.theme)
-        : widget.theme;
-
-    final FieldState fieldState = widget.controller.getFieldState(field.id);
-    final FieldColorScheme fieldColors;
-    switch (fieldState) {
-      case FieldState.error:
-        fieldColors = mergedTheme.errorColorScheme!;
-        break;
-      case FieldState.disabled:
-        fieldColors = mergedTheme.disabledColorScheme!;
-        break;
-      case FieldState.active:
-        fieldColors = mergedTheme.activeColorScheme!;
-        break;
-      case FieldState.destructive:
-        fieldColors = mergedTheme.errorColorScheme!;
-        break;
-      case FieldState.normal:
-        fieldColors = mergedTheme.colorScheme!;
-        break;
-    }
-
-    flutter.Widget outputWidget = FormFieldRegistry.instance.buildField(
-      context,
-      widget.controller,
-      field,
-      fieldState,
-      fieldColors,
-      (bool focused) {
-        widget.controller.setFieldFocus(field.id, focused);
-      },
-    );
-
-    if (widget.fieldPadding != null && widget.fieldPadding != flutter.EdgeInsets.zero) {
-      outputWidget =
-          flutter.Padding(padding: widget.fieldPadding!, child: outputWidget);
-    }
-
-    final flutter.Widget built = field.fieldLayout(
-      context,
-      field,
-      widget.controller,
-      fieldColors,
-      field.fieldBackground(
-        context,
-        field,
-        widget.controller,
-        fieldColors,
-        outputWidget,
-      ),
-    );
-
-    final bool animateErrors = field.animateValidationErrors ??
-        FormFieldDefaults.instance.animateValidationErrors;
-
-    return animateErrors
-        ? FieldWiggleAnimator(
-            controller: widget.controller,
-            fieldId: field.id,
-            child: built,
-          )
-        : built;
   }
 }

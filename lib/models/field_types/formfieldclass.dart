@@ -1,5 +1,6 @@
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/models/field_clipboard.dart';
 import 'package:championforms/models/field_colors.dart';
 import 'package:championforms/models/field_condition.dart';
 import 'package:championforms/models/file_model.dart';
@@ -79,6 +80,22 @@ abstract class Field implements FieldBase {
   /// `FormFieldDefaults.instance.animateValidationErrors`. Set `true`/`false`
   /// to explicitly override the app-wide default for this field.
   final bool? animateValidationErrors;
+
+  /// How this field's value is copied to and pasted from the clipboard.
+  ///
+  /// Nullable: `null` (the default) means fall through to the codec
+  /// registered for this field's type (`FormFieldRegistry.register(...,
+  /// clipboard: codec)` or `FormFieldRegistry.registerClipboardCodec`).
+  /// Set a codec to override it for this one field. Nothing is copied when
+  /// `FormFieldDefaults.instance.clipboardEnabled` is false. Resolve with
+  /// `FormFieldRegistry.resolveClipboard(field)`.
+  ///
+  /// Like [colors] and [animateValidationErrors], this is deliberately not
+  /// on the abstract [copyWith] signature, so existing custom subclasses keep
+  /// compiling. A custom field that wants a per-field codec to survive a copy
+  /// should add an optional `FieldClipboardCodec? clipboard` parameter to its
+  /// own constructor and `copyWith` and forward it.
+  final FieldClipboardCodec? clipboard;
 
   /// Whether to leave this field out of the form entirely.
   ///
@@ -209,7 +226,7 @@ abstract class Field implements FieldBase {
   /// }
   /// ```
   ///
-  /// NOTE: `colors` and `animateValidationErrors` are intentionally NOT declared
+  /// NOTE: `colors`, `animateValidationErrors` and `clipboard` are intentionally NOT declared
   /// on this abstract signature. Base-library fields add them to their own
   /// concrete `copyWith` overrides (a valid override may add extra optional named
   /// parameters), but keeping them off the abstract keeps existing external
@@ -251,6 +268,7 @@ abstract class Field implements FieldBase {
     this.theme,
     this.colors = FieldColors.normal,
     this.animateValidationErrors,
+    this.clipboard,
     this.title,
     this.description,
     this.disabled = false,

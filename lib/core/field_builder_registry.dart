@@ -1,4 +1,5 @@
 import 'package:championforms/championforms.dart';
+import 'package:championforms/models/field_defaults_singleton.dart';
 import 'package:championforms/default_fields/checkboxselect.dart';
 import 'package:championforms/default_fields/chipselect.dart';
 import 'package:championforms/default_fields/fileupload.dart';
@@ -317,6 +318,9 @@ class FormFieldRegistry {
   /// JSON factories, keyed by `typeName`.
   final Map<String, FieldFromJson> _fromJson = {};
 
+  /// Per-type clipboard codecs, keyed by field `Type`.
+  final Map<Type, FieldClipboardCodec> _clipboardCodecs = {};
+
   // ===========================================================================
   // NEW STATIC API (v0.6.0+)
   // ===========================================================================
@@ -334,6 +338,8 @@ class FormFieldRegistry {
   /// - [typeName]: A unique identifier for this field type (for debugging)
   /// - [builder]: The builder function (receives [FieldBuilderContext])
   /// - [converters]: Optional custom converters for value conversion
+  /// - [clipboard]: Optional default [FieldClipboardCodec] for fields of type
+  ///   `T` (see [clipboardFor] and [resolveClipboard])
   ///
   /// **Example:**
   /// ```dart
@@ -364,8 +370,53 @@ class FormFieldRegistry {
     FormFieldBuilder builder, {
     FieldConverters? converters,
     FieldFromJson? fromJson,
+    FieldClipboardCodec? clipboard,
   }) {
     _instance._registerInternal<T>(typeName, builder, converters, fromJson);
+    if (clipboard != null) _instance._clipboardCodecs[T] = clipboard;
+  }
+
+  // ===========================================================================
+  // CLIPBOARD CODECS (v0.8.0+)
+  // ===========================================================================
+
+  /// Registers [codec] as the default clipboard codec for field type `T`.
+  ///
+  /// For a type registered somewhere you do not control, or when the codec
+  /// is decided separately from the builder. Replaces any codec already
+  /// registered for `T`, including a built-in one.
+  ///
+  /// ```dart
+  /// FormFieldRegistry.registerClipboardCodec<RatingField>(RatingCodec());
+  /// ```
+  static void registerClipboardCodec<T extends Field>(
+    FieldClipboardCodec codec,
+  ) {
+    _instance._clipboardCodecs[T] = codec;
+  }
+
+  /// The clipboard codec registered for [type], or `null`.
+  ///
+  /// Lookup is by exact type, like builders: a subclass of `TextField` does
+  /// not inherit `TextField`'s codec unless it registers one or sets
+  /// `Field.clipboard`.
+  static FieldClipboardCodec? clipboardFor(Type type) =>
+      _instance._clipboardCodecs[type];
+
+  /// The codec to use for [field], or `null` when it cannot be copied.
+  ///
+  /// Resolution follows the package's sensible-default pattern:
+  ///
+  /// 1. `null` when `FormFieldDefaults.instance.clipboardEnabled` is false;
+  /// 2. otherwise the field's own [Field.clipboard] codec;
+  /// 3. otherwise the codec registered for `field.runtimeType`.
+  ///
+  /// A non-null codec may still refuse a particular value — a password
+  /// field's codec returns null from `copy`.
+  static FieldClipboardCodec? resolveClipboard(Field field) {
+    if (!FormFieldDefaults.instance.clipboardEnabled) return null;
+    ensureInitialized();
+    return field.clipboard ?? clipboardFor(field.runtimeType);
   }
 
   /// Checks if a builder is registered for a specific field type (static method).
@@ -619,6 +670,7 @@ class FormFieldRegistry {
     bool rollUpErrors = false,
     FieldConverters? converters,
     FieldFromJson? fromJson,
+    FieldClipboardCodec? clipboard,
   }) {
     _instance._registerCompoundInternal<T>(
       typeName,
@@ -628,6 +680,7 @@ class FormFieldRegistry {
       converters,
       fromJson,
     );
+    if (clipboard != null) _instance._clipboardCodecs[T] = clipboard;
   }
 
   /// Checks if a compound builder is registered for a specific field type (static method).
@@ -942,28 +995,37 @@ class FormFieldRegistry {
       'textField',
       buildTextField,
       fromJson: TextField.fromJson,
+      clipboard: const TextFieldClipboardCodec(),
     );
     FormFieldRegistry.register<OptionSelect>(
       'optionSelect',
       buildOptionSelect,
       fromJson: OptionSelect.fromJson,
+      clipboard: const OptionSelectClipboardCodec(),
     );
     FormFieldRegistry.register<CheckboxSelect>(
       'checkboxSelect',
       buildCheckboxSelect,
       fromJson: CheckboxSelect.fromJson,
+      clipboard: const OptionSelectClipboardCodec(),
     );
     FormFieldRegistry.register<ChipSelect>(
       'chipSelect',
       buildChipSelect,
       fromJson: ChipSelect.fromJson,
+      clipboard: const OptionSelectClipboardCodec(),
     );
     FormFieldRegistry.register<RadioSelect>(
       'radioSelect',
       buildRadioSelect,
       fromJson: RadioSelect.fromJson,
+      clipboard: const OptionSelectClipboardCodec(),
     );
-    FormFieldRegistry.register<FileUpload>('fileUpload', buildFileUpload);
+    FormFieldRegistry.register<FileUpload>(
+      'fileUpload',
+      buildFileUpload,
+      clipboard: const FileUploadClipboardCodec(),
+    );
 
     _registerCoreAliases();
 
@@ -1031,6 +1093,7 @@ class FormFieldRegistry {
         );
       },
       rollUpErrors: false,
+      clipboard: const CompoundClipboardCodec(),
     );
   }
 
@@ -1118,6 +1181,7 @@ class FormFieldRegistry {
         );
       },
       rollUpErrors: false,
+      clipboard: const CompoundClipboardCodec(),
     );
   }
 }

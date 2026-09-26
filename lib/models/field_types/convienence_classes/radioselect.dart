@@ -1,4 +1,5 @@
 import 'package:championforms/core/field_json.dart';
+import 'package:championforms/models/field_clipboard.dart';
 import 'package:championforms/models/field_builder_context.dart';
 import 'package:championforms/models/field_colors.dart';
 import 'package:championforms/models/field_condition.dart';
@@ -60,6 +61,7 @@ class RadioSelect extends OptionSelect {
     super.fieldBackground,
     super.colors,
     super.animateValidationErrors,
+    super.clipboard,
     Widget Function(FieldBuilderContext)? fieldBuilder,
   }) : super(
           multiselect: false,
@@ -127,6 +129,7 @@ class RadioSelect extends OptionSelect {
     )? fieldBackground,
     FieldColors? colors,
     bool? animateValidationErrors,
+    FieldClipboardCodec? clipboard,
     Widget Function(FieldBuilderContext)? fieldBuilder,
   }) {
     // `multiselect` is accepted for signature compatibility with the base
@@ -157,6 +160,7 @@ class RadioSelect extends OptionSelect {
       colors: colors ?? this.colors,
       animateValidationErrors:
           animateValidationErrors ?? this.animateValidationErrors,
+      clipboard: clipboard ?? this.clipboard,
       fieldBuilder: fieldBuilder ?? this.fieldBuilder,
     );
   }

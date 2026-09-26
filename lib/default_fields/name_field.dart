@@ -1,4 +1,5 @@
 import 'package:championforms/models/field_colors.dart';
+import 'package:championforms/models/field_clipboard.dart';
 import 'package:championforms/models/field_types/compound_field.dart';
 import 'package:championforms/models/field_condition.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
@@ -99,6 +100,7 @@ class NameField extends CompoundField {
     super.theme,
     super.colors,
     super.animateValidationErrors,
+    super.clipboard,
     super.validators,
     super.validateLive,
     super.onSubmit,
@@ -118,6 +120,7 @@ class NameField extends CompoundField {
     FormTheme? theme,
     FieldColors? colors,
     bool? animateValidationErrors,
+    FieldClipboardCodec? clipboard,
     List<Validator>? validators,
     bool? validateLive,
     Function(FormResults results)? onSubmit,
@@ -152,6 +155,7 @@ class NameField extends CompoundField {
       colors: colors ?? this.colors,
       animateValidationErrors:
           animateValidationErrors ?? this.animateValidationErrors,
+      clipboard: clipboard ?? this.clipboard,
       validators: validators ?? this.validators,
       validateLive: validateLive ?? this.validateLive,
       onSubmit: onSubmit ?? this.onSubmit,
