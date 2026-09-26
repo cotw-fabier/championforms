@@ -25,8 +25,20 @@ objc2-app-kit = "0.3"
 objc2-ui-kit = "0.3"
 
 # --- Windows (stage S2d) -----------------------------------------------------
+[target.'cfg(target_os = "windows")'.dependencies.windows]
+version = "0.62"
+features = [
+  "Win32_Foundation",
+  "Win32_System_DataExchange",
+  "Win32_System_Memory",
+  "Win32_System_Ole",
+  "Win32_UI_WindowsAndMessaging",
+]
 
 # --- Linux (stage S2d) -------------------------------------------------------
+# None: GTK3/GDK/GLib are declared by hand in src/linux.rs (#[link] to the
+# system gtk-3/gdk-3/glib-2.0 shared libraries, which Flutter's Linux
+# embedder already requires via libgtk-3-dev).
 
 [profile.release]
 panic = "unwind"

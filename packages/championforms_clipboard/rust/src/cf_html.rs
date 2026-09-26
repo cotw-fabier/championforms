@@ -28,19 +28,18 @@ const END_MARKER: &str = "<!--EndFragment-->";
 /// never altered, so decode(encode(x)) == x.
 pub fn encode(html_fragment: &str) -> Vec<u8> {
     // (document prefix, fragment, document suffix)
-    let (prefix, fragment, suffix): (String, &str, String) =
-        match split_body(html_fragment) {
-            Some((before, inner, after)) => (
-                format!("{before}{START_MARKER}"),
-                inner,
-                format!("{END_MARKER}{after}"),
-            ),
-            None => (
-                format!("<html>\r\n<body>\r\n{START_MARKER}"),
-                html_fragment,
-                format!("{END_MARKER}\r\n</body>\r\n</html>"),
-            ),
-        };
+    let (prefix, fragment, suffix): (String, &str, String) = match split_body(html_fragment) {
+        Some((before, inner, after)) => (
+            format!("{before}{START_MARKER}"),
+            inner,
+            format!("{END_MARKER}{after}"),
+        ),
+        None => (
+            format!("<html>\r\n<body>\r\n{START_MARKER}"),
+            html_fragment,
+            format!("{END_MARKER}\r\n</body>\r\n</html>"),
+        ),
+    };
 
     let header_len = header(0, 0, 0, 0).len();
     let start_html = header_len;
@@ -59,7 +58,12 @@ pub fn encode(html_fragment: &str) -> Vec<u8> {
     out
 }
 
-fn header(start_html: usize, end_html: usize, start_fragment: usize, end_fragment: usize) -> String {
+fn header(
+    start_html: usize,
+    end_html: usize,
+    start_fragment: usize,
+    end_fragment: usize,
+) -> String {
     let w = OFFSET_DIGITS;
     format!(
         "Version:0.9\r\n\
@@ -247,7 +251,10 @@ mod tests {
         let text = std::str::from_utf8(&payload).unwrap();
         assert!(text.starts_with("Version:0.9\r\nStartHTML:"));
         let h = offsets(&payload);
-        assert_eq!(slice(&payload, h.start_fragment, h.end_fragment), "<b>hi</b>");
+        assert_eq!(
+            slice(&payload, h.start_fragment, h.end_fragment),
+            "<b>hi</b>"
+        );
         assert_eq!(h.end_html.unwrap() as usize, payload.len());
         assert_eq!(h.start_html.unwrap() as usize, h.end);
         assert!(slice(&payload, h.start_html, h.end_html).starts_with("<html>"));
@@ -270,7 +277,10 @@ mod tests {
         assert_ne!(fragment.len(), fragment.chars().count());
         let payload = encode(fragment);
         let h = offsets(&payload);
-        let (s, e) = (h.start_fragment.unwrap() as usize, h.end_fragment.unwrap() as usize);
+        let (s, e) = (
+            h.start_fragment.unwrap() as usize,
+            h.end_fragment.unwrap() as usize,
+        );
         assert_eq!(e - s, fragment.len());
         assert_eq!(&payload[s..e], fragment.as_bytes());
         assert_eq!(decode(&payload).as_deref(), Some(fragment));
@@ -295,10 +305,15 @@ mod tests {
         let doc = "<html><head><title>t</title></head><body class=\"x\"><p>hi</p></body></html>";
         let payload = encode(doc);
         let text = std::str::from_utf8(&payload).unwrap();
-        assert!(text.contains("<body class=\"x\"><!--StartFragment--><p>hi</p><!--EndFragment--></body></html>"));
+        assert!(text.contains(
+            "<body class=\"x\"><!--StartFragment--><p>hi</p><!--EndFragment--></body></html>"
+        ));
         assert_eq!(decode(&payload).as_deref(), Some("<p>hi</p>"));
         let h = offsets(&payload);
-        assert_eq!(slice(&payload, h.start_html, h.end_html), text[h.end..].to_string());
+        assert_eq!(
+            slice(&payload, h.start_html, h.end_html),
+            text[h.end..].to_string()
+        );
     }
 
     #[test]
@@ -306,7 +321,11 @@ mod tests {
         // `<bodyish>` is not `<body>`: wrap normally.
         let payload = encode("<bodyish>x</bodyish>");
         assert_eq!(decode(&payload).as_deref(), Some("<bodyish>x</bodyish>"));
-        assert!(std::str::from_utf8(&payload).unwrap().contains("<html>\r\n<body>"));
+        assert!(
+            std::str::from_utf8(&payload)
+                .unwrap()
+                .contains("<html>\r\n<body>")
+        );
     }
 
     #[test]
@@ -339,7 +358,9 @@ mod tests {
     fn decode_word_style_sample() {
         let html = "<html xmlns:o=\"urn:schemas-microsoft-com:office:office\">\r\n<head>\r\n<meta charset=utf-8>\r\n<style>p{margin:0}</style>\r\n</head>\r\n<body lang=EN-US>\r\n<!--StartFragment--><p class=MsoNormal>Wörd</p><!--EndFragment-->\r\n</body>\r\n</html>";
         let hdr = |a: usize, b: usize, c: usize, d: usize| {
-            format!("Version:1.0\r\nStartHTML:{a:010}\r\nEndHTML:{b:010}\r\nStartFragment:{c:010}\r\nEndFragment:{d:010}\r\nStartSelection:{c:010}\r\nEndSelection:{d:010}\r\n")
+            format!(
+                "Version:1.0\r\nStartHTML:{a:010}\r\nEndHTML:{b:010}\r\nStartFragment:{c:010}\r\nEndFragment:{d:010}\r\nStartSelection:{c:010}\r\nEndSelection:{d:010}\r\n"
+            )
         };
         let hl = hdr(0, 0, 0, 0).len();
         let sf = hl + html.find("<p class").unwrap();
@@ -356,13 +377,18 @@ mod tests {
     fn decode_excel_style_lf_and_nine_digits() {
         let html = "<html>\n<body>\n<table><!--StartFragment--><tr><td>1</td></tr><!--EndFragment--></table>\n</body>\n</html>";
         let hdr = |a: usize, b: usize, c: usize, d: usize| {
-            format!("Version:1.0\nStartHTML:{a:09}\nEndHTML:{b:09}\nStartFragment:{c:09}\nEndFragment:{d:09}\n")
+            format!(
+                "Version:1.0\nStartHTML:{a:09}\nEndHTML:{b:09}\nStartFragment:{c:09}\nEndFragment:{d:09}\n"
+            )
         };
         let hl = hdr(0, 0, 0, 0).len();
         let sf = hl + html.find("<tr>").unwrap();
         let ef = hl + html.find("<!--EndFragment").unwrap();
         let payload = format!("{}{html}", hdr(hl, hl + html.len(), sf, ef));
-        assert_eq!(decode(payload.as_bytes()).as_deref(), Some("<tr><td>1</td></tr>"));
+        assert_eq!(
+            decode(payload.as_bytes()).as_deref(),
+            Some("<tr><td>1</td></tr>")
+        );
     }
 
     #[test]
