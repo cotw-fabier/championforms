@@ -88,6 +88,15 @@ class _AutocompleteWrapperState
   /// List of autocomplete options to display in the overlay.
   List<CompleteOption> _autoCompleteOptions = [];
 
+  /// The options the open overlay is showing, captured together with
+  /// [_autoCompleteItemFocusNodes] so the two always have the same length.
+  ///
+  /// [_autoCompleteOptions] changes as soon as the person types, but the
+  /// overlay is only reinserted after the frame; an overlay rebuild in between
+  /// (the text field's selection handles moving, say) must not index past the
+  /// end of the focus-node list.
+  List<CompleteOption> _overlayOptions = [];
+
   /// Focus nodes for each autocomplete option (for keyboard navigation).
   List<FocusNode> _autoCompleteItemFocusNodes = [];
 
@@ -292,8 +301,9 @@ class _AutocompleteWrapperState
   /// focus, bouncing focus straight back to the field.
   void _createAutoCompleteItemFocusNodes() {
     _disposeAutoCompleteItemFocusNodes();
+    _overlayOptions = List.of(_autoCompleteOptions);
     _autoCompleteItemFocusNodes = List.generate(
-      _autoCompleteOptions.length,
+      _overlayOptions.length,
       (index) {
         final node = FocusNode();
         // Add focus listener for screen reader announcements
@@ -368,7 +378,7 @@ class _AutocompleteWrapperState
 
       // Enter key selects the focused option
       if (event.logicalKey == LogicalKeyboardKey.enter) {
-        _optionSelectedCallback(_autoCompleteOptions[index]);
+        _optionSelectedCallback(_overlayOptions[index]);
         return KeyEventResult.handled;
       }
 
@@ -405,11 +415,11 @@ class _AutocompleteWrapperState
   void _addFocusListenerForAnnouncement(FocusNode focusNode, int index) {
     focusNode.addListener(() {
       if (focusNode.hasFocus && mounted) {
-        final option = _autoCompleteOptions[index];
+        final option = _overlayOptions[index];
         setState(() {
           _focusedIndex = index;
           _currentSemanticAnnouncement =
-              '${option.title}, option ${index + 1} of ${_autoCompleteOptions.length}';
+              '${option.title}, option ${index + 1} of ${_overlayOptions.length}';
         });
       } else if (!focusNode.hasFocus && mounted && _focusedIndex == index) {
         // Clear focused index when this option loses focus
@@ -490,7 +500,7 @@ class _AutocompleteWrapperState
               elevation: 4.0,
               child: Semantics(
                 liveRegion: true,
-                label: '${_autoCompleteOptions.length} options available',
+                label: '${_overlayOptions.length} options available',
                 child: FocusTraversalGroup(
                   policy: ReadingOrderTraversalPolicy(),
                   child: Column(
@@ -508,9 +518,9 @@ class _AutocompleteWrapperState
                           reverse: goUp,
                           shrinkWrap: true,
                           padding: EdgeInsets.zero,
-                          itemCount: _autoCompleteOptions.length,
+                          itemCount: _overlayOptions.length,
                           itemBuilder: (context, index) {
-                            final option = _autoCompleteOptions[index];
+                            final option = _overlayOptions[index];
                             // Use StatefulBuilder to rebuild only this item when focus changes
                             return StatefulBuilder(
                               builder: (context, setItemState) {
@@ -524,7 +534,7 @@ class _AutocompleteWrapperState
                                       _handleOptionKeyEvent(event, index),
                                   child: Semantics(
                                     label:
-                                        '${option.title}, option ${index + 1} of ${_autoCompleteOptions.length}',
+                                        '${option.title}, option ${index + 1} of ${_overlayOptions.length}',
                                     button: true,
                                     child: ListTile(
                                       title: Text(option.title),
