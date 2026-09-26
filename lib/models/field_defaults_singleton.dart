@@ -166,6 +166,21 @@ class FormFieldDefaults {
   /// Package default: `true`.
   bool animateValidationErrors = true;
 
+  /// Whether fields can be copied to and pasted from the clipboard through
+  /// their `FieldClipboardCodec`.
+  ///
+  /// When `false`, `FormFieldRegistry.resolveClipboard` returns `null` for
+  /// every field — including fields with their own `Field.clipboard` codec —
+  /// so nothing that consults it (for example an embedded field in a
+  /// document) copies or restores field values. Flip it off app-wide with:
+  ///
+  /// ```dart
+  /// FormFieldDefaults.instance.clipboardEnabled = false;
+  /// ```
+  ///
+  /// Package default: `true`.
+  bool clipboardEnabled = true;
+
   /// Resets all behavior defaults to the package baselines.
   void reset() {
     spellCheck = true;
@@ -176,5 +191,6 @@ class FormFieldDefaults {
     submitOnControlEnter = false;
     submitOnEnter = false;
     animateValidationErrors = true;
+    clipboardEnabled = true;
   }
 }

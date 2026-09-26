@@ -1,4 +1,5 @@
 import 'package:championforms/models/colorscheme.dart';
+import 'package:championforms/models/field_clipboard.dart';
 import 'package:championforms/models/field_colors.dart';
 import 'package:championforms/models/field_types/optionselect.dart';
 import 'package:championforms/models/file_model.dart';
@@ -88,6 +89,7 @@ class FileUpload extends OptionSelect {
     super.fieldBackground,
     super.colors,
     super.animateValidationErrors,
+    super.clipboard,
     this.allowedExtensions,
     this.fileType,
     this.maxFileSize = 52428800, // 50 MB default
@@ -112,6 +114,7 @@ class FileUpload extends OptionSelect {
     FormTheme? theme,
     FieldColors? colors,
     bool? animateValidationErrors,
+    FieldClipboardCodec? clipboard,
     String? title,
     String? description,
     bool? disabled,
@@ -159,6 +162,7 @@ class FileUpload extends OptionSelect {
       colors: colors ?? this.colors,
       animateValidationErrors:
           animateValidationErrors ?? this.animateValidationErrors,
+      clipboard: clipboard ?? this.clipboard,
       title: title ?? this.title,
       description: description ?? this.description,
       disabled: disabled ?? this.disabled,

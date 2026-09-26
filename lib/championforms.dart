@@ -41,6 +41,9 @@ library;
 // Export Form widget
 export 'package:championforms/widgets_external/form.dart';
 
+// Export FieldView: renders one registered field outside a Form (v0.8.0+)
+export 'package:championforms/widgets_external/field_view.dart';
+
 // Export Form Controller
 export 'package:championforms/controllers/form_controller.dart';
 
@@ -127,6 +130,7 @@ export 'package:championforms/models/field_builder_context.dart';
 export 'package:championforms/widgets_external/stateful_field_widget.dart';
 export 'package:championforms/models/field_converters.dart';
 export 'package:championforms/models/field_clipboard.dart';
+export 'package:championforms/core/clipboard_codecs.dart';
 export 'package:championforms/models/file_model.dart';
 export 'package:championforms/models/themes.dart';
 

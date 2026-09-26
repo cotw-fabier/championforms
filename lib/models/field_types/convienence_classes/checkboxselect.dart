@@ -1,4 +1,5 @@
 import 'package:championforms/models/field_builder_context.dart';
+import 'package:championforms/models/field_clipboard.dart';
 import 'package:championforms/core/field_json.dart';
 import 'package:championforms/models/field_colors.dart';
 import 'package:championforms/models/field_condition.dart';
@@ -38,6 +39,7 @@ class CheckboxSelect extends OptionSelect {
     super.fieldBackground,
     super.colors,
     super.animateValidationErrors,
+    super.clipboard,
     Widget Function(FieldBuilderContext)? fieldBuilder,
   }) : super(fieldBuilder: fieldBuilder ?? checkboxFieldBuilder);
 
@@ -85,6 +87,7 @@ class CheckboxSelect extends OptionSelect {
     FormTheme? theme,
     FieldColors? colors,
     bool? animateValidationErrors,
+    FieldClipboardCodec? clipboard,
     String? title,
     String? description,
     bool? disabled,
@@ -124,6 +127,7 @@ class CheckboxSelect extends OptionSelect {
       colors: colors ?? this.colors,
       animateValidationErrors:
           animateValidationErrors ?? this.animateValidationErrors,
+      clipboard: clipboard ?? this.clipboard,
       title: title ?? this.title,
       description: description ?? this.description,
       disabled: disabled ?? this.disabled,

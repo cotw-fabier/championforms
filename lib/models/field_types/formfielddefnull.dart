@@ -1,4 +1,5 @@
 import 'package:championforms/models/field_colors.dart';
+import 'package:championforms/models/field_clipboard.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/models/file_model.dart';
 import 'package:championforms/models/themes.dart';
@@ -31,6 +32,7 @@ class NullField extends Field {
     super.fieldBackground,
     super.colors,
     super.animateValidationErrors,
+    super.clipboard,
     this.defaultValue,
   });
 
@@ -64,6 +66,7 @@ class NullField extends Field {
     )? fieldBackground,
     FieldColors? colors,
     bool? animateValidationErrors,
+    FieldClipboardCodec? clipboard,
     String? defaultValue,
   }) {
     return NullField(
@@ -84,6 +87,7 @@ class NullField extends Field {
       colors: colors ?? this.colors,
       animateValidationErrors:
           animateValidationErrors ?? this.animateValidationErrors,
+      clipboard: clipboard ?? this.clipboard,
       defaultValue: defaultValue ?? this.defaultValue,
     );
   }
