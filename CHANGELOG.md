@@ -33,6 +33,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   later.
 - No changes to ChampionForms' Dart API.
 
+### Fixed
+
+- Autocomplete keyboard navigation now works. The dropdown recreated each
+  option's focus node on every overlay rebuild, so Tab/Arrow Down moved focus
+  to an option that was disposed a frame later and focus bounced back to the
+  field; Enter-to-select never ran. Focus nodes now live for as long as the
+  dropdown is open.
+- A validator that throws now fails live (on-blur) validation, matching
+  submit. Previously live validation swallowed the exception and the field
+  passed until the form was submitted.
+- `Form` no longer leaves a zero-duration timer pending after every controller
+  notification. It rebuilds synchronously, deferring to the end of the frame
+  only when notified mid-build. Widget tests that finish on a plain `pump()`
+  no longer fail with "A Timer is still pending".
+
 ### Repository
 
 - The repository is now a pub workspace (monorepo). `championforms` stays at
