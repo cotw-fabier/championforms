@@ -33,11 +33,11 @@ final class DocClipboardPayload {
   final Map<String, form.ClipboardFragment> fields;
 
   Map<String, dynamic> toJson() => {
-        'schemaVersion': schemaVersion,
-        'nodes': [for (final n in nodes) n.toJson()],
-        if (fields.isNotEmpty)
-          'fields': {for (final e in fields.entries) e.key: e.value.toJson()},
-      };
+    'schemaVersion': schemaVersion,
+    'nodes': [for (final n in nodes) n.toJson()],
+    if (fields.isNotEmpty)
+      'fields': {for (final e in fields.entries) e.key: e.value.toJson()},
+  };
 
   /// Throws [FormatException] on a wrong shape or unsupported version.
   factory DocClipboardPayload.fromJson(Map<String, dynamic> json) {
@@ -57,7 +57,8 @@ final class DocClipboardPayload {
       fields: {
         for (final e in fields.entries)
           e.key as String: form.ClipboardFragment.fromJson(
-              (e.value as Map).cast<String, dynamic>()),
+            (e.value as Map).cast<String, dynamic>(),
+          ),
       },
     );
   }

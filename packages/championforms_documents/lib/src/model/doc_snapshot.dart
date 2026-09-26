@@ -6,7 +6,7 @@ import 'doc_node.dart';
 /// `FormController`.
 final class DocSnapshot {
   DocSnapshot(List<DocNode> nodes, {this.schemaVersion = currentSchemaVersion})
-      : nodes = List.unmodifiable(nodes) {
+    : nodes = List.unmodifiable(nodes) {
     final seen = <String>{};
     for (final n in nodes) {
       if (!seen.add(n.id)) {
@@ -30,9 +30,9 @@ final class DocSnapshot {
       nodes.whereType<EmbeddedFieldNode>();
 
   Map<String, dynamic> toJson() => {
-        'schemaVersion': schemaVersion,
-        'nodes': [for (final n in nodes) n.toJson()],
-      };
+    'schemaVersion': schemaVersion,
+    'nodes': [for (final n in nodes) n.toJson()],
+  };
 
   /// Throws [FormatException] for a newer or malformed schema.
   factory DocSnapshot.fromJson(Map<String, dynamic> json) {
@@ -43,7 +43,8 @@ final class DocSnapshot {
     final nodes = json['nodes'];
     if (nodes is! List) throw const FormatException('Document needs "nodes"');
     return DocSnapshot([
-      for (final n in nodes) DocNode.fromJson((n as Map).cast<String, dynamic>()),
+      for (final n in nodes)
+        DocNode.fromJson((n as Map).cast<String, dynamic>()),
     ], schemaVersion: version);
   }
 

@@ -24,33 +24,47 @@ sealed class DocNode {
       throw FormatException('Node needs a non-empty "id": $json');
     }
     DocText text() => DocText.fromJson(
-        ((json['content'] as Map?) ?? const {'text': ''}).cast<String, dynamic>());
+      ((json['content'] as Map?) ?? const {'text': ''}).cast<String, dynamic>(),
+    );
     return switch (json['type']) {
       'paragraph' => ParagraphNode(id: id, text: text()),
       'heading' => HeadingNode(
-          id: id, level: _int(json, 'level', 1, min: 1, max: 6), text: text()),
+        id: id,
+        level: _int(json, 'level', 1, min: 1, max: 6),
+        text: text(),
+      ),
       'listItem' => ListItemNode(
-          id: id,
-          ordered: json['ordered'] == true,
-          indent: _int(json, 'indent', 0, min: 0, max: 8),
-          text: text()),
-      'task' => TaskNode(id: id, checked: json['checked'] == true, text: text()),
+        id: id,
+        ordered: json['ordered'] == true,
+        indent: _int(json, 'indent', 0, min: 0, max: 8),
+        text: text(),
+      ),
+      'task' => TaskNode(
+        id: id,
+        checked: json['checked'] == true,
+        text: text(),
+      ),
       'quote' => QuoteNode(id: id, text: text()),
       'divider' => DividerNode(id: id),
       'embeddedField' => EmbeddedFieldNode(
-          id: id,
-          fieldJson: switch (json['field']) {
-            final Map m => m.cast<String, dynamic>(),
-            _ => throw FormatException('embeddedField needs "field": $json'),
-          },
-          sourceId: json['sourceId'] as String?,
-        ),
+        id: id,
+        fieldJson: switch (json['field']) {
+          final Map m => m.cast<String, dynamic>(),
+          _ => throw FormatException('embeddedField needs "field": $json'),
+        },
+        sourceId: json['sourceId'] as String?,
+      ),
       final t => throw FormatException('Unknown node type "$t"'),
     };
   }
 
-  static int _int(Map<String, dynamic> json, String key, int fallback,
-      {required int min, required int max}) {
+  static int _int(
+    Map<String, dynamic> json,
+    String key,
+    int fallback, {
+    required int min,
+    required int max,
+  }) {
     final v = json[key] ?? fallback;
     if (v is! int || v < min || v > max) {
       throw FormatException('"$key" must be an int in [$min, $max]: $json');
@@ -68,12 +82,16 @@ sealed class TextDocNode extends DocNode {
   /// A copy with different text (same id and other properties).
   TextDocNode withText(DocText text);
 
-  Map<String, dynamic> _base() => {'id': id, 'type': type, 'content': text.toJson()};
+  Map<String, dynamic> _base() => {
+    'id': id,
+    'type': type,
+    'content': text.toJson(),
+  };
 }
 
 final class ParagraphNode extends TextDocNode {
   const ParagraphNode({required String id, DocText text = DocText.empty})
-      : super(id, text);
+    : super(id, text);
 
   @override
   String get type => 'paragraph';
@@ -93,10 +111,12 @@ final class ParagraphNode extends TextDocNode {
 }
 
 final class HeadingNode extends TextDocNode {
-  const HeadingNode(
-      {required String id, this.level = 1, DocText text = DocText.empty})
-      : assert(level >= 1 && level <= 6),
-        super(id, text);
+  const HeadingNode({
+    required String id,
+    this.level = 1,
+    DocText text = DocText.empty,
+  }) : assert(level >= 1 && level <= 6),
+       super(id, text);
 
   final int level;
 
@@ -140,8 +160,11 @@ final class ListItemNode extends TextDocNode {
       ListItemNode(id: id, ordered: ordered, indent: indent, text: text);
 
   @override
-  Map<String, dynamic> toJson() =>
-      {..._base(), 'ordered': ordered, 'indent': indent};
+  Map<String, dynamic> toJson() => {
+    ..._base(),
+    'ordered': ordered,
+    'indent': indent,
+  };
 
   @override
   bool operator ==(Object other) =>
@@ -156,9 +179,11 @@ final class ListItemNode extends TextDocNode {
 }
 
 final class TaskNode extends TextDocNode {
-  const TaskNode(
-      {required String id, this.checked = false, DocText text = DocText.empty})
-      : super(id, text);
+  const TaskNode({
+    required String id,
+    this.checked = false,
+    DocText text = DocText.empty,
+  }) : super(id, text);
 
   final bool checked;
 
@@ -185,7 +210,7 @@ final class TaskNode extends TextDocNode {
 
 final class QuoteNode extends TextDocNode {
   const QuoteNode({required String id, DocText text = DocText.empty})
-      : super(id, text);
+    : super(id, text);
 
   @override
   String get type => 'quote';
@@ -250,11 +275,11 @@ final class EmbeddedFieldNode extends DocNode {
 
   @override
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'type': type,
-        'field': fieldJson,
-        if (sourceId != null) 'sourceId': sourceId,
-      };
+    'id': id,
+    'type': type,
+    'field': fieldJson,
+    if (sourceId != null) 'sourceId': sourceId,
+  };
 
   @override
   bool operator ==(Object other) =>
@@ -265,5 +290,9 @@ final class EmbeddedFieldNode extends DocNode {
 
   @override
   int get hashCode => Object.hash(
-      type, id, sourceId, const DeepCollectionEquality().hash(fieldJson));
+    type,
+    id,
+    sourceId,
+    const DeepCollectionEquality().hash(fieldJson),
+  );
 }

@@ -28,8 +28,11 @@ sealed class DocInputEvent {
 
 /// [text] was inserted so that it now ends at [caretOffset] in [nodeId].
 final class TextInserted extends DocInputEvent {
-  const TextInserted(super.nodeId,
-      {required this.text, required this.caretOffset});
+  const TextInserted(
+    super.nodeId, {
+    required this.text,
+    required this.caretOffset,
+  });
 
   final String text;
   final int caretOffset;

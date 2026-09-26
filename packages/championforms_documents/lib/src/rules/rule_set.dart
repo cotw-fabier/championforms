@@ -22,8 +22,10 @@ abstract final class RuleRegistry {
     return decode(json);
   }
 
-  static Map<String, dynamic> toJson(DocRule rule) =>
-      {'rule': rule.ruleName, ...rule.toJson()};
+  static Map<String, dynamic> toJson(DocRule rule) => {
+    'rule': rule.ruleName,
+    ...rule.toJson(),
+  };
 }
 
 /// The rules one document runs, grouped by kind.
@@ -41,20 +43,21 @@ final class RuleSet {
   final List<ConstraintRule> constraints;
 
   Map<String, dynamic> toJson() => {
-        'transforms': [for (final r in transforms) RuleRegistry.toJson(r)],
-        'extracts': [for (final r in extracts) RuleRegistry.toJson(r)],
-        'constraints': [for (final r in constraints) RuleRegistry.toJson(r)],
-      };
+    'transforms': [for (final r in transforms) RuleRegistry.toJson(r)],
+    'extracts': [for (final r in extracts) RuleRegistry.toJson(r)],
+    'constraints': [for (final r in constraints) RuleRegistry.toJson(r)],
+  };
 
   factory RuleSet.fromJson(Map<String, dynamic> json) {
     List<T> read<T extends DocRule>(String key) => [
-          for (final r in (json[key] as List?) ?? const [])
-            switch (RuleRegistry.fromJson((r as Map).cast<String, dynamic>())) {
-              final T rule => rule,
-              final other => throw FormatException(
-                  '"$key" expects ${T.toString()}, got ${other.ruleName}'),
-            },
-        ];
+      for (final r in (json[key] as List?) ?? const [])
+        switch (RuleRegistry.fromJson((r as Map).cast<String, dynamic>())) {
+          final T rule => rule,
+          final other => throw FormatException(
+            '"$key" expects ${T.toString()}, got ${other.ruleName}',
+          ),
+        },
+    ];
     return RuleSet(
       transforms: read<TransformRule>('transforms'),
       extracts: read<ExtractRule>('extracts'),
