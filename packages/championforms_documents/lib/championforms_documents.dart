@@ -6,6 +6,7 @@
 /// `championforms_clipboard`.
 library;
 
+export 'src/clipboard/doc_clipboard_delegate.dart';
 export 'src/model/doc_clipboard_payload.dart';
 export 'src/model/doc_ids.dart';
 export 'src/model/doc_markdown.dart';
