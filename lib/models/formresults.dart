@@ -757,13 +757,18 @@ void _validateField<T>(
         controller.addError(error);
       }
     } catch (e) {
-      // Handle validation errors
+      // A validator that throws is still a failed validation. Register it on
+      // the controller as well as the results list: without that the form is
+      // in an error state that no field renders, so submit blocks with no
+      // visible reason.
       debugPrint("Validation error for field ${field.id}: $e");
-      formErrors.add(FormBuilderError(
+      final error = FormBuilderError(
         reason: "Validation failed: $e",
         fieldId: field.id,
         validatorPosition: i,
-      ));
+      );
+      formErrors.add(error);
+      controller.addError(error);
     }
   }
 }
@@ -813,14 +818,17 @@ void _validateCompoundField(
         controller.addError(error);
       }
     } catch (e, s) {
-      // Handle validation errors
+      // Same as the simple-field path: a thrown validator has to reach the
+      // controller too, or the form blocks on an error nothing displays.
       debugPrint("Compound field validation error for ${field.id}: $e");
       debugPrint("Stack trace: $s");
-      formErrors.add(FormBuilderError(
+      final error = FormBuilderError(
         reason: "Validation failed: $e",
         fieldId: field.id,
         validatorPosition: i,
-      ));
+      );
+      formErrors.add(error);
+      controller.addError(error);
     }
   }
 }
