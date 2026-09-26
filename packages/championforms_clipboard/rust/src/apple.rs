@@ -46,9 +46,11 @@ fn on_main<T: Send + 'static>(
     body: impl FnOnce() -> Result<T, ClipError> + Send + 'static,
 ) {
     let task = move || {
-        let result = catch_unwind(AssertUnwindSafe(|| autoreleasepool(|_| body())))
-            .unwrap_or_else(|_| {
-                Err(ClipError::Platform("panic in the Apple clipboard backend".into()))
+        let result =
+            catch_unwind(AssertUnwindSafe(|| autoreleasepool(|_| body()))).unwrap_or_else(|_| {
+                Err(ClipError::Platform(
+                    "panic in the Apple clipboard backend".into(),
+                ))
             });
         done(result);
     };
@@ -155,6 +157,65 @@ mod imp {
             .unwrap_or_default();
         uti::formats_for(names.iter().map(String::as_str), true)
     }
+
+    /// Uses a private uniquely named pasteboard, so the user's clipboard is
+    /// left alone.
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        const PNG_1X1: [u8; 70] = [
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48,
+            0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00,
+            0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x44, 0x41, 0x54, 0x78,
+            0xDA, 0x63, 0x64, 0x60, 0xF8, 0x5F, 0x0F, 0x00, 0x02, 0x87, 0x01, 0x80, 0xEB, 0x47,
+            0xBA, 0x92, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+        ];
+
+        /// Frees the unique pasteboard in the pasteboard server (objc2 has
+        /// no binding for `releaseGlobally`).
+        fn release(pb: &NSPasteboard) {
+            let _: () = unsafe { objc2::msg_send![pb, releaseGlobally] };
+        }
+
+        #[test]
+        fn synthesizes_png_from_tiff() {
+            let pb = NSPasteboard::pasteboardWithUniqueName();
+            let rep = NSBitmapImageRep::imageRepWithData(&NSData::with_bytes(&PNG_1X1)).unwrap();
+            let tiff = rep.TIFFRepresentation().unwrap();
+            pb.clearContents();
+            assert!(pb.setData_forType(Some(&tiff), &NSString::from_str(uti::TIFF)));
+
+            let png = read_one(&pb, &Format::Png).expect("png synthesized");
+            assert!(png.starts_with(&[0x89, b'P', b'N', b'G']));
+            let back = NSBitmapImageRep::imageRepWithData(&NSData::with_bytes(&png)).unwrap();
+            assert_eq!((back.pixelsWide(), back.pixelsHigh()), (1, 1));
+            release(&pb);
+        }
+
+        #[test]
+        fn text_and_custom_bytes_round_trip() {
+            let pb = NSPasteboard::pasteboardWithUniqueName();
+            pb.clearContents();
+            let text = "é😀".as_bytes();
+            let custom = [0u8, 1, 0, 255];
+            pb.setData_forType(
+                Some(&NSData::with_bytes(text)),
+                &NSString::from_str(uti::HTML),
+            );
+            pb.setData_forType(
+                Some(&NSData::with_bytes(&custom)),
+                &NSString::from_str("com.x.y"),
+            );
+            assert_eq!(read_one(&pb, &Format::Html).as_deref(), Some(text));
+            assert_eq!(
+                read_one(&pb, &Format::Custom("com.x.y".into())).as_deref(),
+                Some(&custom[..])
+            );
+            assert_eq!(read_one(&pb, &Format::Rtf), None);
+            release(&pb);
+        }
+    }
 }
 
 #[cfg(target_os = "ios")]
@@ -237,7 +298,10 @@ mod tests {
     #[test]
     fn keeps_utf8_bytes_exactly() {
         let bytes = "é😀<b>".as_bytes().to_vec();
-        assert_eq!(utf8_text(Some(bytes.clone()), || panic!("no fallback")), Some(bytes));
+        assert_eq!(
+            utf8_text(Some(bytes.clone()), || panic!("no fallback")),
+            Some(bytes)
+        );
     }
 
     #[test]
@@ -246,7 +310,10 @@ mod tests {
         let utf16_plain = vec![b'h', 0, b'i', 0];
         let latin1 = vec![b'c', b'a', b'f', 0xE9];
         for d in [utf16_bom, utf16_plain, latin1] {
-            assert_eq!(utf8_text(Some(d), || Some("ok".into())), Some(b"ok".to_vec()));
+            assert_eq!(
+                utf8_text(Some(d), || Some("ok".into())),
+                Some(b"ok".to_vec())
+            );
         }
     }
 

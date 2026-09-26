@@ -23,19 +23,19 @@ final class CfClipEntry extends Struct {
 }
 
 /// `CfClipCallback`: invoked exactly once per request, on any thread.
-typedef CfClipCallback = Void Function(
-  Int64 reqId,
-  Int32 status,
-  Pointer<CfClipEntry> entries,
-  Size count,
-);
+typedef CfClipCallback =
+    Void Function(
+      Int64 reqId,
+      Int32 status,
+      Pointer<CfClipEntry> entries,
+      Size count,
+    );
 
 typedef CfClipCallbackPointer = Pointer<NativeFunction<CfClipCallback>>;
 
-@Native<Int32 Function(Int64, Pointer<CfClipEntry>, Size, CfClipCallbackPointer)>(
-  symbol: 'cfclip_write',
-  assetId: _asset,
-)
+@Native<
+  Int32 Function(Int64, Pointer<CfClipEntry>, Size, CfClipCallbackPointer)
+>(symbol: 'cfclip_write', assetId: _asset)
 external int cfclipWrite(
   int reqId,
   Pointer<CfClipEntry> entries,
@@ -43,10 +43,9 @@ external int cfclipWrite(
   CfClipCallbackPointer cb,
 );
 
-@Native<Int32 Function(Int64, Pointer<Pointer<Utf8>>, Size, CfClipCallbackPointer)>(
-  symbol: 'cfclip_read',
-  assetId: _asset,
-)
+@Native<
+  Int32 Function(Int64, Pointer<Pointer<Utf8>>, Size, CfClipCallbackPointer)
+>(symbol: 'cfclip_read', assetId: _asset)
 external int cfclipRead(
   int reqId,
   Pointer<Pointer<Utf8>> formats,

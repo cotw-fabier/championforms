@@ -109,7 +109,15 @@ mod tests {
     #[test]
     fn formats_for_dedups_in_order() {
         let got = formats_for(
-            [HTML, "public.utf16-plain-text", PLAIN_TEXT, TIFF, PNG, "com.x.y", HTML],
+            [
+                HTML,
+                "public.utf16-plain-text",
+                PLAIN_TEXT,
+                TIFF,
+                PNG,
+                "com.x.y",
+                HTML,
+            ],
             true,
         );
         assert_eq!(

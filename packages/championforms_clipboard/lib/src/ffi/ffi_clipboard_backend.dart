@@ -22,7 +22,8 @@ class FfiClipboardBackend implements ClipboardBackend {
   @override
   bool supports(ClipboardFormat format) => _nativePlatform;
 
-  static final bool _nativePlatform = Platform.isMacOS ||
+  static final bool _nativePlatform =
+      Platform.isMacOS ||
       Platform.isIOS ||
       Platform.isWindows ||
       Platform.isLinux;
@@ -82,8 +83,9 @@ class FfiClipboardBackend implements ClipboardBackend {
     for (final (id, bytes) in entries) {
       final format = _parseFormat(id);
       if (format == null) continue;
-      values[format] =
-          format.isText ? utf8.decode(bytes, allowMalformed: true) : bytes;
+      values[format] = format.isText
+          ? utf8.decode(bytes, allowMalformed: true)
+          : bytes;
     }
     return ClipboardReadResult(values);
   }
@@ -91,9 +93,7 @@ class FfiClipboardBackend implements ClipboardBackend {
   @override
   Future<Set<ClipboardFormat>> availableFormats() async {
     final entries = await _call(cfclipAvailableFormats);
-    return {
-      for (final (id, _) in entries) ?_parseFormat(id),
-    };
+    return {for (final (id, _) in entries) ?_parseFormat(id)};
   }
 
   static Uint8List _encode(ClipboardFormat format, Object value) =>
@@ -163,9 +163,7 @@ class FfiClipboardBackend implements ClipboardBackend {
     List<(String, Uint8List)> copied = const [];
     Object? copyError;
     try {
-      copied = [
-        for (var i = 0; i < count; i++) _copyEntry((entries + i).ref),
-      ];
+      copied = [for (var i = 0; i < count; i++) _copyEntry((entries + i).ref)];
     } catch (e) {
       copyError = e;
     } finally {
@@ -178,7 +176,8 @@ class FfiClipboardBackend implements ClipboardBackend {
         ClipboardException('bad clipboard reply: $copyError', code: status),
       );
     } else if (status < 0) {
-      final message = copied
+      final message =
+          copied
               .where((e) => e.$1 == 'error')
               .map((e) => utf8.decode(e.$2, allowMalformed: true))
               .firstOrNull ??
@@ -190,11 +189,11 @@ class FfiClipboardBackend implements ClipboardBackend {
   }
 
   static (String, Uint8List) _copyEntry(CfClipEntry e) => (
-        e.format == nullptr ? '' : e.format.toDartString(),
-        e.data == nullptr || e.len == 0
-            ? Uint8List(0)
-            : Uint8List.fromList(e.data.asTypedList(e.len)),
-      );
+    e.format == nullptr ? '' : e.format.toDartString(),
+    e.data == nullptr || e.len == 0
+        ? Uint8List(0)
+        : Uint8List.fromList(e.data.asTypedList(e.len)),
+  );
 
   static String _takeLastError() {
     final p = cfclipLastError();
