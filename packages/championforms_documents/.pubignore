@@ -1,0 +1,29 @@
+# Publish-time ignore rules for this workspace member.
+#
+# The repository root .pubignore excludes `packages/` so this package never
+# ships inside the championforms archive. Pub applies ignore files from the git
+# root down, so publishing from here must hide the enclosing repository:
+#
+#   GIT_CEILING_DIRECTORIES="$(cd .. && pwd)" dart pub publish --dry-run
+#
+# Pub then reads only the ignore files inside this package (this file plus any
+# nested .gitignore such as example/.gitignore), so the build outputs normally
+# covered by the root .gitignore are repeated here.
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+*.iml
+*.ipr
+*.iws
+.idea/
+.vscode/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+pubspec.lock
+doc/api/
+migrate_working_dir/
+rust/target/

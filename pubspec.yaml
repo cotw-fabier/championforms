@@ -1,6 +1,6 @@
 name: championforms
 description: "Easy Build Data Input Fields of All Types in Flutter with clean, modern API using idiomatic Dart namespace patterns"
-version: 0.7.2
+version: 0.8.0-dev.1
 homepage: "https://championsoftheweb.com"
 repository: "https://github.com/cotw-fabier/championforms/"
 issue_tracker: "https://github.com/cotw-fabier/championforms/issues"
@@ -21,6 +21,17 @@ environment:
   # cross_file 0.3.5+5 all require Dart 3.10 / Flutter 3.38.
   sdk: ">=3.10.0 <4.0.0"
   flutter: ">=3.38.0"
+
+# Pub workspace (monorepo). The championforms package itself stays at the
+# repository root, so existing `path:` and `git:` consumers keep working. The
+# members below share this root's single pubspec.lock. `.pubignore` keeps
+# `packages/` out of the published championforms archive.
+workspace:
+  - example
+  - packages/championforms_clipboard
+  - packages/championforms_clipboard/example
+  - packages/championforms_documents
+  - packages/championforms_documents/example
 
 dependencies:
   flutter:

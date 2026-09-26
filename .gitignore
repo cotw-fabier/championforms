@@ -27,7 +27,17 @@ migrate_working_dir/
 
 # Flutter/Dart/Pub related
 # Libraries should not include pubspec.lock, per https://dart.dev/guides/libraries/private-files#pubspeclock.
-/pubspec.lock
+# This repo is a pub workspace: the only lockfile is the root one (untracked,
+# since championforms is a library). Members never get their own lockfile, so
+# ignore stray ones anywhere in the tree.
+pubspec.lock
 **/doc/api/
 .dart_tool/
 build/
+
+# Workspace members (packages/*) are covered by the unanchored rules above.
+# Rust build output for championforms_clipboard's native assets.
+packages/**/rust/target/
+
+# Agent worktrees
+.claude/worktrees/

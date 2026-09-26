@@ -33,6 +33,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   later.
 - No changes to ChampionForms' Dart API.
 
+### Repository
+
+- The repository is now a pub workspace (monorepo). `championforms` stays at
+  the repository root; sibling packages (`championforms_clipboard`,
+  `championforms_documents`) live under `packages/` and are published
+  separately. A root `.pubignore` keeps `packages/` out of the championforms
+  archive, whose contents are unchanged. No impact on consumers: `path:`,
+  `git:` and hosted dependencies on championforms resolve exactly as before.
+- Development version is `0.8.0-dev.1` so workspace members can depend on
+  `championforms: ^0.8.0-dev.1`; the final 0.8.0 is set at release.
+
 ## [0.7.2] - 2026-09-18
 
 ### Changed

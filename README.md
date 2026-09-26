@@ -559,6 +559,21 @@ Resolution order (first non-null wins): field-level explicit value →
     *   `.asMultiselectSingle()`: Returns the first selected option as `form.FieldOption?`.
     *   `.asFile()`: Returns uploaded files as `List<form.FileResultData>`, containing name, path, and `FileModel` (with bytes/stream/MIME details).
 
+## Related packages in this repo
+
+This repository is a pub workspace. `championforms` lives at the root; these
+companion packages live under [`packages/`](packages/) and are published
+separately:
+
+* [`championforms_clipboard`](packages/championforms_clipboard/): multi-format
+  system clipboard (plain text, HTML and custom types) for every Flutter
+  platform. It does not depend on championforms.
+* [`championforms_documents`](packages/championforms_documents/): a rich
+  document builder whose documents embed live ChampionForms fields.
+
+Both are in early development (`0.1.0-dev`). Depending on `championforms` is
+unchanged, and the published package does not include them.
+
 ## Contributing
 
 Contributions, issues, and feature requests are welcome!

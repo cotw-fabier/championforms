@@ -1,0 +1,151 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Workspace members analyzed and tested, in dependency order. The
+  # championforms package itself is the repository root (".").
+  MEMBERS: >-
+    .
+    example
+    packages/championforms_clipboard
+    packages/championforms_clipboard/example
+    packages/championforms_documents
+    packages/championforms_documents/example
+
+jobs:
+  analyze-and-test:
+    name: Analyze and test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux desktop build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev ninja-build clang cmake pkg-config
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.x
+          cache: true
+
+      # Rust is only needed once championforms_clipboard has its native crate.
+      - name: Install Rust toolchain
+        if: hashFiles('packages/championforms_clipboard/rust/Cargo.toml') != ''
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install pinned Rust toolchain (rust-toolchain.toml)
+        if: hashFiles('packages/championforms_clipboard/rust/Cargo.toml') != ''
+        working-directory: packages/championforms_clipboard/rust
+        run: rustup show
+
+      - name: Cache cargo
+        if: hashFiles('packages/championforms_clipboard/rust/Cargo.toml') != ''
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages/championforms_clipboard/rust -> target
+
+      - name: Resolve the workspace
+        run: flutter pub get
+
+      # Only errors fail the build for now: the root and example/ carry a
+      # backlog of pre-existing warnings and infos.
+      - name: Analyze
+        run: |
+          for member in $MEMBERS; do
+            echo "::group::flutter analyze $member"
+            (cd "$member" && flutter analyze --no-fatal-infos --no-fatal-warnings)
+            echo "::endgroup::"
+          done
+
+      - name: Test
+        run: |
+          for member in $MEMBERS; do
+            if [ -d "$member/test" ]; then
+              echo "::group::flutter test $member"
+              (cd "$member" && flutter test)
+              echo "::endgroup::"
+            else
+              echo "No tests in $member, skipping."
+            fi
+          done
+
+      - name: Build clipboard example (desktop)
+        working-directory: packages/championforms_clipboard/example
+        run: |
+          case "$RUNNER_OS" in
+            macOS) flutter build macos --debug ;;
+            Windows) flutter build windows --debug ;;
+            Linux) flutter build linux --debug ;;
+          esac
+
+      - name: Build clipboard example (web)
+        if: runner.os == 'Linux'
+        working-directory: packages/championforms_clipboard/example
+        run: flutter build web
+
+  publish-dry-run:
+    name: Publish dry-run
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.x
+          cache: true
+
+      - name: Resolve the workspace
+        run: flutter pub get
+
+      # Pub exits 65 for warnings as well as errors. Warnings are expected
+      # (prerelease versions, the exact super_editor pin, the legacy `docs/`
+      # directory name), so only fail on validation errors.
+      #
+      # Members are published with GIT_CEILING_DIRECTORIES so pub does not see
+      # the enclosing repository: the root .pubignore excludes `packages/`,
+      # and pub applies ignore files from the git root down.
+      - name: dart pub publish --dry-run
+        run: |
+          status=0
+          for pkg in . packages/championforms_clipboard packages/championforms_documents; do
+            echo "::group::publish dry-run $pkg"
+            if [ "$pkg" = "." ]; then
+              out=$(dart pub publish --dry-run 2>&1) && code=0 || code=$?
+              if grep -qE '^(├|└)── (packages|\.github|\.claude)$' <<< "$out"; then
+                echo "::error::championforms archive contains packages/, .github/ or .claude/"; status=1
+              fi
+            else
+              out=$(cd "$pkg" && GIT_CEILING_DIRECTORIES="$GITHUB_WORKSPACE/packages" dart pub publish --dry-run 2>&1) && code=0 || code=$?
+            fi
+            echo "$out"
+            echo "::endgroup::"
+            if [ "$code" != 0 ] && [ "$code" != 65 ]; then
+              echo "::error::$pkg: dart pub publish --dry-run exited $code"; status=1
+            elif grep -q "missing some requirements" <<< "$out"; then
+              echo "::error::$pkg: package validation errors"; status=1
+            fi
+          done
+          exit $status

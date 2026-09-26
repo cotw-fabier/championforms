@@ -1,0 +1,35 @@
+name: championforms_documents
+description: "Rich document builder for ChampionForms: a block editor whose documents embed live ChampionForms fields, with rules, results and clipboard round-tripping."
+version: 0.1.0-dev.1
+homepage: "https://championsoftheweb.com"
+repository: "https://github.com/cotw-fabier/championforms/tree/main/packages/championforms_documents"
+issue_tracker: "https://github.com/cotw-fabier/championforms/issues"
+
+topics:
+  - forms
+  - editor
+  - rich-text
+  - documents
+
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+  flutter: ">=3.38.0"
+
+# Member of the repository-root pub workspace (see ../../pubspec.yaml).
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  championforms: ^0.8.0-dev.1
+  championforms_clipboard: ^0.1.0-dev.1
+  # Pinned exactly: stable super_editor 0.2.7 requires uuid ^3, which
+  # conflicts with championforms. This package stays a prerelease until
+  # super_editor ships a stable release.
+  super_editor: 0.3.0-dev.52
+  uuid: ^4.6.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

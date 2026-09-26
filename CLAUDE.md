@@ -50,6 +50,57 @@ flutter clean
 dart doc
 ```
 
+## Monorepo / Pub Workspace Layout
+
+The repository is a [pub workspace](https://dart.dev/tools/pub/workspaces).
+**The `championforms` package stays at the repository root** (so existing
+`path:` and `git:` consumers keep working); sibling packages live under
+`packages/`:
+
+```
+championforms/                             # repo root == championforms package
+├── pubspec.yaml                           # workspace: [...] members listed here
+├── pubspec.lock                           # the ONLY lockfile (untracked; library)
+├── .pubignore                             # replaces .gitignore for pub; excludes packages/
+├── lib/ test/ example/ docs/ tool/        # championforms itself (unchanged)
+├── packages/
+│   ├── championforms_clipboard/           # multi-format clipboard (no championforms dep)
+│   │   └── example/                       # championforms_clipboard_example
+│   └── championforms_documents/           # document builder (super_editor based)
+│       └── example/                       # championforms_documents_example (trial app)
+└── .github/workflows/ci.yaml
+```
+
+Every member has `resolution: workspace`, so a single `flutter pub get` at the
+root resolves everything. Member lockfiles and `.dart_tool/` are never
+committed. Members depend on each other by version constraint (e.g.
+`championforms: ^0.8.0-dev.1`), which the workspace satisfies with the local
+package. `packages/**` is excluded from the root `analysis_options.yaml`;
+each member has its own.
+
+### Per-package commands
+
+```bash
+flutter pub get                                   # at the root: whole workspace
+
+# championforms (root) and its example
+flutter analyze && flutter test
+(cd example && flutter analyze && flutter test)
+
+# championforms_clipboard and its example
+(cd packages/championforms_clipboard && flutter analyze && flutter test)
+(cd packages/championforms_clipboard/example && flutter run -d macos)
+
+# championforms_documents and its trial app
+(cd packages/championforms_documents && flutter analyze && flutter test)
+(cd packages/championforms_documents/example && flutter run -d macos)
+```
+
+Run `flutter test` only where a `test/` directory exists. CI
+(`.github/workflows/ci.yaml`) runs the same loop on Linux, macOS and Windows,
+builds the clipboard example for each desktop OS (plus web on Linux) and runs
+`dart pub publish --dry-run` for all three packages.
+
 ## Architecture Overview
 
 ### Two-Tier Export System
@@ -357,10 +408,27 @@ Minimum requirements:
 
 This is a published package on pub.dev: https://pub.dev/packages/championforms
 
-Current version: 0.6.0
+Current version: 0.8.0-dev.1 (development version; latest release 0.7.2). The
+final 0.8.0 is set at release time.
 
 When making changes, ensure:
 1. Version is updated in `pubspec.yaml`
 2. CHANGELOG.md is updated
 3. Breaking changes are clearly documented
 4. Migration guides are provided for API changes
+
+Release tags are per package: `championforms-vX.Y.Z`,
+`championforms_clipboard-vX.Y.Z`, `championforms_documents-vX.Y.Z`.
+
+Always check the archive before publishing:
+```bash
+# championforms (repo root). The root .pubignore replaces .gitignore for pub
+# and excludes packages/, .github/ and .claude/; keep it in sync with .gitignore.
+dart pub publish --dry-run
+
+# Workspace members: hide the enclosing git repo from pub, otherwise the root
+# .pubignore rule `packages/` hides the member's own files ("The pubspec is
+# hidden"). Each member has its own .pubignore for build outputs.
+cd packages/championforms_documents
+GIT_CEILING_DIRECTORIES="$(cd .. && pwd)" dart pub publish --dry-run
+```

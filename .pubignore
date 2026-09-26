@@ -1,0 +1,60 @@
+# .pubignore for the championforms package (repository root).
+#
+# IMPORTANT: once this file exists, pub no longer reads the root .gitignore
+# when building the published archive. Every rule from .gitignore is therefore
+# repeated below, followed by the monorepo-specific exclusions. Keep the two in
+# sync when .gitignore changes. (Nested .gitignore files, e.g. example/.gitignore,
+# are still honored.) Verify with `dart pub publish --dry-run`.
+
+# ---- Copied from .gitignore ----
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+.flutter-plugins
+.flutter-plugins-dependencies
+
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+# Libraries should not include pubspec.lock, per https://dart.dev/guides/libraries/private-files#pubspeclock.
+# This repo is a pub workspace: the only lockfile is the root one (untracked,
+# since championforms is a library). Members never get their own lockfile, so
+# ignore stray ones anywhere in the tree.
+pubspec.lock
+**/doc/api/
+.dart_tool/
+build/
+
+# Workspace members (packages/*) are covered by the unanchored rules above.
+# Rust build output for championforms_clipboard's native assets.
+packages/**/rust/target/
+
+# ---- Not shipped with championforms (monorepo members and repo tooling) ----
+# Sibling workspace packages are published separately.
+packages/
+# CI, agent and editor configuration.
+.github/
+.claude/
+.vscode/
+# Generated API docs (dart doc) if present.
+doc/api/
+.claude/worktrees/
