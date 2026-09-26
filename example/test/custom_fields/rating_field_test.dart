@@ -93,10 +93,9 @@ void main() {
         validateLive: true,
         validators: [
           form.Validator(
-            validator: (results) {
-              final value = results.grab('validated_rating').asInt();
-              return value != null && value >= 3;
-            },
+            // Validators receive the field's raw value (an int for
+            // RatingField), not a FieldResultAccessor.
+            validator: (value) => value is int && value >= 3,
             reason: 'Minimum rating of 3 stars required',
           ),
         ],
@@ -178,8 +177,10 @@ void main() {
 
     testWidgets('Selected rating displays filled stars',
         (WidgetTester tester) async {
-      // Arrange: Set initial rating programmatically
-      controller.updateFieldValue<int>('test_rating', 3);
+      // Arrange: Seed an initial rating programmatically. The field is not
+      // registered until the Form mounts, so use createFieldValue
+      // (updateFieldValue requires an existing field definition).
+      controller.createFieldValue<int>('test_rating', 3);
 
       await tester.pumpWidget(
         MaterialApp(

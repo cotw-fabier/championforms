@@ -12,6 +12,7 @@ import 'package:championforms/models/themes.dart';
 import 'package:championforms/widgets_internal/field_wiggle_animator.dart';
 import 'package:championforms/widgets_external/form_wrappers/simple_wrapper.dart';
 import 'package:flutter/material.dart' as flutter;
+import 'package:flutter/scheduler.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
 import 'package:championforms/models/field_types/formfieldbase.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
@@ -241,12 +242,34 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
     );
   }
 
+  bool _rebuildScheduled = false;
+
+  /// Rebuilds this form when the controller notifies.
+  ///
+  /// Notifications can arrive while the framework is building (e.g. a
+  /// registration from [didUpdateWidget], or a child field's own lifecycle),
+  /// where calling [setState] synchronously is not allowed. In that case the
+  /// rebuild is deferred to the end of the current frame. Everywhere else
+  /// (gesture handlers, async callbacks, post-frame callbacks) it rebuilds
+  /// synchronously.
+  ///
+  /// This deliberately does not use a zero-duration [Future.delayed]: that
+  /// leaves a real timer pending after every notification, which fails any
+  /// widget test that finishes on a plain `pump()` ("A Timer is still pending
+  /// even after the widget tree was disposed").
   void _rebuildOnControllerUpdate() {
-    Future.delayed(Duration.zero, () {
-      if (mounted) {
-        setState(() {});
-      }
-    });
+    if (!mounted) return;
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.persistentCallbacks) {
+      if (_rebuildScheduled) return;
+      _rebuildScheduled = true;
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        _rebuildScheduled = false;
+        if (mounted) setState(() {});
+      });
+      return;
+    }
+    setState(() {});
   }
 
   /// Registers [fieldDefs] with the controller, seeds their defaults, and
