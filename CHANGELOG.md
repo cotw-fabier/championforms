@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `form.FieldView`: renders one registered field outside a `form.Form`, with
+  the same theme resolution, state palette, layout, background and validation
+  wiggle a form uses. `Form` now draws every field, compound fields included,
+  through `FieldView`, so there is one render path. `FieldView` rebuilds only
+  when that field's value, focus, state or errors change. The field must be
+  registered first: `controller.addFields(form.FieldView.fieldsToRegister(field))`.
+- Field clipboard codecs. A field can describe its value for the clipboard as
+  plain text, HTML and restorable JSON data (`ClipboardFragment`,
+  `FieldClipboardCodec`):
+  - Built-in codecs for `TextField` (password fields are never copied), the
+    `OptionSelect` family (checklists with ☑/☐ for checkbox and chip fields,
+    the selected label for dropdowns and radios), `FileUpload` (names and
+    metadata, never bytes) and compound fields (`NameField`, `AddressField`).
+  - A per-field override, `clipboard:`, on every built-in field.
+  - Per-type defaults via `FormFieldRegistry.register(..., clipboard:)`,
+    `registerCompound(..., clipboard:)` and `registerClipboardCodec<T>()`,
+    looked up with `clipboardFor(Type)`. `resolveClipboard(field)` applies the
+    `field.clipboard ?? clipboardFor(type)` chain.
+  - `FormFieldDefaults.instance.clipboardEnabled` (default `true`) turns it off
+    app-wide.
+  - Helpers for restoring values: `OptionSelectClipboardCodec.optionsFor`,
+    `CompoundClipboardCodec.valueFrom` / `writeTo`.
+- Both additions are non-breaking. `clipboard` is an optional `Field`
+  constructor parameter and is kept off the abstract `copyWith` (as `colors`
+  and `animateValidationErrors` are), so existing custom `Field` subclasses
+  compile unchanged.
+
 ### Changed
 
 - Dependency sweep:
