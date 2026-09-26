@@ -84,8 +84,11 @@ abstract class FieldClipboardCodec {
   /// map is not something this codec wrote. Must not throw on hostile input;
   /// return null instead.
   ///
-  /// The returned value is what `FormController.updateFieldValue` expects for
-  /// the field type (a `String` for a text field, a `List<FieldOption>` for an
-  /// option select, and so on).
+  /// The returned value is JSON-shaped, because [data] carries no field
+  /// definition to resolve against. It is a `String` for a text field, the
+  /// selected option *values* (`List<String>`) for an option select (turn them
+  /// into `FieldOption`s with `OptionSelectClipboardCodec.optionsFor`), and so
+  /// on. Each built-in codec documents its shape and the controller call that
+  /// restores it.
   dynamic paste(Map<String, dynamic> data);
 }
