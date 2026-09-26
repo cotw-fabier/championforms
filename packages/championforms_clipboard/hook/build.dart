@@ -10,7 +10,7 @@ import 'package:native_toolchain_rust/native_toolchain_rust.dart';
 void main(List<String> args) async {
   await build(args, (input, output) async {
     if (!input.config.buildCodeAssets) return;
-    const rustOSes = {OS.macOS, OS.iOS, OS.windows, OS.linux};
+    final rustOSes = {OS.macOS, OS.iOS, OS.windows, OS.linux};
     if (!rustOSes.contains(input.config.code.targetOS)) return;
     await const RustBuilder(
       assetName: 'championforms_clipboard_native',
