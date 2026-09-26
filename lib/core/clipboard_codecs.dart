@@ -44,8 +44,8 @@ String clipboardHtmlEscape(String text) {
 
 /// Escapes [text] and turns its line breaks into `<br>`.
 String _escapeMultiline(String text) => clipboardHtmlEscape(
-      text.replaceAll('\r\n', '\n').replaceAll('\r', '\n'),
-    ).replaceAll('\n', '<br>');
+  text.replaceAll('\r\n', '\n').replaceAll('\r', '\n'),
+).replaceAll('\n', '<br>');
 
 /// Runs a paste body, turning any exception from hostile input into null.
 Object? _guard(Object? Function() body) {
@@ -105,9 +105,9 @@ class TextFieldClipboardCodec extends FieldClipboardCodec {
 
   @override
   dynamic paste(Map<String, dynamic> data) => _guard(() {
-        final value = _valueOf(data);
-        return value is String ? value : null;
-      });
+    final value = _valueOf(data);
+    return value is String ? value : null;
+  });
 }
 
 // ===========================================================================
@@ -198,7 +198,8 @@ class OptionSelectClipboardCodec extends FieldClipboardCodec {
           (selectedSet.contains(option.value) ? '☑' : '☐', option.label),
       ];
       plain = lines.map((l) => '${l.$1} ${l.$2}').join('\n');
-      html = '<ul>'
+      html =
+          '<ul>'
           '${lines.map((l) => '<li>${l.$1} ${clipboardHtmlEscape(l.$2)}</li>').join()}'
           '</ul>';
     } else {
@@ -210,20 +211,17 @@ class OptionSelectClipboardCodec extends FieldClipboardCodec {
     return ClipboardFragment(
       plainText: plain,
       html: html,
-      data: {
-        'type': _typeName(field, 'optionSelect'),
-        'value': selectedValues,
-      },
+      data: {'type': _typeName(field, 'optionSelect'), 'value': selectedValues},
     );
   }
 
   @override
   dynamic paste(Map<String, dynamic> data) => _guard(() {
-        final value = _valueOf(data);
-        if (value is! List) return null;
-        if (value.any((v) => v is! String)) return null;
-        return List<String>.from(value);
-      });
+    final value = _valueOf(data);
+    if (value is! List) return null;
+    if (value.any((v) => v is! String)) return null;
+    return List<String>.from(value);
+  });
 }
 
 // ===========================================================================
@@ -264,7 +262,8 @@ class FileUploadClipboardCodec extends FieldClipboardCodec {
 
     return ClipboardFragment(
       plainText: names.join('\n'),
-      html: '<ul>'
+      html:
+          '<ul>'
           '${names.map((n) => '<li>${clipboardHtmlEscape(n)}</li>').join()}'
           '</ul>',
       data: {'type': _typeName(field, 'fileUpload'), 'value': files},
@@ -272,10 +271,10 @@ class FileUploadClipboardCodec extends FieldClipboardCodec {
   }
 
   static Map<String, dynamic> _metadata(FileModel file) => {
-        'name': file.fileName,
-        'mimeType': file.mimeData?.mime,
-        'size': file.fileBytes?.length,
-      };
+    'name': file.fileName,
+    'mimeType': file.mimeData?.mime,
+    'size': file.fileBytes?.length,
+  };
 
   @override
   dynamic paste(Map<String, dynamic> data) => _guard(() => _paste(data));
@@ -329,7 +328,9 @@ class CompoundClipboardCodec extends FieldClipboardCodec {
     final prefix = '${field.id}_';
     return field
         .buildSubFields()
-        .map((f) => f.id.startsWith(prefix) ? f.id.substring(prefix.length) : f.id)
+        .map(
+          (f) => f.id.startsWith(prefix) ? f.id.substring(prefix.length) : f.id,
+        )
         .toList();
   }
 
@@ -341,7 +342,8 @@ class CompoundClipboardCodec extends FieldClipboardCodec {
   ) {
     return {
       for (final suffix in _suffixes(field))
-        suffix: controller
+        suffix:
+            controller
                 .getFieldValueOrNull<Object>(subFieldId(field, suffix))
                 ?.toString() ??
             '',
@@ -373,7 +375,9 @@ class CompoundClipboardCodec extends FieldClipboardCodec {
     final raw = <String, String>{};
     (value as Map?)?.forEach((key, v) {
       if (key is! String) return;
-      final suffix = key.startsWith(prefix) ? key.substring(prefix.length) : key;
+      final suffix = key.startsWith(prefix)
+          ? key.substring(prefix.length)
+          : key;
       raw[suffix] = v?.toString() ?? '';
     });
 
@@ -383,16 +387,12 @@ class CompoundClipboardCodec extends FieldClipboardCodec {
         if (raw.containsKey(suffix)) suffix: raw[suffix]!,
       ...raw,
     };
-    final joined =
-        ordered.values.where((v) => v.isNotEmpty).join(', ');
+    final joined = ordered.values.where((v) => v.isNotEmpty).join(', ');
 
     return ClipboardFragment(
       plainText: joined,
       html: '<span>${_escapeMultiline(joined)}</span>',
-      data: {
-        'type': _typeName(field, 'compound'),
-        'value': ordered,
-      },
+      data: {'type': _typeName(field, 'compound'), 'value': ordered},
     );
   }
 

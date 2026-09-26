@@ -45,8 +45,9 @@ String prefixSubFieldId(String compoundId, String subFieldId) {
 /// sub-field's `copyWith`. Returns an empty list, with a debug warning, when
 /// the compound type was never registered.
 List<Field> expandCompoundField(CompoundField compoundField) {
-  final registration = FormFieldRegistry.instance
-      .getCompoundRegistrationByType(compoundField.runtimeType);
+  final registration = FormFieldRegistry.instance.getCompoundRegistrationByType(
+    compoundField.runtimeType,
+  );
 
   if (registration == null) {
     debugPrint(

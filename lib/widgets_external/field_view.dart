@@ -72,9 +72,9 @@ class FieldView extends StatefulWidget {
   /// in a `FieldView`: the field itself and, for a [CompoundField], its
   /// prefixed sub-fields (exactly as a `Form` registers them).
   static List<Field> fieldsToRegister(Field field) => [
-        field,
-        if (field is CompoundField) ...expandCompoundField(field),
-      ];
+    field,
+    if (field is CompoundField) ...expandCompoundField(field),
+  ];
 
   @override
   State<FieldView> createState() => _FieldViewState();
@@ -185,7 +185,8 @@ class _FieldViewState extends State<FieldView> {
         ? _buildCompound(context, field, baseTheme)
         : _buildField(context, field, baseTheme);
 
-    final bool animateErrors = field.animateValidationErrors ??
+    final bool animateErrors =
+        field.animateValidationErrors ??
         FormFieldDefaults.instance.animateValidationErrors;
 
     return animateErrors
@@ -199,12 +200,15 @@ class _FieldViewState extends State<FieldView> {
 
   Widget _buildField(BuildContext context, Field field, FormTheme baseTheme) {
     final controller = widget.controller;
-    final mergedTheme =
-        field.theme != null ? baseTheme.copyWith(theme: field.theme) : baseTheme;
+    final mergedTheme = field.theme != null
+        ? baseTheme.copyWith(theme: field.theme)
+        : baseTheme;
 
     final FieldState fieldState = controller.getFieldState(field.id);
-    final FieldColorScheme fieldColors =
-        colorsForFieldState(mergedTheme, fieldState);
+    final FieldColorScheme fieldColors = colorsForFieldState(
+      mergedTheme,
+      fieldState,
+    );
 
     Widget outputWidget = FormFieldRegistry.instance.buildField(
       context,
@@ -281,7 +285,8 @@ class _FieldViewState extends State<FieldView> {
       // sub-fields may carry their own as well.
       errors = [
         ...controller.findErrors(compoundField.id),
-        for (final subField in _subFields) ...controller.findErrors(subField.id),
+        for (final subField in _subFields)
+          ...controller.findErrors(subField.id),
       ];
       if (errors.isEmpty) errors = null;
     }
