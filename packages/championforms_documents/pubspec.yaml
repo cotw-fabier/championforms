@@ -28,6 +28,7 @@ dependencies:
   # super_editor ships a stable release.
   super_editor: 0.3.0-dev.52
   uuid: ^4.6.0
+  collection: ^1.19.0
 
 dev_dependencies:
   flutter_test:
