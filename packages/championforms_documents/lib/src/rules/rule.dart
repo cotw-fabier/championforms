@@ -136,6 +136,17 @@ final class DocIssue {
   final int? end;
 
   @override
+  bool operator ==(Object other) =>
+      other is DocIssue &&
+      other.message == message &&
+      other.nodeId == nodeId &&
+      other.start == start &&
+      other.end == end;
+
+  @override
+  int get hashCode => Object.hash(message, nodeId, start, end);
+
+  @override
   String toString() => 'DocIssue($message${nodeId == null ? '' : ' @$nodeId'})';
 }
 

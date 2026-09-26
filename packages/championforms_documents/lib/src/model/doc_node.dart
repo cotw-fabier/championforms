@@ -17,8 +17,17 @@ sealed class DocNode {
 
   Map<String, dynamic> toJson();
 
-  /// Throws [FormatException] for an unknown type or wrong shape.
+  /// Throws [FormatException] for an unknown type or wrong shape, never a
+  /// [TypeError]: documents and pasted payloads are untrusted input.
   static DocNode fromJson(Map<String, dynamic> json) {
+    try {
+      return _fromJson(json);
+    } on TypeError catch (e) {
+      throw FormatException('Malformed node: $e');
+    }
+  }
+
+  static DocNode _fromJson(Map<String, dynamic> json) {
     final id = json['id'];
     if (id is! String || id.isEmpty) {
       throw FormatException('Node needs a non-empty "id": $json');

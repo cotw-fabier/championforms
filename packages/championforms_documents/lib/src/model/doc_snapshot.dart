@@ -34,8 +34,17 @@ final class DocSnapshot {
     'nodes': [for (final n in nodes) n.toJson()],
   };
 
-  /// Throws [FormatException] for a newer or malformed schema.
+  /// Throws [FormatException] for a newer or malformed schema, never a
+  /// [TypeError].
   factory DocSnapshot.fromJson(Map<String, dynamic> json) {
+    try {
+      return DocSnapshot._fromJson(json);
+    } on TypeError catch (e) {
+      throw FormatException('Malformed document: $e');
+    }
+  }
+
+  factory DocSnapshot._fromJson(Map<String, dynamic> json) {
     final version = json['schemaVersion'] ?? 1;
     if (version is! int || version < 1 || version > currentSchemaVersion) {
       throw FormatException('Unsupported document schemaVersion: $version');

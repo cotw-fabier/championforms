@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:championforms/championforms.dart' as form;
 
 import 'doc_node.dart';
@@ -39,8 +41,36 @@ final class DocClipboardPayload {
       'fields': {for (final e in fields.entries) e.key: e.value.toJson()},
   };
 
-  /// Throws [FormatException] on a wrong shape or unsupported version.
+  /// Decodes a payload as read from the clipboard, enforcing
+  /// [maxEncodedLength] *before* parsing. Throws [FormatException] on
+  /// anything wrong; this is the entry point for pasted data.
+  static DocClipboardPayload decode(String encoded) {
+    if (encoded.length > maxEncodedLength) {
+      throw FormatException(
+        'Clipboard payload too large (${encoded.length} > $maxEncodedLength)',
+      );
+    }
+    // jsonDecode itself throws FormatException on malformed input.
+    final Object? json = jsonDecode(encoded);
+    if (json is! Map<String, dynamic>) {
+      throw const FormatException('Clipboard payload must be a JSON object');
+    }
+    return DocClipboardPayload.fromJson(json);
+  }
+
+  String encode() => jsonEncode(toJson());
+
+  /// Throws [FormatException] on a wrong shape or unsupported version, never
+  /// a [TypeError].
   factory DocClipboardPayload.fromJson(Map<String, dynamic> json) {
+    try {
+      return DocClipboardPayload._fromJson(json);
+    } on TypeError catch (e) {
+      throw FormatException('Malformed clipboard payload: $e');
+    }
+  }
+
+  factory DocClipboardPayload._fromJson(Map<String, dynamic> json) {
     final version = json['schemaVersion'];
     if (version is! int || version < 1 || version > currentSchemaVersion) {
       throw FormatException('Unsupported clipboard schemaVersion: $version');
