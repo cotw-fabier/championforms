@@ -179,12 +179,11 @@ pub fn decode(bytes: &[u8]) -> Option<String> {
     }
     let h = parse_header(bytes);
 
-    if let Some((s, e)) = range(h.start_fragment, h.end_fragment, len) {
-        if s >= h.end {
-            if let Ok(fragment) = std::str::from_utf8(&bytes[s..e]) {
-                return Some(fragment.to_owned());
-            }
-        }
+    if let Some((s, e)) = range(h.start_fragment, h.end_fragment, len)
+        && s >= h.end
+        && let Ok(fragment) = std::str::from_utf8(&bytes[s..e])
+    {
+        return Some(fragment.to_owned());
     }
 
     let html_range = range(h.start_html, h.end_html, len)
@@ -375,7 +374,7 @@ mod tests {
             "Version:0.9\r\nStartHTML:0000000001\r\nEndHTML:0000009999\r\nStartFragment:0000000138\r\nEndFragment:0000000139\r\n{html}"
         );
         // Sanity: the bogus range really is invalid UTF-8.
-        assert!(std::str::from_utf8(&payload.as_bytes()[138..139]).is_err());
+        assert!(!payload.is_char_boundary(138));
         assert_eq!(decode(payload.as_bytes()).as_deref(), Some("日本"));
     }
 
