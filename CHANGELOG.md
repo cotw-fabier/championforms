@@ -64,6 +64,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Autocomplete dropdowns now close when you tap outside the field and the
+  dropdown, on every platform. On touch platforms Flutter keeps a text field
+  focused after an outside tap, so the dropdown used to stay open until an
+  option was picked or the field was left. The field keeps focus (and the
+  keyboard stays up), so typing again reopens the suggestions.
 - Autocomplete keyboard navigation now works. The dropdown recreated each
   option's focus node on every overlay rebuild, so Tab/Arrow Down moved focus
   to an option that was disposed a frame later and focus bounced back to the

@@ -42,10 +42,9 @@ void main() {
 
       expect(find.text('Test Option'), findsOneWidget);
 
-      // The overlay closes when the field loses focus. Flutter's EditableText
-      // unfocuses on an outside mouse click (desktop/web); on mobile it keeps
-      // focus for an outside touch by platform convention, so click with a
-      // mouse here.
+      // A mouse click outside closes the dropdown (and, on desktop/web,
+      // EditableText also unfocuses the field). Touch taps are covered in
+      // autocomplete_tap_outside_test.dart.
       await tester.tap(
         find.byKey(const Key('outside-area')),
         kind: PointerDeviceKind.mouse,

@@ -69,16 +69,14 @@ class AutocompleteWrapper extends StatefulWidget {
   final ValueNotifier<String>? valueNotifier;
 
   @override
-  State<AutocompleteWrapper> createState() =>
-      _AutocompleteWrapperState();
+  State<AutocompleteWrapper> createState() => _AutocompleteWrapperState();
 }
 
 /// State class for AutocompleteWrapper.
 ///
 /// Manages overlay lifecycle, positioning calculations, keyboard navigation,
 /// focus tracking, and debounced option updates.
-class _AutocompleteWrapperState
-    extends State<AutocompleteWrapper> {
+class _AutocompleteWrapperState extends State<AutocompleteWrapper> {
   /// LayerLink connects the field widget to the overlay for positioning.
   final LayerLink _layerLink = LayerLink();
 
@@ -203,9 +201,11 @@ class _AutocompleteWrapperState
     // Otherwise, filter options locally from initialOptions
     setState(() {
       _autoCompleteOptions = widget.autoComplete.initialOptions
-          .where((option) =>
-              option.value.toLowerCase().contains(value.toLowerCase()) ||
-              option.title.toLowerCase().contains(value.toLowerCase()))
+          .where(
+            (option) =>
+                option.value.toLowerCase().contains(value.toLowerCase()) ||
+                option.title.toLowerCase().contains(value.toLowerCase()),
+          )
           .toList();
     });
 
@@ -260,7 +260,8 @@ class _AutocompleteWrapperState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      final shouldShow = widget.context.getFocusNode().hasFocus &&
+      final shouldShow =
+          widget.context.getFocusNode().hasFocus &&
           widget.autoComplete.type == AutoCompleteType.dropdown &&
           _autoCompleteOptions.isNotEmpty &&
           !_updatedFromAutoComplete;
@@ -302,15 +303,14 @@ class _AutocompleteWrapperState
   void _createAutoCompleteItemFocusNodes() {
     _disposeAutoCompleteItemFocusNodes();
     _overlayOptions = List.of(_autoCompleteOptions);
-    _autoCompleteItemFocusNodes = List.generate(
-      _overlayOptions.length,
-      (index) {
-        final node = FocusNode();
-        // Add focus listener for screen reader announcements
-        _addFocusListenerForAnnouncement(node, index);
-        return node;
-      },
-    );
+    _autoCompleteItemFocusNodes = List.generate(_overlayOptions.length, (
+      index,
+    ) {
+      final node = FocusNode();
+      // Add focus listener for screen reader announcements
+      _addFocusListenerForAnnouncement(node, index);
+      return node;
+    });
   }
 
   /// Disposes all autocomplete item focus nodes and clears the list.
@@ -451,7 +451,8 @@ class _AutocompleteWrapperState
 
     // Calculate screen height accounting for safe areas
     final mediaQuery = MediaQuery.of(context);
-    final screenHeight = mediaQuery.size.height -
+    final screenHeight =
+        mediaQuery.size.height -
         mediaQuery.padding.top -
         mediaQuery.padding.bottom;
 
@@ -490,68 +491,78 @@ class _AutocompleteWrapperState
             showWhenUnlinked: false,
             offset: Offset(
               0,
-              goUp
-                  ? -height - dropdownMargin
-                  : size.height + dropdownMargin,
+              goUp ? -height - dropdownMargin : size.height + dropdownMargin,
             ),
-            child: Material(
-              color: widget.context.colors.surfaceBackground,
-              textStyle: TextStyle(color: widget.context.colors.surfaceText),
-              elevation: 4.0,
-              child: Semantics(
-                liveRegion: true,
-                label: '${_overlayOptions.length} options available',
-                child: FocusTraversalGroup(
-                  policy: ReadingOrderTraversalPolicy(),
-                  child: Column(
-                    children: [
-                      // Hidden semantics widget for dynamic announcements
-                      if (_currentSemanticAnnouncement.isNotEmpty)
-                        Semantics(
-                          liveRegion: true,
-                          label: _currentSemanticAnnouncement,
-                          child: const SizedBox.shrink(),
-                        ),
-                      Expanded(
-                        child: ListView.builder(
-                          controller: _scrollController,
-                          reverse: goUp,
-                          shrinkWrap: true,
-                          padding: EdgeInsets.zero,
-                          itemCount: _overlayOptions.length,
-                          itemBuilder: (context, index) {
-                            final option = _overlayOptions[index];
-                            // Use StatefulBuilder to rebuild only this item when focus changes
-                            return StatefulBuilder(
-                              builder: (context, setItemState) {
-                                return Focus(
-                                  focusNode: _autoCompleteItemFocusNodes[index],
-                                  onFocusChange: (hasFocus) {
-                                    // Rebuild this specific ListTile when focus changes
-                                    setItemState(() {});
-                                  },
-                                  onKeyEvent: (node, event) =>
-                                      _handleOptionKeyEvent(event, index),
-                                  child: Semantics(
-                                    label:
-                                        '${option.title}, option ${index + 1} of ${_overlayOptions.length}',
-                                    button: true,
-                                    child: ListTile(
-                                      title: Text(option.title),
-                                      tileColor: _autoCompleteItemFocusNodes[index]
-                                              .hasFocus
-                                          ? widget.context.colors.textBackgroundColor
-                                          : null,
-                                      onTap: () => _optionSelectedCallback(option),
+            // Inside the follower, not around it: tap regions hit-test in
+            // their own coordinates, and the follower paints the dropdown
+            // away from its layout slot.
+            child: TapRegion(
+              groupId: _tapRegionGroup,
+              child: Material(
+                color: widget.context.colors.surfaceBackground,
+                textStyle: TextStyle(color: widget.context.colors.surfaceText),
+                elevation: 4.0,
+                child: Semantics(
+                  liveRegion: true,
+                  label: '${_overlayOptions.length} options available',
+                  child: FocusTraversalGroup(
+                    policy: ReadingOrderTraversalPolicy(),
+                    child: Column(
+                      children: [
+                        // Hidden semantics widget for dynamic announcements
+                        if (_currentSemanticAnnouncement.isNotEmpty)
+                          Semantics(
+                            liveRegion: true,
+                            label: _currentSemanticAnnouncement,
+                            child: const SizedBox.shrink(),
+                          ),
+                        Expanded(
+                          child: ListView.builder(
+                            controller: _scrollController,
+                            reverse: goUp,
+                            shrinkWrap: true,
+                            padding: EdgeInsets.zero,
+                            itemCount: _overlayOptions.length,
+                            itemBuilder: (context, index) {
+                              final option = _overlayOptions[index];
+                              // Use StatefulBuilder to rebuild only this item when focus changes
+                              return StatefulBuilder(
+                                builder: (context, setItemState) {
+                                  return Focus(
+                                    focusNode:
+                                        _autoCompleteItemFocusNodes[index],
+                                    onFocusChange: (hasFocus) {
+                                      // Rebuild this specific ListTile when focus changes
+                                      setItemState(() {});
+                                    },
+                                    onKeyEvent: (node, event) =>
+                                        _handleOptionKeyEvent(event, index),
+                                    child: Semantics(
+                                      label:
+                                          '${option.title}, option ${index + 1} of ${_overlayOptions.length}',
+                                      button: true,
+                                      child: ListTile(
+                                        title: Text(option.title),
+                                        tileColor:
+                                            _autoCompleteItemFocusNodes[index]
+                                                .hasFocus
+                                            ? widget
+                                                  .context
+                                                  .colors
+                                                  .textBackgroundColor
+                                            : null,
+                                        onTap: () =>
+                                            _optionSelectedCallback(option),
+                                      ),
                                     ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
+                                  );
+                                },
+                              );
+                            },
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -591,6 +602,20 @@ class _AutocompleteWrapperState
     _removeOverlay(keepAway: true, requestFocus: false);
   }
 
+  /// Groups the field and its dropdown into one tap region, so a tap on
+  /// either counts as "inside" and a tap anywhere else dismisses the dropdown.
+  final Object _tapRegionGroup = Object();
+
+  /// Dismisses the dropdown on a tap outside the field and the dropdown.
+  ///
+  /// On touch platforms an outside tap does not unfocus a text field, so
+  /// without this the dropdown stayed open until an option was chosen or the
+  /// field was left. Focus (and the soft keyboard) is left alone on purpose:
+  /// typing again reopens the suggestions, as it does after Escape.
+  void _handleTapOutside(PointerDownEvent event) {
+    if (_overlayEntry != null) _removeOverlay(requestFocus: false);
+  }
+
   /// Removes the overlay entry and cleans up focus nodes.
   ///
   /// If [requestFocus] is true, returns focus to the field with cursor at end.
@@ -615,6 +640,14 @@ class _AutocompleteWrapperState
 
   @override
   Widget build(BuildContext context) {
+    return TapRegion(
+      groupId: _tapRegionGroup,
+      onTapOutside: _handleTapOutside,
+      child: _buildTarget(),
+    );
+  }
+
+  Widget _buildTarget() {
     return CompositedTransformTarget(
       link: _layerLink,
       child: Focus(
