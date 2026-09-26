@@ -23,11 +23,11 @@ final class DocMark {
   final String? href;
 
   Map<String, dynamic> toJson() => {
-        'type': type.name,
-        'start': start,
-        'end': end,
-        if (href != null) 'href': href,
-      };
+    'type': type.name,
+    'start': start,
+    'end': end,
+    if (href != null) 'href': href,
+  };
 
   factory DocMark.fromJson(Map<String, dynamic> json) {
     final type = DocMarkType.values.asNameMap()[json['type']];
@@ -36,7 +36,12 @@ final class DocMark {
     if (type == null || start is! int || end is! int || start > end) {
       throw FormatException('Invalid mark: $json');
     }
-    return DocMark(type: type, start: start, end: end, href: json['href'] as String?);
+    return DocMark(
+      type: type,
+      start: start,
+      end: end,
+      href: json['href'] as String?,
+    );
   }
 
   @override
@@ -78,16 +83,17 @@ final class DocText {
   }
 
   Map<String, dynamic> toJson() => {
-        'text': text,
-        if (marks.isNotEmpty) 'marks': [for (final m in marks) m.toJson()],
-      };
+    'text': text,
+    if (marks.isNotEmpty) 'marks': [for (final m in marks) m.toJson()],
+  };
 
   factory DocText.fromJson(Map<String, dynamic> json) {
     final text = json['text'];
     if (text is! String) throw FormatException('Text needs "text": $json');
     final marks = (json['marks'] as List?) ?? const [];
     return DocText(text, [
-      for (final m in marks) DocMark.fromJson((m as Map).cast<String, dynamic>()),
+      for (final m in marks)
+        DocMark.fromJson((m as Map).cast<String, dynamic>()),
     ]);
   }
 
