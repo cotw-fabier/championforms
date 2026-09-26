@@ -5,6 +5,34 @@ All notable changes to ChampionForms will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Dependency sweep:
+  - `desktop_drop` `^0.7.0` → `^0.8.4`
+  - `image_picker` `^1.2.1` → `^1.2.3`
+  - `mime` `^2.0.0` → `^2.1.0`
+  - `uuid` `^4.5.1` → `^4.6.0`
+  - `cross_file` `^0.3.4+2` → `^0.3.5+5`
+  - dev: `flutter_lints` `^5.0.0` → `^6.0.0`
+  - dev: removed the unused `custom_lint` (no lint plugin was configured, and
+    it held `analyzer` at 8.x)
+- `cross_file` stays on 0.3.x for now. Every `desktop_drop` release (up to
+  0.8.4) requires `cross_file ^0.3.4+2`, and `file_picker` 13.1.0 requires
+  `^0.3.5+4`, so 0.4.0 can't resolve yet. `XFile` is used only internally
+  (drag-and-drop and picker plumbing) and is not part of ChampionForms' public
+  API. `FileModel` holds bytes, name and MIME data only, so the eventual move
+  to cross_file 0.4 won't break the public API.
+- Minimum SDK raised to Dart `>=3.10.0` / Flutter `>=3.38.0`. This matches what
+  `file_picker` 13, `image_picker` 1.2.3 and `cross_file` 0.3.5+5 already
+  required, so the effective floor doesn't change. The old `>=3.35.0` was
+  never reachable.
+- Android hosts: `desktop_drop` 0.8.x uses built-in Kotlin on Android Gradle
+  Plugin 9+. On AGP below 9, the app must apply Kotlin Gradle Plugin 2.0.0 or
+  later.
+- No changes to ChampionForms' Dart API.
+
 ## [0.7.2] - 2026-09-18
 
 ### Changed

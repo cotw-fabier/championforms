@@ -159,9 +159,9 @@ dependencies:
   flutter:
     sdk: flutter
   # Required for File Uploads:
-  file_picker: ^10.0.0 # Or latest compatible version
-  desktop_drop: ^0.7.0 # Or latest compatible version (for drag-and-drop on desktop)
-  mime: ^2.0.0 # Or latest compatible version
+  file_picker: ^13.1.0 # Or latest compatible version
+  desktop_drop: ^0.8.4 # Or latest compatible version (for drag-and-drop on desktop)
+  mime: ^2.1.0 # Or latest compatible version
 
   # Other dependencies if needed (e.g., email_validator for default email check)
   email_validator: ^3.0.0

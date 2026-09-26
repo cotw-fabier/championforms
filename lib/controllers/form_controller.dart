@@ -966,7 +966,7 @@ class FormController extends ChangeNotifier {
       if (fieldDef?.onChange != null) {
         try {
           final results = FormResults.getResults(
-              controller: this, fields: [if (fieldDef != null) fieldDef]);
+              controller: this, fields: [?fieldDef]);
           fieldDef!.onChange!(results);
         } catch (e) {
           // Silent error handling - onChange is external code

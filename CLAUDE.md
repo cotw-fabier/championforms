@@ -32,10 +32,7 @@ flutter analyze
 flutter analyze lib/controllers/form_controller.dart
 
 # Format code
-flutter format lib/
-
-# Run custom lints
-dart run custom_lint
+dart format lib/
 ```
 
 ### Development
@@ -346,15 +343,15 @@ form.Row(
 ## Dependencies
 
 Key dependencies:
-- `file_picker` (^10.3.2) - File selection
-- `desktop_drop` (^0.7.0) - Drag-and-drop for desktop platforms
+- `file_picker` (^13.1.0) - File selection
+- `desktop_drop` (^0.8.4) - Drag-and-drop for desktop platforms
 - `email_validator` (^3.0.0) - Email validation
-- `uuid` (^4.5.1) - Unique ID generation
-- `mime` (^2.0.0) - MIME type detection
+- `uuid` (^4.6.0) - Unique ID generation
+- `mime` (^2.1.0) - MIME type detection
 
 Minimum requirements:
-- Dart SDK: >=3.0.5 <4.0.0
-- Flutter SDK: >=3.35.0
+- Dart SDK: >=3.10.0 <4.0.0
+- Flutter SDK: >=3.38.0
 
 ## Package Publishing
 
