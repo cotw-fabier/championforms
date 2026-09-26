@@ -1,0 +1,35 @@
+[package]
+name = "championforms_clipboard_native"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[lib]
+# native_toolchain_rust requires both; Flutter links the cdylib everywhere.
+crate-type = ["staticlib", "cdylib"]
+
+[dependencies]
+
+# --- Apple (stage S2c) -------------------------------------------------------
+[target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
+objc2 = "0.6"
+objc2-foundation = "0.3"
+dispatch2 = "0.3"
+libc = "0.2"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2-app-kit = "0.3"
+
+[target.'cfg(target_os = "ios")'.dependencies]
+objc2-ui-kit = "0.3"
+
+# --- Windows (stage S2d) -----------------------------------------------------
+
+# --- Linux (stage S2d) -------------------------------------------------------
+
+[profile.release]
+panic = "unwind"
+lto = true
+codegen-units = 1
+strip = true
