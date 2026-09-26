@@ -11,6 +11,8 @@ use std::cell::RefCell;
 use std::ffi::{CStr, CString, c_char};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
+#[cfg_attr(not(target_os = "windows"), allow(dead_code))]
+mod cf_html;
 mod format;
 mod platform;
 
