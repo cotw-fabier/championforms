@@ -2448,7 +2448,16 @@ class FormController extends ChangeNotifier {
           currentFieldErrors.add(newError);
         }
       } catch (e) {
-        // Silent error handling - validator execution is external code
+        // A validator that throws is a failed validation, exactly as on the
+        // submit path (FormResults.getResults). Swallowing it here let a
+        // broken validator silently pass live/on-blur validation while the
+        // same field failed on submit.
+        debugPrint("Validation error for field $fieldId: $e");
+        currentFieldErrors.add(FormBuilderError(
+          reason: "Validation failed: $e",
+          fieldId: fieldId,
+          validatorPosition: i,
+        ));
       }
     }
 
