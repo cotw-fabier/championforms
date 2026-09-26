@@ -227,8 +227,6 @@ class _FileUploadContentState extends State<_FileUploadContent> {
   }
 
   Future<void> _pickWithFilePicker(FileUpload field) async {
-    FilePickerResult? result;
-
     FileType fileType;
     List<String>? allowedExtensions;
 
@@ -247,27 +245,30 @@ class _FileUploadContentState extends State<_FileUploadContent> {
       allowedExtensions = null;
     }
 
+    // file_picker 12 made picking static and split single from multiple. It
+    // returns an empty list, not null, when the person cancels.
+    final List<PlatformFile> picked;
     if (field.multiselect) {
-      result = await FilePicker.platform.pickFiles(
+      picked = await FilePicker.pickFiles(
         type: fileType,
         allowedExtensions: allowedExtensions,
-        allowMultiple: true,
       );
     } else {
-      result = await FilePicker.platform.pickFiles(
+      final one = await FilePicker.pickFile(
         type: fileType,
         allowedExtensions: allowedExtensions,
       );
+      picked = one == null ? const <PlatformFile>[] : <PlatformFile>[one];
     }
 
-    if (result != null) {
+    if (picked.isNotEmpty) {
       // Build all options first, then set once
       final baseFiles = field.clearOnUpload
           ? <FieldOption>[]
           : (widget.context.getValue<List<FieldOption>>() ?? []);
 
       final newOptions = <FieldOption>[];
-      for (final xfile in result.xFiles) {
+      for (final xfile in picked.map((f) => f.xFile)) {
         final option = await _buildFileOption(xfile, field);
         if (option != null) newOptions.add(option);
       }

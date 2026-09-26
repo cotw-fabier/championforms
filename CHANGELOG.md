@@ -5,6 +5,17 @@ All notable changes to ChampionForms will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2026-09-18
+
+### Changed
+
+- Requires `file_picker ^13.1.0` (was `^10.3.2`). file_picker 10 depends on
+  `win32 ^5`, which cannot resolve alongside packages that need `win32 ^6`
+  (Serverpod 4, among others), and its Windows code is compiled on every
+  platform that has `dart:ffi`. file_picker 12+ drops win32. The file upload
+  field now uses the static `FilePicker.pickFiles` / `FilePicker.pickFile` API
+  and reads each result's `xFile`. No change to ChampionForms' public API.
+
 ## [0.7.1] - 2026-08-11
 
 ### Fixed
