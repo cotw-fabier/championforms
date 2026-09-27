@@ -6,6 +6,21 @@ import 'package:championforms/models/multiselect_option.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/widgets.dart';
 
+/// Marks a field whose value is computed from other fields — an extracted
+/// value, a total, a derived flag.
+///
+/// Its value is part of the answer, so it is collected by
+/// [FormResults.getResults] and included by [FormResults.toJson] (unless
+/// `includeDerived: false`). It is left out of
+/// [FormController.exportValues]: a saved draft holds only the inputs, and
+/// the derived values are recomputed from them after a load, never written
+/// back from stale data.
+///
+/// ```dart
+/// class TotalField extends form.Field implements form.DerivedValueField { … }
+/// ```
+abstract interface class DerivedValueField {}
+
 // --- Base class for type erasure in lists ---
 abstract class BaseFieldResults {
   final String id;
@@ -735,6 +750,72 @@ class FormResults {
   bool hasField(String id) {
     return fieldDefinitions.containsKey(id);
   }
+
+  /// The collected values as JSON-encodable data, keyed by field id — what
+  /// a submission would send.
+  ///
+  /// Each value goes through [valueToJson]. Hidden fields are not in the
+  /// results, so they are not here either (for a draft that keeps them, use
+  /// [FormController.exportValues]). Values of [DerivedValueField]s are
+  /// included unless [includeDerived] is false. Errors are not part of the
+  /// output; read [errorState] and [formErrors] for those.
+  ///
+  /// ```dart
+  /// final results = form.FormResults.getResults(controller: controller);
+  /// if (!results.errorState) await api.submit(jsonEncode(results.toJson()));
+  /// ```
+  Map<String, Object?> toJson({bool includeDerived = true}) => {
+        for (final entry in results.entries)
+          if (includeDerived ||
+              fieldDefinitions[entry.key] is! DerivedValueField)
+            entry.key: valueToJson(entry.value),
+      };
+
+  /// [value] as JSON-encodable data:
+  /// - `null`, `String`, `num` and `bool` pass through;
+  /// - a [FieldOption] becomes its `value`, unless it carries a [FileModel]
+  ///   (a file upload), which becomes its metadata;
+  /// - a [FileModel] becomes `{name, mimeType, size}` — never the bytes;
+  ///   `mimeType` and `size` are omitted when unknown;
+  /// - a [DateTime] becomes its ISO 8601 string;
+  /// - maps and iterables are converted element by element (map keys become
+  ///   strings);
+  /// - any other object with a `toJson()` method (a document snapshot, say)
+  ///   becomes that method's output, itself converted;
+  /// - anything else becomes its `toString()`.
+  static Object? valueToJson(Object? value) {
+    switch (value) {
+      case null || String() || num() || bool():
+        return value;
+      case FieldOption(additionalData: final FileModel file):
+        return _fileToJson(file);
+      case FieldOption():
+        return value.value;
+      case FileModel():
+        return _fileToJson(value);
+      case DateTime():
+        return value.toIso8601String();
+      case Map():
+        return {
+          for (final e in value.entries) '${e.key}': valueToJson(e.value),
+        };
+      case Iterable():
+        return [for (final v in value) valueToJson(v)];
+    }
+    Object? json;
+    try {
+      json = (value as dynamic).toJson();
+    } on NoSuchMethodError {
+      return value.toString();
+    }
+    return identical(json, value) ? value.toString() : valueToJson(json);
+  }
+
+  static Map<String, Object?> _fileToJson(FileModel file) => {
+        'name': file.fileName,
+        if (file.mimeData != null) 'mimeType': file.mimeData!.mime,
+        if (file.fileBytes != null) 'size': file.fileBytes!.length,
+      };
 }
 
 // Add this helper method to your FormResults class:

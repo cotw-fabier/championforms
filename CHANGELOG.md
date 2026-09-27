@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- JSON-safe values export and load:
+  - `FormResults.toJson({includeDerived})`: the collected (visible) values as
+    JSON-encodable data, for a submission payload.
+  - `FormController.exportValues()`: every stored value, hidden fields
+    included, as JSON-encodable data, for a saved draft that
+    `setFieldValues` loads back.
+  - `FormResults.valueToJson(value)`, the encoder both use: a `FieldOption`
+    becomes its value, a file (`FileModel`, or an option carrying one)
+    becomes `{name, mimeType, size}` metadata with no bytes, a `DateTime`
+    its ISO string, an object with `toJson()` that method's output;
+    primitives, maps and lists pass through.
+  - `DerivedValueField`, a marker interface for fields whose value is
+    computed from other fields. `exportValues` leaves them out, so loading a
+    draft never writes a stale derived value.
+- `setFieldValues` accepts JSON-shaped option values: an `OptionSelect` takes
+  its selected option values (`List<String>` or a `String`) and matches them
+  against its options. A `FileUpload` takes only live `FieldOption`s;
+  exported file metadata is skipped instead of being stored as a broken
+  value.
+- `setFieldValues` keeps values for ids that have no field yet in
+  `pendingFieldValues` and applies them (silently) when the field is
+  registered with `addFields` or `updateField`. One call can now restore
+  fields that only appear once another value is set, such as a document's
+  embedded fields. A later write to the id replaces the pending value;
+  `resetAllFields` and `clearForm` discard them. Previously such values were
+  dropped.
+
 - `FormController.registerPendingEditFlusher` / `unregisterPendingEditFlusher`
   / `flushPendingEdits`: a field that buffers input (a rich editor on a
   throttle, a debounced custom field) registers a synchronous flusher, and

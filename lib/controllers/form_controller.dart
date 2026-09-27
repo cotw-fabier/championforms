@@ -2,7 +2,10 @@
 
 import 'dart:async';
 
+import 'package:championforms/core/clipboard_codecs.dart'
+    show OptionSelectClipboardCodec;
 import 'package:championforms/models/field_colors.dart';
+import 'package:championforms/models/field_types/fileupload.dart';
 import 'package:championforms/models/field_types/optionselect.dart';
 import 'package:championforms/models/fieldstate.dart';
 import 'package:championforms/models/formbuildererrorclass.dart';
@@ -387,6 +390,8 @@ class FormController extends ChangeNotifier {
         _fieldDefinitions[field.id] = field;
         _fieldFocusStates.putIfAbsent(field.id, () => false);
         _updateFieldState(field.id);
+        // A value setFieldValues received before this field existed.
+        _adoptPendingValue(field);
         changed = true;
       } else {
         final existingField = _fieldDefinitions[field.id]!;
@@ -853,9 +858,9 @@ class FormController extends ChangeNotifier {
   ///
   /// **Example:**
   /// ```dart
-  /// // Load saved draft
-  /// final savedData = await storage.read('form-draft');
-  /// controller.setFieldValues(jsonDecode(savedData));
+  /// // Save a draft, load it back later (see exportValues)
+  /// await storage.write('form-draft', jsonEncode(controller.exportValues()));
+  /// controller.setFieldValues(jsonDecode(await storage.read('form-draft')));
   ///
   /// // Pre-populate from user profile
   /// controller.setFieldValues({
@@ -864,20 +869,114 @@ class FormController extends ChangeNotifier {
   /// });
   /// ```
   ///
-  /// **Note:** Only sets values for fields that exist. Ignores unknown field IDs.
+  /// **JSON-shaped values** (v0.8.0+) are accepted where a field stores
+  /// something richer, so [exportValues] output loads back as is:
+  /// - an `OptionSelect` (dropdown, checkbox, chip, radio) takes its selected
+  ///   option *values* — a `List<String>` or a single `String` — and they are
+  ///   matched against the field's options (unknown values are dropped; a
+  ///   single-select field keeps the first). A `List<FieldOption>` is stored
+  ///   as before.
+  /// - a `FileUpload` only takes a live `List<FieldOption>`. Exported file
+  ///   metadata carries no bytes, so it is skipped rather than stored as a
+  ///   broken value.
+  ///
+  /// **Unknown ids are kept, not dropped** (v0.8.0+). A value for an id that
+  /// has no field yet waits in [pendingFieldValues] and is applied, silently
+  /// (no onChange, no live validation), when a field with that id is
+  /// registered through [addFields] or [updateField]. This is what lets one
+  /// call restore fields that only exist once another value is set — a
+  /// document's embedded fields, a later wizard page's fields. A later write
+  /// to the same id ([createFieldValue], [updateFieldValue]) replaces the
+  /// pending value; [resetAllFields] and [clearForm] discard them all. Until
+  /// the field is registered the value is not in [getAllFieldValues] or in
+  /// any results.
   ///
   /// See also:
+  /// - [exportValues] for the JSON-safe counterpart
   /// - [getAllFieldValues] to retrieve all values
   /// - [updateFieldValue] to set a single value
   void setFieldValues(Map<String, dynamic> values, {bool noNotify = false}) {
     for (final entry in values.entries) {
-      if (_fieldDefinitions.containsKey(entry.key)) {
-        updateFieldValue(entry.key, entry.value, noNotify: true);
+      final field = _fieldDefinitions[entry.key];
+      if (field == null) {
+        _pendingFieldValues[entry.key] = entry.value;
+        continue;
       }
+      final (:ok, :value) = _coerceIncomingValue(field, entry.value);
+      if (ok) updateFieldValue(entry.key, value, noNotify: true);
     }
     if (!noNotify) {
       _safeNotifyListeners();
     }
+  }
+
+  /// Values [setFieldValues] received for ids with no registered field yet,
+  /// keyed by field id. Each is applied when its field is registered.
+  Map<String, dynamic> get pendingFieldValues =>
+      Map.unmodifiable(_pendingFieldValues);
+
+  final Map<String, dynamic> _pendingFieldValues = {};
+
+  /// Applies the pending value of [field], if any, without notifying.
+  /// Returns whether one was applied.
+  bool _adoptPendingValue(Field field) {
+    if (!_pendingFieldValues.containsKey(field.id)) return false;
+    final raw = _pendingFieldValues.remove(field.id);
+    final (:ok, :value) = _coerceIncomingValue(field, raw);
+    if (!ok) return false;
+    createFieldValue(field.id, value, noNotify: true);
+    return true;
+  }
+
+  /// [value] in the shape [field] stores, or `ok: false` when it cannot be
+  /// stored (see [setFieldValues]).
+  ({bool ok, dynamic value}) _coerceIncomingValue(Field field, dynamic value) {
+    if (value == null || field is! OptionSelect) return (ok: true, value: value);
+    if (value is List && value.every((v) => v is FieldOption)) {
+      return (ok: true, value: List<FieldOption>.from(value));
+    }
+    if (field is FileUpload) return (ok: false, value: null);
+    final List<String>? optionValues = switch (value) {
+      final String s => [s],
+      final List list when list.every((v) => v is String) =>
+        list.cast<String>(),
+      _ => null,
+    };
+    if (optionValues == null) return (ok: false, value: null);
+    return (
+      ok: true,
+      value: OptionSelectClipboardCodec.optionsFor(field, optionValues),
+    );
+  }
+
+  /// Every stored value as JSON-encodable data, keyed by field id: a
+  /// save-a-draft snapshot that [setFieldValues] loads back.
+  ///
+  /// Runs [flushPendingEdits] first, then encodes the value of each
+  /// registered field with [FormResults.valueToJson]: options become their
+  /// values, files become `{name, mimeType, size}` metadata (no bytes),
+  /// objects with a `toJson()` become its output, primitives pass through.
+  ///
+  /// Unlike `FormResults.toJson()` this includes **hidden** fields — a draft
+  /// keeps the answer behind a condition that is off right now — and leaves
+  /// out fields that implement [DerivedValueField] (values computed from
+  /// other fields, recomputed on load) and fields with no value.
+  ///
+  /// ```dart
+  /// final draft = jsonEncode(controller.exportValues());
+  /// // later, on a controller with the same fields registered:
+  /// controller.setFieldValues(jsonDecode(draft));
+  /// ```
+  ///
+  /// File uploads do not round-trip: their metadata is exported for display,
+  /// and [setFieldValues] skips it on load.
+  Map<String, Object?> exportValues() {
+    flushPendingEdits();
+    return {
+      for (final field in _fieldDefinitions.values)
+        if (field is! DerivedValueField && _fieldValues[field.id] != null)
+          field.id: FormResults.valueToJson(_fieldValues[field.id]),
+    };
   }
 
   /// Retrieves the default value for a field.
@@ -1013,6 +1112,8 @@ class FormController extends ChangeNotifier {
   }) {
     final T? oldValue =
         _fieldValues.containsKey(id) ? _fieldValues[id] as T? : null;
+    // The latest write wins over a value still waiting for its field.
+    _pendingFieldValues.remove(id);
 
     if (newValue != null) {
       _fieldValues[id] = newValue;
@@ -1107,6 +1208,7 @@ class FormController extends ChangeNotifier {
     _fieldDefinitions[field.id] = field;
     _fieldFocusStates.putIfAbsent(field.id, () => false);
     _updateFieldState(field.id);
+    _adoptPendingValue(field);
     _safeNotifyListeners();
   }
 
@@ -1304,6 +1406,7 @@ class FormController extends ChangeNotifier {
       updateFieldValue(fieldId, defaultValue, noNotify: true);
     }
     clearAllErrors(noNotify: true);
+    _pendingFieldValues.clear();
 
     if (!noNotify) {
       _safeNotifyListeners();
@@ -1334,6 +1437,7 @@ class FormController extends ChangeNotifier {
 
     // Clear the values map
     _fieldValues.clear();
+    _pendingFieldValues.clear();
 
     // Update state for all fields that had values
     for (final fieldId in fieldIdsWithValues) {
