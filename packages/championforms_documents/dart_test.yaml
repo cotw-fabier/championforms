@@ -1,0 +1,10 @@
+# package:test configuration for championforms_documents.
+
+tags:
+  # Benchmarks (test/perf/): slow and machine-dependent, so the default run
+  # skips them. package:test lets a config-level `exclude_tags` win over
+  # `--tags`, so they are skipped here rather than excluded; run them with:
+  #   flutter test --tags perf --run-skipped
+  perf:
+    skip: "Benchmark. Run with: flutter test --tags perf --run-skipped"
+    timeout: 5x
