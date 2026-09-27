@@ -92,7 +92,22 @@ class _FormBuilderWidgetState extends flutter.State<FormBuilderWidget> {
     final sameShape = oldIds.length == newIds.length &&
         Iterable<int>.generate(oldIds.length)
             .every((i) => oldIds[i] == newIds[i]);
-    if (sameShape && oldWidget.controller == widget.controller) return;
+    if (sameShape && oldWidget.controller == widget.controller) {
+      // Same ids, but a definition may still have changed — a parent that
+      // rebuilds with `hideField: true` or a new `conditional`. Hand the
+      // controller the new definitions without notifying: a silent update
+      // cannot feed back into _rebuildOnControllerUpdate, and passing only
+      // definitions that are not the identical object keeps the common
+      // rebuild free.
+      final changed = [
+        for (var i = 0; i < newFields.length; i++)
+          if (!identical(oldFields[i], newFields[i])) newFields[i],
+      ];
+      if (changed.isNotEmpty) {
+        widget.controller.addFields(changed, noNotify: true);
+      }
+      return;
+    }
 
     // Fields this widget no longer renders leave activeFields — that list
     // tracks what is on screen, and dispose() is not the only way to leave it.

@@ -75,6 +75,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A `Form` rebuilt with the same field ids but changed definitions (for
+  example `hideField: true` or a new `conditional`) now hands the new
+  definitions to its controller. Previously the rebuild was skipped when the
+  ids matched, so the field kept its old definition and stayed in the
+  results. The update is silent, so it cannot loop.
 - Autocomplete dropdowns now close when you tap outside the field and the
   dropdown, on every platform. On touch platforms Flutter keeps a text field
   focused after an outside tap, so the dropdown used to stay open until an
