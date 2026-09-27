@@ -21,7 +21,17 @@ flutter test --reporter expanded
 
 # Run example app tests
 flutter test example/test/autocomplete_overlay_integration_test.dart
+
+# Run an app's macOS integration tests (use this, not `flutter test -d macos`)
+tool/macos_integration_test.sh packages/championforms_clipboard/example
+tool/macos_integration_test.sh packages/championforms_clipboard/example integration_test/ffi_clipboard_test.dart
 ```
+
+`flutter test -d macos` intermittently leaves the test app's window open after
+reporting results (even for a trivial test), so always run macOS integration
+tests through `tool/macos_integration_test.sh`. It closes any leftover process
+of that app (matched by its `build/macos/` path only) and keeps flutter's exit
+status.
 
 ### Code Quality
 ```bash
