@@ -133,7 +133,8 @@ void main() {
     expect(field.disabled, isTrue);
     expect(field.hideField, isTrue);
     expect(field.theme, same(theme));
-    expect(field.conditional, same(_gate));
+    // Wrapped in the live document scope, with the inherited rules inside.
+    expect(field.conditional!.rules, same(_gate.rules));
   });
 
   test('changing the inheritance re-registers the blocks', () {

@@ -1,6 +1,7 @@
 import 'package:championforms/championforms.dart' as form;
 import 'package:flutter/foundation.dart';
 
+import '../embedded/document_scoped_condition.dart';
 import '../embedded/embedded_field_manager.dart';
 import '../model/doc_ids.dart';
 import '../model/doc_node.dart';
@@ -27,9 +28,10 @@ import 'document_field.dart';
 ///   and the runtime ends.
 ///
 /// Definition changes are picked up on the controller's next notification.
-/// `addFields` does not notify for a `hideField`-only change, so a
-/// document hidden that way hides its children at the next notification
-/// (a `conditional` works immediately, because children inherit it).
+/// Visibility does not wait for that: every child carries a
+/// [DocumentScopedCondition] that reads the document's visibility live, so
+/// a document hidden through `hideField` alone (which `addFields` does not
+/// notify for) takes its children out of the results at once.
 class DocumentRuntime {
   DocumentRuntime._(this.controller, DocumentField field)
     : _field = field,
@@ -131,7 +133,10 @@ class DocumentRuntime {
           key: key,
           disabled: _field.disabled,
           hideField: _field.hideField,
-          conditional: _field.conditional,
+          conditional: DocumentScopedCondition(
+            controller: controller,
+            documentId: docId,
+          ),
         ),
     ], noNotify: noNotify);
   }

@@ -151,6 +151,79 @@ void main() {
       expect(results.results.containsKey('doc.people'), isFalse);
     });
 
+    testWidgets('hiding the document through hideField alone takes its '
+        'blocks and derived values out of the results at once', (
+      tester,
+    ) async {
+      final doc = DocumentField(
+        id: 'doc',
+        ruleSet: const RuleSet(extracts: [MentionsExtract(key: 'people')]),
+        initialDocument: DocSnapshot([
+          const ParagraphNode(id: 'p', text: DocText('Hi @ada')),
+          _textBlock('b1'),
+        ]),
+      );
+      final h = await pumpDocumentForm(tester, fields: [doc]);
+      var results = form.FormResults.getResults(controller: h.controller);
+      expect(results.results.containsKey('doc.field.b1'), isTrue);
+      expect(results.results.containsKey('doc.people'), isTrue);
+
+      // A hideField-only change: `addFields` replaces the definition without
+      // notifying, so nothing prompts the runtime to re-register children.
+      var notified = 0;
+      void count() => notified++;
+      h.controller.addListener(count);
+      addTearDown(() => h.controller.removeListener(count));
+      h.controller.addFields([doc.copyWith(hideField: true)]);
+      expect(notified, 0);
+      results = form.FormResults.getResults(controller: h.controller);
+      expect(results.results.containsKey('doc'), isFalse);
+      expect(results.results.containsKey('doc.field.b1'), isFalse);
+      expect(results.results.containsKey('doc.people'), isFalse);
+
+      h.controller.addFields([doc.copyWith(hideField: false)]);
+      results = form.FormResults.getResults(controller: h.controller);
+      expect(results.results.containsKey('doc.field.b1'), isTrue);
+      expect(results.results.containsKey('doc.people'), isTrue);
+    });
+
+    testWidgets('a Form rebuilt with a hidden document drops its blocks from '
+        'the screen after one pump', (tester) async {
+      final controller = form.FormController();
+      addTearDown(controller.dispose);
+      final hidden = ValueNotifier(false);
+      addTearDown(hidden.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: ValueListenableBuilder<bool>(
+                valueListenable: hidden,
+                builder: (context, isHidden, _) => form.Form(
+                  controller: controller,
+                  fields: [
+                    DocumentField(
+                      id: 'doc',
+                      hideField: isHidden,
+                      initialDocument: DocSnapshot([_textBlock('b1')]),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('embedded-b1')), findsOneWidget);
+      hidden.value = true;
+      await tester.pump();
+      expect(find.byKey(const ValueKey('embedded-b1')), findsNothing);
+      hidden.value = false;
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('embedded-b1')), findsOneWidget);
+    });
+
     testWidgets('a disabled document disables its blocks and is read-only', (
       tester,
     ) async {
