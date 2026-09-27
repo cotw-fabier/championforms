@@ -9,6 +9,7 @@ import 'package:championforms/models/validatorclass.dart';
 import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/controllers/form_controller.dart';
+import 'package:championforms/core/field_json.dart';
 import 'package:flutter/widgets.dart';
 
 /// Built-in compound field for collecting name information.
@@ -107,6 +108,25 @@ class NameField extends CompoundField {
     super.onChange,
   });
 
+  /// Builds a NameField from a JSON field definition (common keys plus its
+  /// own layout flags).
+  factory NameField.fromJson(Map<String, dynamic> json) => NameField(
+    id: FieldJson.id(json),
+    title: FieldJson.string(json, 'title'),
+    description: FieldJson.string(json, 'description'),
+    includeMiddleName: FieldJson.boolean(
+      json,
+      'includeMiddleName',
+      fallback: true,
+    ),
+    disabled: FieldJson.boolean(json, 'disabled'),
+    hideField: FieldJson.boolean(json, 'hideField'),
+    rollUpErrors: FieldJson.boolean(json, 'rollUpErrors'),
+    validateLive: FieldJson.boolean(json, 'validateLive'),
+    validators: FieldJson.validators(json),
+    conditional: FieldJson.conditional(json),
+  );
+
   @override
   NameField copyWith({
     String? id,
@@ -132,14 +152,16 @@ class NameField extends CompoundField {
       FormController controller,
       FieldColorScheme currentColors,
       Widget renderedField,
-    )? fieldLayout,
+    )?
+    fieldLayout,
     Widget Function(
       BuildContext context,
       Field fieldDetails,
       FormController controller,
       FieldColorScheme currentColors,
       Widget renderedField,
-    )? fieldBackground,
+    )?
+    fieldBackground,
     bool? requestFocus,
   }) {
     return NameField(

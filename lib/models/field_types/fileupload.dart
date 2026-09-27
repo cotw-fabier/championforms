@@ -12,6 +12,7 @@ import 'package:championforms/models/formresults.dart';
 import 'package:championforms/models/field_types/formfieldclass.dart';
 import 'package:championforms/controllers/form_controller.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:championforms/core/field_json.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
@@ -63,8 +64,7 @@ class FileUpload extends OptionSelect {
   /// Change the display of the drag and drop zone for file uploads.
   /// Takes parameters of the current color scheme and the
   /// field details so they're available for building your custom implementation.
-  final Widget Function(FieldColorScheme, FileUpload)?
-      dropDisplayWidget;
+  final Widget Function(FieldColorScheme, FileUpload)? dropDisplayWidget;
 
   FileUpload({
     required super.id,
@@ -99,9 +99,45 @@ class FileUpload extends OptionSelect {
     this.fileUploadBuilder,
     this.dropDisplayWidget,
     super.fieldBuilder, // Pass through optional custom fieldBuilder
-  }) : super(
-          options: [],
-        );
+  }) : super(options: []);
+
+  /// Builds a file upload from a JSON field definition.
+  ///
+  /// Reads the common keys plus `multiselect`, `allowedExtensions` (list of
+  /// strings), `fileType` (a `FileType` name: `any`, `media`, `image`,
+  /// `video`, `audio`, `custom`), `maxFileSize` (bytes), `displayUploadedFiles`
+  /// and `clearOnUpload`. Builders and widgets can't be expressed as JSON and
+  /// keep their defaults.
+  factory FileUpload.fromJson(Map<String, dynamic> json) {
+    final fileTypeName = FieldJson.string(json, 'fileType');
+    final fileType = fileTypeName == null
+        ? null
+        : FileType.values.asNameMap()[fileTypeName] ??
+              (throw FormatException(
+                'Field "${json['id']}": unknown "fileType" "$fileTypeName".',
+              ));
+    return FileUpload(
+      id: FieldJson.id(json),
+      title: FieldJson.string(json, 'title'),
+      description: FieldJson.string(json, 'description'),
+      multiselect: FieldJson.boolean(json, 'multiselect'),
+      allowedExtensions: FieldJson.stringList(json, 'allowedExtensions'),
+      fileType: fileType,
+      maxFileSize: FieldJson.integer(json, 'maxFileSize') ?? 52428800,
+      displayUploadedFiles: FieldJson.boolean(
+        json,
+        'displayUploadedFiles',
+        fallback: true,
+      ),
+      clearOnUpload: FieldJson.boolean(json, 'clearOnUpload'),
+      disabled: FieldJson.boolean(json, 'disabled'),
+      hideField: FieldJson.boolean(json, 'hideField'),
+      requestFocus: FieldJson.boolean(json, 'requestFocus'),
+      validateLive: FieldJson.boolean(json, 'validateLive'),
+      validators: FieldJson.validators(json),
+      conditional: FieldJson.conditional(json),
+    );
+  }
 
   @override
   FileUpload copyWith({
@@ -133,14 +169,16 @@ class FileUpload extends OptionSelect {
       FormController controller,
       FieldColorScheme currentColors,
       Widget renderedField,
-    )? fieldLayout,
+    )?
+    fieldLayout,
     Widget Function(
       BuildContext context,
       Field fieldDetails,
       FormController controller,
       FieldColorScheme currentColors,
       Widget renderedField,
-    )? fieldBackground,
+    )?
+    fieldBackground,
     Widget Function(FieldBuilderContext)? fieldBuilder,
     List<String>? allowedExtensions,
     FileType? fileType,
@@ -170,7 +208,8 @@ class FileUpload extends OptionSelect {
       conditional: conditional ?? this.conditional,
       requestFocus: requestFocus ?? this.requestFocus,
       defaultValue: defaultValue ?? this.defaultValue,
-      caseSensitiveDefaultValue: caseSensitiveDefaultValue ?? this.caseSensitiveDefaultValue,
+      caseSensitiveDefaultValue:
+          caseSensitiveDefaultValue ?? this.caseSensitiveDefaultValue,
       validators: validators ?? this.validators,
       validateLive: validateLive ?? this.validateLive,
       onSubmit: onSubmit ?? this.onSubmit,
@@ -194,29 +233,30 @@ class FileUpload extends OptionSelect {
   /// Extracts FileModel objects from the additionalData of selected options.
   /// The input `value` is dynamic, expected to be List<FieldOption>.
   @override
-  List<FileModel> Function(dynamic value)? get asFileListConverter =>
-      (dynamic value) {
-        List<FieldOption> effectiveOptions;
-        if (value is List<FieldOption>) {
-          effectiveOptions = value;
-        } else if (value == null) {
-          // Use the defaultValue from the superclass (OptionSelect)
-          // which should be an empty list for FileUpload if not specified otherwise.
-          effectiveOptions = defaultValue;
-        } else {
-          // If value is not List<FieldOption> and not null, it's an unexpected type.
-          throw TypeError();
-        }
+  List<FileModel> Function(dynamic value)?
+  get asFileListConverter => (dynamic value) {
+    List<FieldOption> effectiveOptions;
+    if (value is List<FieldOption>) {
+      effectiveOptions = value;
+    } else if (value == null) {
+      // Use the defaultValue from the superclass (OptionSelect)
+      // which should be an empty list for FileUpload if not specified otherwise.
+      effectiveOptions = defaultValue;
+    } else {
+      // If value is not List<FieldOption> and not null, it's an unexpected type.
+      throw TypeError();
+    }
 
-        List<FileModel> files = [];
-        for (final option in effectiveOptions) {
-          if (option.additionalData is FileModel) {
-            files.add(option.additionalData as FileModel);
-          } else {
-            debugPrint(
-                "Warning: FileUpload field '${super.id}' encountered an option ('${option.value}') without a FileModel in additionalData.");
-          }
-        }
-        return files;
-      };
+    List<FileModel> files = [];
+    for (final option in effectiveOptions) {
+      if (option.additionalData is FileModel) {
+        files.add(option.additionalData as FileModel);
+      } else {
+        debugPrint(
+          "Warning: FileUpload field '${super.id}' encountered an option ('${option.value}') without a FileModel in additionalData.",
+        );
+      }
+    }
+    return files;
+  };
 }

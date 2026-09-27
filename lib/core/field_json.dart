@@ -76,6 +76,18 @@ abstract final class FieldJson {
     );
   }
 
+  /// An optional list of strings at [key].
+  static List<String>? stringList(Map<String, dynamic> json, String key) {
+    final value = json[key];
+    if (value == null) return null;
+    if (value is List && value.every((e) => e is String)) {
+      return List<String>.from(value);
+    }
+    throw FormatException(
+      'Field "${json['id']}": "$key" must be a list of strings; got $value.',
+    );
+  }
+
   /// The field's `defaultValue` as text, or null.
   ///
   /// Coerced rather than type-checked: a number field's default is written as
@@ -104,9 +116,7 @@ abstract final class FieldJson {
         '${raw.runtimeType}.',
       );
     }
-    return [
-      for (final entry in raw) _option(entry, json['id']),
-    ];
+    return [for (final entry in raw) _option(entry, json['id'])];
   }
 
   static FieldOption _option(dynamic entry, dynamic fieldId) {

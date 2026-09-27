@@ -58,3 +58,4 @@ packages/
 # Generated API docs (dart doc) if present.
 doc/api/
 .claude/worktrees/
+tool/macos_integration_test.sh

@@ -29,9 +29,10 @@ dependencies:
   super_editor: 0.3.0-dev.52
   uuid: ^4.6.0
   collection: ^1.19.0
+  html: ^0.15.7
   # Leader/Follower anchoring for the slash menu (also used by super_editor).
   follow_the_leader: ^0.5.3
-  # Browser paste events for the editor on the web.
+  # Browser clipboard events for the editor on the web.
   web: ^1.1.1
 
 dev_dependencies:
