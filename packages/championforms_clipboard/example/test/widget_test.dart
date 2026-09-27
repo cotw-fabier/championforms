@@ -1,30 +1,51 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+import 'dart:typed_data';
 
+import 'package:championforms_clipboard/championforms_clipboard.dart';
+import 'package:championforms_clipboard_example/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:championforms_clipboard_example/main.dart';
-
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('writes through SystemClipboard and lists the formats', (
+    tester,
+  ) async {
+    final fake = FakeClipboardBackend(unsupported: {demoFormat});
+    SystemClipboard.backend = fake;
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.pumpWidget(const ClipboardInspectorApp());
+    expect(find.text('(none)'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    await tester.tap(find.text('HTML'));
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(fake.contents[ClipboardFormat.html], contains('<b>bold</b>'));
+    expect(find.text('On the clipboard (2 formats)'), findsOneWidget);
+    expect(find.text('text/html'), findsWidgets);
+
+    // Custom is unsupported by this fake: it is skipped, plain text stays.
+    await tester.tap(find.text('Custom'));
+    await tester.pumpAndSettle();
+    expect(fake.contents.keys, [ClipboardFormat.plainText]);
+  });
+
+  testWidgets('shows write failures in the last-error field', (tester) async {
+    SystemClipboard.backend = FakeClipboardBackend(
+      unsupported: {ClipboardFormat.rtf, ClipboardFormat.plainText},
+    );
+    await tester.pumpWidget(const ClipboardInspectorApp());
+    await tester.tap(find.text('RTF'));
+    await tester.pumpAndSettle();
+    final error = tester.widget<SelectableText>(
+      find.byKey(const Key('lastError')),
+    );
+    expect(error.data, contains('No writable format'));
+  });
+
+  test('hexPreview', () {
+    expect(hexPreview(Uint8List.fromList([0, 15, 255])), '00 0f ff');
+    expect(
+      hexPreview(Uint8List.fromList(List.filled(40, 1)), max: 2),
+      '01 01 …',
+    );
   });
 }
