@@ -20,6 +20,7 @@ export 'src/editor/super_editor_adapter.dart';
 export 'src/editor/web/clipboard_events.dart'
     show DocClipboardEvents, BrowserClipboardAction;
 export 'src/embedded/embedded_field_manager.dart';
+export 'src/field/block_icons.dart';
 export 'src/field/derived_field.dart';
 export 'src/field/document_field.dart';
 export 'src/field/document_field_widget.dart';

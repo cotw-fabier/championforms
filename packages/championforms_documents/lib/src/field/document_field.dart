@@ -10,6 +10,7 @@ import '../model/doc_snapshot.dart';
 import '../rules/engine.dart';
 import '../rules/rule.dart';
 import '../rules/rule_set.dart';
+import 'block_icons.dart';
 import 'registration.dart';
 
 /// A rich document as a form field.
@@ -105,8 +106,9 @@ class DocumentField extends form.Field {
   /// Minimum editor height in logical pixels.
   final double minHeight;
 
-  /// Copy / cut / paste handling. Null keeps super_editor's plain-text
-  /// behavior. (Named so to stay clear of [form.Field.clipboard], which is
+  /// Copy / cut / paste handling. Null falls back to
+  /// [DocumentFields.defaultClipboardDelegate], and when that is null too,
+  /// keeps super_editor's plain-text behavior. (Named so to stay clear of [form.Field.clipboard], which is
   /// the codec for copying the whole field's value.)
   final DocClipboardDelegate? clipboardDelegate;
 
@@ -271,14 +273,25 @@ class DocumentField extends form.Field {
   ///   "readOnly": false,
   ///   "ruleSet": {"transforms": [], "extracts": [], "constraints": []},
   ///   "initialDocument": {"schemaVersion": 1, "nodes": []},
-  ///   "blocks": [{"label": "Rating", "field": {"type": "rating"}}]
+  ///   "blocks": [
+  ///     {
+  ///       "label": "Rating",
+  ///       "icon": "star",
+  ///       "id": "rating",
+  ///       "keywords": ["stars", "score"],
+  ///       "field": {"type": "rating"}
+  ///     }
+  ///   ]
   /// }
   /// ```
   ///
   /// Plus the common keys every field reads (`description`, `disabled`,
   /// `hideField`, `requestFocus`, `validateLive`, `validators`,
-  /// `conditional`). `blocks` become [blockTemplates] (no icon). Throws
-  /// [FormatException] for a malformed rule set or document.
+  /// `conditional`). `blocks` become [blockTemplates]; a block's `icon` is
+  /// a name from [DocumentBlockIcons] (unknown names get its fallback icon),
+  /// and `id` and `keywords` are optional. JSON cannot carry a
+  /// [clipboardDelegate]; set [DocumentFields.defaultClipboardDelegate] once
+  /// instead. Throws [FormatException] for a malformed rule set or document.
   factory DocumentField.fromJson(Map<String, dynamic> json) {
     Map<String, dynamic>? map(String key) {
       final raw = json[key];
@@ -328,6 +341,13 @@ class DocumentField extends form.Field {
           if (b is Map && b['label'] is String && b['field'] is Map)
             DocumentBlockTemplate(
               label: b['label'] as String,
+              icon: DocumentBlockIcons.resolve(b['icon']),
+              id: b['id'] is String ? b['id'] as String : null,
+              keywords: [
+                if (b['keywords'] case final List words)
+                  for (final w in words)
+                    if (w is String) w,
+              ],
               fieldJson: () => Map<String, dynamic>.from(b['field'] as Map),
             ),
       ],
