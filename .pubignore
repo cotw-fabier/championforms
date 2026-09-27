@@ -59,3 +59,4 @@ packages/
 doc/api/
 .claude/worktrees/
 tool/macos_integration_test.sh
+tool/profile_documents.sh

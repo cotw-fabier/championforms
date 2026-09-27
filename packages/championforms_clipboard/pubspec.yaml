@@ -24,7 +24,7 @@ dependencies:
   web: ^1.1.1
   jni: ^1.0.3
   jni_flutter: ^1.0.3
-  # Native-assets build hook (hook/build.dart, added in a later stage). These
+  # Native-assets build hook (hook/build.dart builds the Rust crate). These
   # are regular dependencies because the hook runs in consumers' builds.
   hooks: ^2.2.0
   code_assets: ^2.1.0
