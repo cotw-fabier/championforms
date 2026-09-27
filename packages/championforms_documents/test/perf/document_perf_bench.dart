@@ -167,7 +167,7 @@ Future<Duration> _timeAsync(Future<void> Function() body) async {
 ///   embedded sync → controller value → derived values → issues);
 /// - `toSnapshot`: the editor document → [DocSnapshot] conversion alone;
 /// - `evaluate`: [evaluate] with [benchRuleSet];
-/// - `getResults`: `DocumentFields.getResults` over the whole form.
+/// - `getResults`: `FormResults.getResults` over the whole form (flushes documents first).
 ///
 /// [onPhase] is called with `'keystrokes'` right before the timed keystrokes
 /// and with `'done'` right after them, so a live binding can attribute
@@ -274,9 +274,9 @@ Future<BenchReport> runDocumentBenchmark(
     expect(result.values['hasPayment'], isTrue);
     expect(result.issues, isEmpty);
 
-    stats['getResults'] = BenchStat('DocumentFields.getResults', [
+    stats['getResults'] = BenchStat('FormResults.getResults', [
       for (var i = 0; i < 10; i++)
-        _time(() => DocumentFields.getResults(controller: controller)),
+        _time(() => form.FormResults.getResults(controller: controller)),
     ]);
   } finally {
     await tester.pumpWidget(const SizedBox());

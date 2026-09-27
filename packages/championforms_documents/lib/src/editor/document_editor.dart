@@ -612,6 +612,13 @@ class DocumentEditorState extends State<DocumentEditor>
         editor: _editor,
         focusNode: _focusNode,
         documentLayoutKey: _layoutKey,
+        // super_editor shares one OS input connection per role and asserts
+        // when two editors on screen claim the same (default null) role.
+        // Doc ids are only unique per controller, so the State's identity
+        // makes it unique on screen; it is stable across rebuilds.
+        inputRole:
+            'championforms_documents:${widget.docId}:'
+            '${identityHashCode(this)}',
         plugins: {_slashPlugin},
         shrinkWrap: true,
         stylesheet: stylesheet,
