@@ -477,9 +477,13 @@ class FormResults {
   /// locked value the server supplied is still part of the answer, but their
   /// validators do not run.
   ///
-  /// When [checkForErrors] is false no validator runs and no controller state
-  /// is mutated; the returned errors are the controller's existing ones,
-  /// narrowed to the fields collected.
+  /// Every call first runs [FormController.flushPendingEdits], so fields that
+  /// buffer input (such as a document editor) report their latest content.
+  ///
+  /// When [checkForErrors] is false no validator runs and no error state is
+  /// mutated (the flush above may still write buffered values); the returned
+  /// errors are the controller's existing ones, narrowed to the fields
+  /// collected.
   factory FormResults.getResults({
     required FormController controller,
     bool checkForErrors = true, // Whether to run validation.
@@ -488,6 +492,10 @@ class FormResults {
   }) {
     assert(fields == null || pageName == null,
         'Pass either `fields` or `pageName` to scope results, not both.');
+
+    // Fields that buffer input (a document editor's throttle, say) push it
+    // now, so the results reflect the last keystroke.
+    controller.flushPendingEdits();
 
     // Determine the list of fields to process.
     final List<Field> scope = fields ??

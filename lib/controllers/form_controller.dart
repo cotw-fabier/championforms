@@ -339,6 +339,7 @@ class FormController extends ChangeNotifier {
     // This guards against pending async operations, focus events, and timers
     // that may fire during the disposal window.
     _isDisposed = true;
+    _pendingEditFlushers.clear();
 
     _fieldControllers.forEach((key, controller) {
       if (controller is ChangeNotifier) {
@@ -735,6 +736,69 @@ class FormController extends ChangeNotifier {
   /// - [getFieldValue] to get a single value
   Map<String, dynamic> getAllFieldValues() {
     return Map.from(_fieldValues);
+  }
+
+  // ===========================================================================
+  // PENDING EDITS (v0.8.0+)
+  // ===========================================================================
+
+  final Map<Object, VoidCallback> _pendingEditFlushers = {};
+  bool _flushingPendingEdits = false;
+
+  /// Registers [flush], which pushes edits a field is still holding into this
+  /// controller.
+  ///
+  /// Some fields buffer input before writing it — a rich editor that pushes
+  /// its document on a short throttle, a custom field that debounces. Their
+  /// controller value can trail the last few keystrokes. Registering a flusher
+  /// makes [FormResults.getResults], [validateForm] and [validatePage] see
+  /// those edits: each runs every flusher first via [flushPendingEdits].
+  ///
+  /// [flush] must be synchronous and should write with the normal value API
+  /// (`updateFieldValue` / `setFieldValues`). It should be cheap when there is
+  /// nothing pending, because it runs on every results read.
+  ///
+  /// [key] identifies the owner; registering the same key again replaces its
+  /// flusher. Call [unregisterPendingEditFlusher] with it on dispose.
+  void registerPendingEditFlusher(Object key, VoidCallback flush) {
+    _pendingEditFlushers[key] = flush;
+  }
+
+  /// Removes the flusher registered under [key], if any.
+  void unregisterPendingEditFlusher(Object key) {
+    _pendingEditFlushers.remove(key);
+  }
+
+  /// Runs every registered flusher so buffered edits reach the controller.
+  ///
+  /// Called automatically by [FormResults.getResults], [validateForm] and
+  /// [validatePage]; call it yourself before reading values another way.
+  /// Re-entrant calls (a flush notifies a listener that reads results) are
+  /// ignored. A flusher that throws is reported through
+  /// [FlutterError.reportError] and the others still run, so one broken
+  /// field can't leave every other field's edits unflushed.
+  void flushPendingEdits() {
+    if (_flushingPendingEdits || _isDisposed || _pendingEditFlushers.isEmpty) {
+      return;
+    }
+    _flushingPendingEdits = true;
+    try {
+      // Copy: a flusher may register or unregister while we iterate.
+      for (final flush in List.of(_pendingEditFlushers.values)) {
+        try {
+          flush();
+        } catch (error, stack) {
+          FlutterError.reportError(FlutterErrorDetails(
+            exception: error,
+            stack: stack,
+            library: 'championforms',
+            context: ErrorDescription('while flushing pending field edits'),
+          ));
+        }
+      }
+    } finally {
+      _flushingPendingEdits = false;
+    }
   }
 
   // ===========================================================================
@@ -1635,6 +1699,7 @@ class FormController extends ChangeNotifier {
   /// - [validateField] to validate a single field
   /// - [validatePage] to validate fields on a specific page
   bool validateForm() {
+    flushPendingEdits();
     for (final field in registeredFields) {
       if (!_shouldValidate(field)) continue;
       _validateField(field.id, notify: false);
@@ -1790,6 +1855,7 @@ class FormController extends ChangeNotifier {
   /// - [getPageFields] to retrieve fields on a page
   /// - [validateForm] to validate entire form
   bool validatePage(String pageName) {
+    flushPendingEdits();
     final fieldsOnPage = getPageFields(pageName);
 
     if (fieldsOnPage.isEmpty && !pageFields.containsKey(pageName)) {
