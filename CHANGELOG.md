@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `FormController.registerPendingEditFlusher` / `unregisterPendingEditFlusher`
+  / `flushPendingEdits`: a field that buffers input (a rich editor on a
+  throttle, a debounced custom field) registers a synchronous flusher, and
+  `FormResults.getResults`, `validateForm` and `validatePage` run every
+  flusher first. Results always reflect the last keystroke with no extra call.
+
 - JSON factories for `FileUpload`, `NameField` and `AddressField`, so every
   built-in field type can now be built with `FormFieldRegistry.fieldFromJson`
   (type names `fileUpload`, `name`, `address`). `FieldJson.stringList` reads
