@@ -221,9 +221,12 @@ v0.7.0 added two behavior/emphasis properties to the base `Field`:
   automatic validation "wiggle" animation. `null` falls through to
   `FormFieldDefaults.instance.animateValidationErrors` (default `true`).
 
-**Omitting these from your custom field is NON-BREAKING.** The base `Field`
-defaults `colors` to `FieldColors.normal`, so existing custom fields keep
-compiling and behaving exactly as before. Adding them is **opt-in**: forward
+**For a field that extends `Field` directly, omitting these is
+non-breaking.** The base `Field` defaults `colors` to `FieldColors.normal`, so
+existing custom fields keep compiling and behaving exactly as before. (A class
+that extends a *built-in* field is different: see
+[Subclassing a built-in field](#subclassing-a-built-in-field-textfield-optionselect-).)
+Adding them is **opt-in**: forward
 them through your constructor and `copyWith` so the emphasis palette (and the
 resolved animation flag) propagate correctly when the field is cloned — for
 example when a compound field prefixes and copies its sub-fields.
@@ -277,6 +280,98 @@ class CustomField extends form.Field {
   }
 }
 ```
+
+### Forwarding `clipboard` (v0.8.0+)
+
+v0.8.0 added `clipboard: FieldClipboardCodec?` to the base `Field`: a
+per-field codec that turns the field's value into plain text, HTML and
+restorable JSON for copy and paste. `null` falls through to the codec
+registered for the field's type (`FormFieldRegistry.resolveClipboard`).
+
+Like `colors`, it is kept off the abstract `Field.copyWith`, so a field that
+extends `Field` directly keeps compiling without it. To let a codec survive a
+copy, forward it the same way:
+
+```dart
+class CustomField extends form.Field {
+  CustomField({
+    required super.id,
+    // ... other super properties
+    super.clipboard,                 // FieldClipboardCodec?
+    this.customProperty = '',
+  });
+
+  @override
+  CustomField copyWith({
+    String? id,
+    // ... other properties
+    form.FieldClipboardCodec? clipboard,
+    String? customProperty,
+  }) {
+    return CustomField(
+      id: id ?? this.id,
+      // ... other properties
+      clipboard: clipboard ?? this.clipboard,
+      customProperty: customProperty ?? this.customProperty,
+    );
+  }
+}
+```
+
+### Subclassing a built-in field (TextField, OptionSelect, ...)
+
+A class that extends a built-in field and overrides `copyWith` must accept
+**every** parameter of the built-in `copyWith`, or Dart reports
+`invalid_override`. The built-in `copyWith` methods declare `colors`,
+`animateValidationErrors` and `conditional` (since 0.7.0) and `clipboard`
+(since 0.8.0), so your override needs them too:
+
+```dart
+class TagSelect extends form.CheckboxSelect {
+  TagSelect({
+    required super.id,
+    required super.options,
+    super.colors,
+    super.animateValidationErrors,
+    super.conditional,
+    super.clipboard,
+    this.tag = '',
+  });
+
+  final String tag;
+
+  @override
+  TagSelect copyWith({
+    String? id,
+    // ... every other CheckboxSelect.copyWith parameter ...
+    form.FieldColors? colors,
+    bool? animateValidationErrors,
+    form.FieldCondition? conditional,
+    form.FieldClipboardCodec? clipboard,
+    String? tag,
+  }) {
+    return TagSelect(
+      id: id ?? this.id,
+      options: options ?? this.options,
+      // ...
+      colors: colors ?? this.colors,
+      animateValidationErrors:
+          animateValidationErrors ?? this.animateValidationErrors,
+      conditional: conditional ?? this.conditional,
+      clipboard: clipboard ?? this.clipboard,
+      tag: tag ?? this.tag,
+    );
+  }
+}
+```
+
+This applies to subclasses of `TextField`, `OptionSelect`, `CheckboxSelect`,
+`ChipSelect`, `RadioSelect`, `FileUpload`, `NameField`, `AddressField` and
+`NullField`. A full, compiling example is in
+`test/builtin_subclass_copywith_test.dart`. Registry codecs are matched by
+exact type, so a subclass does not inherit its parent's codec: pass
+`clipboard:` or call `FormFieldRegistry.registerClipboardCodec<TagSelect>(...)`.
+See [MIGRATION-0.8.0](../migrations/MIGRATION-0.8.0.md).
 
 ### Note for StatefulFieldWidget Users
 

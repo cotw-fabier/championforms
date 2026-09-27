@@ -233,6 +233,11 @@ abstract class Field implements FieldBase {
   /// custom-field `copyWith` overrides valid — adding them here would force every
   /// custom subclass to declare the new parameters, which would be a breaking
   /// change. See CLAUDE.md "Field emphasis colors".
+  ///
+  /// This protects direct `Field` subclasses only. A class that extends a
+  /// built-in field (`TextField`, `OptionSelect`, ...) overrides that class's
+  /// `copyWith` and must declare all of its parameters, these included. See
+  /// docs/migrations/MIGRATION-0.8.0.md.
   Field copyWith({
     String? id,
     Widget? icon,

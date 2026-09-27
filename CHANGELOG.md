@@ -69,10 +69,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     app-wide.
   - Helpers for restoring values: `OptionSelectClipboardCodec.optionsFor`,
     `CompoundClipboardCodec.valueFrom` / `writeTo`.
-- Both additions are non-breaking. `clipboard` is an optional `Field`
-  constructor parameter and is kept off the abstract `copyWith` (as `colors`
-  and `animateValidationErrors` are), so existing custom `Field` subclasses
-  compile unchanged.
+- `clipboard` is an optional `Field` constructor parameter and is kept off
+  the abstract `Field.copyWith`, so custom fields that extend `Field` (or
+  `CompoundField`) directly compile unchanged. Subclasses of the built-in
+  field classes do not; see Breaking below.
+
+### Breaking
+
+- **Subclasses of built-in fields that override `copyWith` must add
+  `clipboard`.** The concrete `copyWith` of these classes now declares
+  `FieldClipboardCodec? clipboard`:
+  - `TextField`
+  - `OptionSelect`, `CheckboxSelect`, `ChipSelect`, `RadioSelect`
+  - `FileUpload`
+  - `NameField`, `AddressField`
+  - `NullField`
+
+  A class that extends one of them and overrides `copyWith` with the 0.7
+  signature fails to compile (`invalid_override`). Migration: add
+  `FieldClipboardCodec? clipboard,` to the override's parameters and pass
+  `clipboard: clipboard ?? this.clipboard` to the constructor. Custom fields
+  that extend `Field` or `CompoundField` directly are not affected. See
+  [MIGRATION-0.8.0.md](docs/migrations/MIGRATION-0.8.0.md).
+- The same applied in 0.7.0 and was not documented then: the built-in
+  `copyWith` methods gained `colors`, `animateValidationErrors` and
+  `conditional`. A subclass written against 0.6 needs all four parameters.
 
 ### Changed
 
