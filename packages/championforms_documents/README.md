@@ -7,10 +7,8 @@ ChampionForms fields, evaluate document rules, and expose their values through
 the familiar `FormResults` API. Copy and paste round-trips through
 `championforms_clipboard`.
 
-> **Status:** early development (`0.1.0-dev`). The document model, rules
-> engine, serializers and results helpers are available; the editor widget
-> and `DocumentField` are not yet. This package stays a prerelease until
-> super_editor ships a stable release.
+> **Status:** early development (`0.1.0-dev`). This package stays a
+> prerelease until super_editor ships a stable release.
 
 It lives in the [championforms repository](https://github.com/cotw-fabier/championforms)
 as a pub workspace member.
@@ -19,6 +17,120 @@ as a pub workspace member.
 import 'package:championforms/championforms.dart' as form;
 import 'package:championforms_documents/championforms_documents.dart';
 ```
+
+## DocumentField
+
+A `DocumentField` is a form field whose value is a document. Put it in a
+`form.Form` next to ordinary fields:
+
+```dart
+final controller = form.FormController();
+
+form.Form(
+  controller: controller,
+  fields: [
+    form.TextField(id: 'title', title: 'Title'),
+    DocumentField(
+      id: 'agreement',
+      title: 'Agreement',
+      placeholder: 'Type / for blocks',
+      minHeight: 200,
+      ruleSet: RuleSet(
+        extracts: [
+          MentionsExtract(key: 'people', required: true),
+          HasSectionExtract(key: 'hasPricing', title: 'Pricing'),
+        ],
+        constraints: [ForbiddenPatternRule(pattern: 'TODO')],
+      ),
+      initialDocument: savedDoc,          // optional DocSnapshot
+      clipboardDelegate: ChampionDocClipboard(controller), // optional
+    ),
+  ],
+);
+```
+
+Constructing a `DocumentField` registers the `document` field type. Call
+`DocumentFields.ensureInitialized()` yourself before decoding forms from
+JSON (`FormFieldRegistry.fieldFromJson({'type': 'document', ...})`, which
+accepts `ruleSet`, `initialDocument`, `placeholder`, `minHeight`,
+`readOnly`, `blocks` and the common field keys).
+
+### Reading results: flush first
+
+The editor pushes its content to the controller on a 150 ms trailing
+throttle, on blur, and whenever it is flushed. Before reading results, push
+any pending keystrokes:
+
+```dart
+final results = DocumentFields.getResults(controller: controller);
+// same as:
+DocumentFields.flushAll(controller);
+final results = form.FormResults.getResults(controller: controller);
+```
+
+(`FormResults.getResults` has no hook a package can use, so the flush is
+explicit. Validation of the document's rules always runs on the value the
+controller holds.)
+
+### What the document registers
+
+- **The document** `agreement`: a `DocSnapshot`.
+- **Embedded fields** `agreement.field.{nodeId}`: one real field per
+  embedded block (`/` menu → Text input, Checkbox, Select, File upload, or
+  any `DocumentBlockTemplate` you pass in `blockTemplates`). They validate,
+  appear in results and can be targeted by conditions like any other
+  field. Deleting a block unregisters its field; undo brings it (and its
+  value) back. A block whose type is not registered shows an "unsupported
+  block" placeholder instead of failing.
+- **Derived values** `agreement.{key}`: one per extract rule, updated on
+  every push, so `results.grab('agreement.people')` works and other fields
+  can use them in a `FieldCondition`:
+
+  ```dart
+  form.TextField(
+    id: 'paymentTerms',
+    conditional: const form.FieldCondition(rules: [
+      form.ConditionRule(
+        fieldId: 'agreement.hasPricing',
+        operator: form.ConditionOperator.equals,
+        value: true,
+      ),
+    ]),
+  )
+  ```
+
+Embedded and derived fields inherit the document's `disabled`, `hideField`,
+`conditional` and `theme`, so a hidden document takes them out of the
+results with it. `readOnly: true` locks the text but keeps embedded fields
+fillable (a fixed template with blanks).
+
+### Validation
+
+Required extracts and constraint rules become the document field's errors
+(`errorState`, `formErrors`, live with `validateLive: true`). Issues anchored
+to a block mark that block and make it wiggle when validation fails.
+
+### Editing
+
+Typing, Enter and Backspace go through the rule set's transform rules
+(`DocumentRules.defaultTransforms` when the rule set has none): `- `, `1. `,
+`# `, `[] `, `> ` and `---` + Enter convert blocks; Enter continues lists;
+Backspace at the start of a block unwraps or merges it. `/` opens the block
+menu (arrows and Enter pick, Escape closes; on phones it opens above the
+caret).
+
+### Clipboard
+
+With a `clipboardDelegate`, Cmd/Ctrl+C/X/V, the iOS and Android selection
+toolbars and a desktop right-click menu go through it; on the web the
+browser's own copy/cut/paste events do (`DocClipboardEvents.current` gives
+a custom delegate the event). Pasted nodes are inserted at the caret (see
+`pasteEdit` for the exact rules) and pasted embedded field values are
+restored. Without a delegate, super_editor's plain-text clipboard is used.
+
+The lower-level pieces are public too: `DocumentEditor` (the editing
+surface without a form), `SuperEditorAdapter` (`MutableDocument` ⇄
+`DocSnapshot`), `EmbeddedFieldManager` and `DocumentRulesBridge`.
 
 ## The document model
 
@@ -106,7 +218,7 @@ Each accepts a custom `message`.
 ## Results
 
 ```dart
-final results = form.FormResults.getResults(controller: controller);
+final results = DocumentFields.getResults(controller: controller);
 results.grab('agreement').asDocument();      // DocSnapshot?
 results.grab('agreement').asDocumentJson();  // Map?
 results.grab('agreement').asMarkdown();      // String
