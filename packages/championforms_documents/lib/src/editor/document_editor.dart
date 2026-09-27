@@ -125,6 +125,7 @@ class DocumentEditorState extends State<DocumentEditor>
   final _layoutKey = GlobalKey(debugLabel: 'DocumentEditor.layout');
   final _bodyKey = GlobalKey(debugLabel: 'DocumentEditor.body');
   bool _revealScheduled = false;
+  late final _imeOverrides = _SlashMenuImeOverrides(_pickSlashItemOnNewline);
   double _bottomInset = 0;
   final _slashPortal = OverlayPortalController();
   int _generation = 0;
@@ -493,6 +494,17 @@ class DocumentEditorState extends State<DocumentEditor>
     return se.ExecutionInstruction.continueExecution;
   }
 
+  /// A software keyboard's Enter while the menu is open picks the
+  /// highlighted item, like the hardware Enter in [_slashKeys]. Returns
+  /// whether it did (and so the newline must not be inserted).
+  bool _pickSlashItemOnNewline() {
+    if (!mounted || slashQuery == null || widget.readOnly) return false;
+    final items = matchingSlashItems;
+    if (items.isEmpty) return false;
+    chooseSlashItem(items[_slashHighlight.clamp(0, items.length - 1)]);
+    return true;
+  }
+
   // -------------------------------------------------------------------------
   // Build
   // -------------------------------------------------------------------------
@@ -600,6 +612,7 @@ class DocumentEditorState extends State<DocumentEditor>
         imePolicies: const se.SuperEditorImePolicies(
           openImeOnNonPrimaryFocusGain: false,
         ),
+        imeOverrides: _imeOverrides,
         keyboardActions: [
           _slashKeys,
           _rules.backspaceAction,
@@ -709,6 +722,24 @@ class DocumentEditorState extends State<DocumentEditor>
         onHover: (i) => setState(() => _slashHighlight = i),
       ),
     );
+  }
+}
+
+/// Intercepts the IME's newline while the `/` menu is open.
+///
+/// Software keyboards do not send an Enter key event: iOS sends a newline
+/// action (its "\n" delta is ignored by super_editor), and Android sends
+/// a "\n" insertion delta that super_editor forwards as a newline action
+/// through this same client. Both land in [performAction].
+class _SlashMenuImeOverrides extends se.DeltaTextInputClientDecorator {
+  _SlashMenuImeOverrides(this.onNewline);
+
+  final bool Function() onNewline;
+
+  @override
+  void performAction(TextInputAction action) {
+    if (action == TextInputAction.newline && onNewline()) return;
+    super.performAction(action);
   }
 }
 

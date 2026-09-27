@@ -180,6 +180,57 @@ void main() {
     }),
   );
 
+  testWidgets(
+    'a software keyboard Enter (IME newline) picks the highlighted item',
+    (tester) async {
+      final h = await _pump(tester);
+      await tester.placeCaretInParagraph('p', 0);
+      await tester.typeImeText('/textin');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('slash-menu')), findsOneWidget);
+
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        // Android reports the action key only as a "\n" insertion delta.
+        await tester.ime.typeText('\n', getter: imeClientGetter);
+      } else {
+        // iOS reports a "\n" delta (which super_editor skips) and then a
+        // newline action.
+        await tester.pressEnterWithIme(getter: imeClientGetter);
+      }
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('slash-menu')), findsNothing);
+      final node = _embedded(h);
+      expect(node.fieldType, 'text');
+      expect(
+        h.controller.hasFieldDefinition(node.controllerIdFor('doc')),
+        true,
+      );
+      final texts = h.snapshot.nodes.whereType<TextDocNode>().toList();
+      for (final n in texts) {
+        expect(n.text.text, isEmpty, reason: 'no query text, no newline');
+      }
+      // The block replaced the empty paragraph and one follows it: no
+      // extra paragraph from a newline.
+      expect(h.snapshot.nodes, hasLength(2));
+
+      // With the menu closed, Enter is a newline again.
+      await tester.placeCaretInParagraph(texts.last.id, 0);
+      await tester.typeImeText('x');
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        await tester.ime.typeText('\n', getter: imeClientGetter);
+      } else {
+        await tester.pressEnterWithIme(getter: imeClientGetter);
+      }
+      await tester.pumpAndSettle();
+      expect(h.snapshot.nodes, hasLength(3));
+    },
+    variant: const TargetPlatformVariant({
+      TargetPlatform.android,
+      TargetPlatform.iOS,
+    }),
+  );
+
   testWidgets('Escape closes the menu and keeps the text', (tester) async {
     final h = await _pump(tester);
     await tester.placeCaretInParagraph('p', 0);
