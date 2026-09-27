@@ -152,9 +152,7 @@ void main() {
     });
 
     testWidgets('hiding the document through hideField alone takes its '
-        'blocks and derived values out of the results at once', (
-      tester,
-    ) async {
+        'blocks and derived values out of the results at once', (tester) async {
       final doc = DocumentField(
         id: 'doc',
         ruleSet: const RuleSet(extracts: [MentionsExtract(key: 'people')]),
@@ -431,6 +429,54 @@ void main() {
   });
 
   group('value sync', () {
+    testWidgets('an empty mark is harmless: nothing shows, nothing loops, '
+        'and only an edit of its node drops it', (tester) async {
+      const marked = DocText('Hello world', [
+        DocMark(type: DocMarkType.bold, start: 5, end: 5),
+        DocMark(type: DocMarkType.link, start: 6, end: 6, href: 'https://x'),
+        DocMark(type: DocMarkType.italic, start: 0, end: 5),
+      ]);
+      final initial = DocSnapshot([
+        const ParagraphNode(id: 'p', text: marked),
+        const ParagraphNode(id: 'q', text: DocText('Other')),
+      ]);
+      final h = await pumpDocumentForm(
+        tester,
+        fields: [DocumentField(id: 'doc', initialDocument: initial)],
+      );
+      // The editor shows exactly the text and the one real mark.
+      final shown = SuperEditorInspector.findTextInComponent('p');
+      expect(shown.toPlainText(), 'Hello world');
+      expect(SuperEditorAdapter.toDocText(shown).marks, [
+        const DocMark(type: DocMarkType.italic, start: 0, end: 5),
+      ]);
+      // An unedited node round-trips as it was, so the value is unchanged
+      // and the controller does not rehydrate the editor.
+      expect(h.snapshot, initial);
+      var notified = 0;
+      void count() => notified++;
+      h.controller.addListener(count);
+      addTearDown(() => h.controller.removeListener(count));
+      await h.settleThrottle();
+      expect(notified, 0);
+
+      // Editing another node keeps it; editing its own node drops it.
+      await tester.placeCaretInParagraph('q', 5);
+      await tester.typeImeText('!');
+      await h.settleThrottle();
+      final pushed = h.controllerDoc('doc')!;
+      expect((pushed.nodes.first as ParagraphNode).text, marked);
+      await tester.placeCaretInParagraph('p', 11);
+      await tester.typeImeText('!');
+      await h.settleThrottle();
+      expect(
+        (h.controllerDoc('doc')!.nodes.first as ParagraphNode).text,
+        const DocText('Hello world!', [
+          DocMark(type: DocMarkType.italic, start: 0, end: 5),
+        ]),
+      );
+    });
+
     testWidgets('edits are throttled, and flushed before results', (
       tester,
     ) async {
