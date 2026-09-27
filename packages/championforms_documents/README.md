@@ -101,7 +101,9 @@ controller holds.)
 
 Embedded and derived fields inherit the document's `disabled`, `hideField`,
 `conditional` and `theme`, so a hidden document takes them out of the
-results with it. `readOnly: true` locks the text but keeps embedded fields
+results with it. Their visibility follows the document's live: a document
+hidden through `hideField` alone (which `addFields` does not notify for)
+drops them from results at once. `readOnly: true` locks the text but keeps embedded fields
 fillable (a fixed template with blanks).
 
 ### Validation
@@ -117,7 +119,9 @@ Typing, Enter and Backspace go through the rule set's transform rules
 `# `, `[] `, `> ` and `---` + Enter convert blocks; Enter continues lists;
 Backspace at the start of a block unwraps or merges it. `/` opens the block
 menu (arrows and Enter pick, Escape closes; on phones it opens above the
-caret).
+caret, and the software keyboard's Enter picks too). Inside a scrolling
+page the page scrolls to keep the caret in view while typing, moving the
+caret, or when the on-screen keyboard opens, like a `TextField`.
 
 ### Clipboard
 
@@ -131,6 +135,22 @@ restored. Without a delegate, super_editor's plain-text clipboard is used.
 The lower-level pieces are public too: `DocumentEditor` (the editing
 surface without a form), `SuperEditorAdapter` (`MutableDocument` ⇄
 `DocSnapshot`), `EmbeddedFieldManager` and `DocumentRulesBridge`.
+
+### Known limitations
+
+- **No task or paragraph indentation, no paragraph alignment.** The model
+  has no place for them, so the editor does not offer them: Tab on a task
+  or paragraph moves focus, and indentation or alignment requests from
+  code are ignored. List items indent (super_editor stops at 6 levels; the
+  model allows 8).
+- **Empty marks** (`start == end`) are dropped when their block is next
+  edited. They cover no text, so nothing visible changes.
+- **Rebuilding a `Form` with the same field ids does not re-register
+  changed definitions** (a championforms core behavior). Toggling
+  `hideField` on a `DocumentField` that way hides it on screen, but the
+  controller keeps the old definition, so results still include the
+  document until its definition is re-registered (`controller.addFields`).
+  Prefer a `conditional`, which the controller evaluates live.
 
 ## The document model
 

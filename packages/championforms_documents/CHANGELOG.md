@@ -38,3 +38,18 @@
   menu with custom `DocumentBlockTemplate`s, and clipboard wiring for a
   `DocClipboardDelegate` (keyboard, iOS/Android toolbars, desktop context
   menu, browser clipboard events on the web).
+- The page scrolls to reveal the caret: the editor has no scrolling of its
+  own, so on selection and content changes, and when the on-screen
+  keyboard opens, it calls `showOnScreen` with the caret rect.
+- The software keyboard's Enter (an IME newline action or `"\n"` delta)
+  picks the highlighted `/` menu item instead of inserting a newline.
+- Embedded, compound sub- and derived fields carry a
+  `DocumentScopedCondition` that reads the document's visibility live, so
+  a document hidden through `hideField` alone leaves the results with its
+  children at once.
+- Task / paragraph indentation and paragraph alignment (which the model
+  cannot hold) are refused in the editor, and Tab on a task or paragraph
+  moves focus instead of indenting.
+- Pending keystrokes are kept when the field unmounts, the runtime's flush
+  hook is released on dispose, and a controller swap sends pending edits to
+  the old controller and rehydrates from the new one.
