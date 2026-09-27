@@ -88,25 +88,70 @@ class DocumentFieldWidgetState extends State<DocumentFieldWidget> {
   @override
   void didUpdateWidget(covariant DocumentFieldWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.ctx.controller, controller)) {
+    final controllerChanged = !identical(oldWidget.ctx.controller, controller);
+    final oldRuntime = _runtime;
+    if (controllerChanged) {
+      // Edits typed against the old controller belong to it. This runs
+      // during a build, so write silently.
+      _timer?.cancel();
+      _timer = null;
+      if (_dirty) {
+        final doc = editorState?.snapshot();
+        if (doc != null) oldRuntime.publish(doc, noNotify: true);
+        _dirty = false;
+      }
       oldWidget.ctx.controller.removeListener(_onControllerChanged);
       controller.addListener(_onControllerChanged);
     }
     _runtime = DocumentRuntime.of(controller, field);
+    if (!identical(oldRuntime, _runtime) && oldRuntime.flusher == flush) {
+      // Otherwise flushing the old controller would run this editor.
+      oldRuntime.flusher = null;
+    }
     _runtime.flusher = flush;
+    if (controllerChanged) {
+      // Show and register what the new controller holds.
+      final raw = controller.getFieldValueOrNull<Object>(docId);
+      final incoming = DocumentField.coerce(raw) ?? field.defaultValue;
+      _runtime.lastPushed = raw;
+      _failureTick = controller.validationFailureTick;
+      _runtime.registerDerivedFields(noNotify: true);
+      _runtime.syncEmbedded(incoming.embeddedFields, noNotify: true);
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !identical(widget.ctx.controller, controller)) return;
+        if (incoming == editorState?.snapshot()) {
+          _runtime.publishDerived(incoming);
+        } else {
+          _rehydrate(incoming); // publishes the derived values too
+        }
+        _updateIssues();
+      });
+    }
+  }
+
+  @override
+  void deactivate() {
+    // Keep the last keystrokes. This must happen here, not in dispose: by
+    // then the editor below has already been unmounted. Notifying while the
+    // tree is locked is not allowed, so write silently.
+    _savePendingSilently();
+    super.deactivate();
+  }
+
+  void _savePendingSilently() {
+    _timer?.cancel();
+    _timer = null;
+    if (!_dirty) return;
+    final doc = editorState?.snapshot();
+    if (doc != null) _runtime.publish(doc, noNotify: true);
+    _dirty = false;
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    if (_dirty) {
-      // Keep the last keystrokes. Notifying while the tree is being torn
-      // down is not allowed, so write silently.
-      final doc = editorState?.snapshot();
-      if (doc != null) _runtime.publish(doc, noNotify: true);
-      _dirty = false;
-    }
-    if (identical(_runtime.flusher, flush)) _runtime.flusher = null;
+    _savePendingSilently();
+    // Tear-offs of one method are equal, not identical.
+    if (_runtime.flusher == flush) _runtime.flusher = null;
     controller.removeListener(_onControllerChanged);
     _focusNode.dispose();
     _issueNodeIds.dispose();

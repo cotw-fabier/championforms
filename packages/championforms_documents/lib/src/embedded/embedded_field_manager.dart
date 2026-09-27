@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 
 import '../clipboard/champion_doc_clipboard.dart' show restorePastedFieldValue;
 import '../model/doc_node.dart';
+import 'document_scoped_condition.dart';
 
 /// What an embedded field inherits from the document that contains it.
 ///
@@ -48,7 +49,7 @@ class EmbeddedFieldInheritance {
 
 /// One embedded block as the manager knows it.
 class _Entry {
-  _Entry(this.node, this.field, this.error, this.registeredIds);
+  _Entry(this.node, this.field, this.error, this.registeredFields);
 
   final EmbeddedFieldNode node;
 
@@ -58,9 +59,11 @@ class _Entry {
   /// Why [field] is null.
   final String? error;
 
-  /// Every controller id registered for this block (a compound field
-  /// registers its sub-fields too).
-  final List<String> registeredIds;
+  /// Every field registered for this block (a compound field registers its
+  /// sub-fields too), each scoped to the document's visibility.
+  final List<form.Field> registeredFields;
+
+  Iterable<String> get registeredIds => registeredFields.map((f) => f.id);
 }
 
 /// Keeps a document's embedded fields registered on the [controller].
@@ -70,8 +73,9 @@ class _Entry {
 ///
 /// - a **new** node is built with `FormFieldRegistry.fieldFromJson`, given
 ///   its controller id, made to inherit the document's disabled / hidden /
-///   conditional / theme settings ([EmbeddedFieldInheritance]) and registered
-///   with `addFields(FieldView.fieldsToRegister(field))`;
+///   conditional / theme settings ([EmbeddedFieldInheritance]), scoped to
+///   the document's live visibility ([DocumentScopedCondition]) and
+///   registered with `addFields(FieldView.fieldsToRegister(field))`;
 /// - a **removed** node is withdrawn with an explicit `unregisterFields`
 ///   (a `Form` no longer drops fields just because a `fields:` list stopped
 ///   listing them, and these were never in one). Values are kept, so undoing
@@ -131,9 +135,7 @@ class EmbeddedFieldManager {
       if (_entries.containsKey(node.id)) continue;
       final entry = _build(node);
       _entries[node.id] = entry;
-      if (entry.field != null) {
-        toRegister.addAll(form.FieldView.fieldsToRegister(entry.field!));
-      }
+      toRegister.addAll(entry.registeredFields);
     }
 
     // Ids that are re-registered (a changed definition) must not be
@@ -229,9 +231,21 @@ class EmbeddedFieldManager {
         const [],
       );
     }
-    final field = inherit(built.copyWith(id: controllerId), _inheritance);
+    final field = DocumentScopedCondition.scope(
+      inherit(built.copyWith(id: controllerId), _inheritance),
+      controller,
+      docId,
+    );
+    // Compound sub-fields are expanded without the parent's condition, so
+    // each one is scoped too: none may outlive a hidden document.
     return _Entry(node, field, null, [
-      for (final f in form.FieldView.fieldsToRegister(field)) f.id,
+      field,
+      for (final f in form.FieldView.fieldsToRegister(field).skip(1))
+        DocumentScopedCondition.scope(
+          f.copyWith(hideField: f.hideField || field.hideField),
+          controller,
+          docId,
+        ),
     ]);
   }
 

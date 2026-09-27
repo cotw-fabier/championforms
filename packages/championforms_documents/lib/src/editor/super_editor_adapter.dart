@@ -6,6 +6,7 @@ import '../model/doc_node.dart';
 import '../model/doc_snapshot.dart';
 import '../model/doc_text.dart';
 import 'embedded_block.dart';
+import 'unsupported_formatting.dart' show refuseUnsupportedFormatting;
 
 /// Converts between super_editor's mutable document model and the immutable
 /// [DocSnapshot] the rest of the package works with.
@@ -25,11 +26,14 @@ import 'embedded_block.dart';
 /// Node ids are preserved in both directions. Marks convert between
 /// [DocMark]'s exclusive `end` and attributed_text's inclusive span end.
 ///
-/// Things super_editor can hold that a snapshot cannot (task indentation,
-/// paragraph alignment, images, code blocks, composing/spelling
+/// Things super_editor can hold that a snapshot cannot (task and paragraph
+/// indentation, paragraph alignment, images, code blocks, composing/spelling
 /// attributions) are dropped or degrade to a paragraph when converting
-/// editor → snapshot. Empty marks (`start == end`) cannot be represented in
-/// attributed text and are dropped snapshot → editor.
+/// editor → snapshot. The `DocumentEditor` never lets a user create the
+/// indentation or alignment ([refuseUnsupportedFormatting]), so nothing
+/// visible is lost. Empty marks (`start == end`) cannot be represented in
+/// attributed text and are dropped snapshot → editor; they cover no text,
+/// so they have no visible effect.
 ///
 /// A node that has not been edited converts back to the very [DocNode] it
 /// was made from. Marks read from edited editor text come back in a
