@@ -168,9 +168,14 @@ Future<Duration> _timeAsync(Future<void> Function() body) async {
 /// - `toSnapshot`: the editor document → [DocSnapshot] conversion alone;
 /// - `evaluate`: [evaluate] with [benchRuleSet];
 /// - `getResults`: `DocumentFields.getResults` over the whole form.
+///
+/// [onPhase] is called with `'keystrokes'` right before the timed keystrokes
+/// and with `'done'` right after them, so a live binding can attribute
+/// engine frame timings to typing.
 Future<BenchReport> runDocumentBenchmark(
   WidgetTester tester, {
   required String mode,
+  void Function(String phase)? onPhase,
 }) async {
   if (!tester.testTextInput.isRegistered) tester.testTextInput.register();
   final doc = buildBenchDocument();
@@ -229,10 +234,12 @@ Future<BenchReport> runDocumentBenchmark(
     await tester.pump();
 
     final keystrokes = <Duration>[];
+    onPhase?.call('keystrokes');
     for (var i = 0; i < benchKeystrokes; i++) {
       final ch = String.fromCharCode(0x61 + i % 26);
       keystrokes.add(await _timeAsync(() => tester.typeImeText(ch)));
     }
+    onPhase?.call('done');
     stats['keystroke'] = BenchStat('keystroke (IME char + frame)', keystrokes);
 
     final typed =
