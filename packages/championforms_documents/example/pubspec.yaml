@@ -1,5 +1,5 @@
 name: championforms_documents_example
-description: "Example app for championforms_documents."
+description: "Agreement Builder: the trial app for championforms_documents."
 publish_to: "none"
 version: 1.0.0+1
 
@@ -13,13 +13,26 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
+  championforms:
+    path: ../../../
+  championforms_clipboard:
+    path: ../../championforms_clipboard
   championforms_documents:
     path: ../
+  # Save / Load writes a JSON file to the app documents directory.
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
   flutter_lints: ^6.0.0
+  # Test helpers for typing into the editor (typeImeText, placeCaretInParagraph).
+  super_editor: 0.3.0-dev.52
+  flutter_test_robots: ^0.0.24
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/templates/
