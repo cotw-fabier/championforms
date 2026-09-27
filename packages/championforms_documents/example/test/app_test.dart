@@ -322,7 +322,7 @@ void main() {
     expect(app.clipboard.contents.values, contains(contains('Net 60')));
 
     // Paste into the scratch document.
-    await tester.tap(find.text('Scratch document').first);
+    await tester.tap(find.byKey(const ValueKey('switch-scratch')));
     await tester.pumpAndSettle();
     final scratchNode = app.snapshot('scratch').nodes.first.id;
     await tester.placeCaretInParagraph(

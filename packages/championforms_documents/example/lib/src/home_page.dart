@@ -427,12 +427,12 @@ class HomePageState extends State<HomePage> {
       ButtonSegment(
         value: 0,
         icon: Icon(Icons.description_outlined),
-        label: Text('Agreement'),
+        label: Text('Agreement', key: ValueKey('switch-agreement')),
       ),
       ButtonSegment(
         value: 1,
         icon: Icon(Icons.edit_note_outlined),
-        label: Text('Scratch document'),
+        label: Text('Scratch document', key: ValueKey('switch-scratch')),
       ),
     ],
     selected: {_tab},
