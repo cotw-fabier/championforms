@@ -7,6 +7,24 @@ rich content can round-trip between your app and other apps.
 > **Status:** early development (`0.1.0-dev`). The web and Android backends
 > are implemented; the Rust desktop/iOS backends are in progress.
 
+## Using from git (before the pub.dev release)
+
+Until the package is on pub.dev, depend on the repository:
+
+```yaml
+dependencies:
+  championforms_clipboard:
+    git:
+      url: https://github.com/cotw-fabier/championforms
+      ref: feature/documents-monorepo
+      path: packages/championforms_clipboard
+```
+
+`ref` is the branch until it merges into `main`; pin a commit SHA for
+reproducible builds. No overrides are needed: this package does not depend on
+`championforms`. Building for macOS, iOS, Windows or Linux needs a Rust
+toolchain (`rustup`).
+
 ## Usage
 
 ```dart
