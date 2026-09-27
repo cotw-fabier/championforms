@@ -108,7 +108,8 @@ class DocumentEditor extends StatefulWidget {
   State<DocumentEditor> createState() => DocumentEditorState();
 }
 
-class DocumentEditorState extends State<DocumentEditor> {
+class DocumentEditorState extends State<DocumentEditor>
+    with WidgetsBindingObserver {
   late se.MutableDocument _document;
   late se.MutableDocumentComposer _composer;
   late se.Editor _editor;
@@ -121,6 +122,10 @@ class DocumentEditorState extends State<DocumentEditor> {
 
   late FocusNode _focusNode;
   final _slashLink = LeaderLink();
+  final _layoutKey = GlobalKey(debugLabel: 'DocumentEditor.layout');
+  final _bodyKey = GlobalKey(debugLabel: 'DocumentEditor.body');
+  bool _revealScheduled = false;
+  double _bottomInset = 0;
   final _slashPortal = OverlayPortalController();
   int _generation = 0;
   int _slashHighlight = 0;
@@ -146,6 +151,7 @@ class DocumentEditorState extends State<DocumentEditor> {
     _rules = DocumentRulesBridge(widget.ruleSet);
     _createEditor(widget.initialDocument);
     _setUpClipboard();
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
@@ -162,7 +168,19 @@ class DocumentEditorState extends State<DocumentEditor> {
   }
 
   @override
+  void didChangeMetrics() {
+    // The on-screen keyboard opening (or growing) shrinks the page: bring
+    // the caret back into view, as EditableText does. (A Scaffold body's
+    // MediaQuery has the insets removed, so read the view's.)
+    if (!mounted) return;
+    final inset = View.maybeOf(context)?.viewInsets.bottom ?? 0;
+    if (inset > _bottomInset) _scheduleCaretReveal();
+    _bottomInset = inset;
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _tearDownClipboard();
     _disposeEditor(_document, _composer, _editor, _slashPlugin);
     if (widget.focusNode == null) _focusNode.dispose();
@@ -179,7 +197,8 @@ class DocumentEditorState extends State<DocumentEditor> {
         : snapshot;
     _document = SuperEditorAdapter.toMutableDocument(nodes)
       ..addListener(_onDocumentChanged);
-    _composer = se.MutableDocumentComposer();
+    _composer = se.MutableDocumentComposer()
+      ..selectionNotifier.addListener(_scheduleCaretReveal);
     _editor = se.Editor(
       editables: {
         se.Editor.documentKey: _document,
@@ -211,6 +230,7 @@ class DocumentEditorState extends State<DocumentEditor> {
     se.ActionTagsPlugin plugin,
   ) {
     document.removeListener(_onDocumentChanged);
+    composer.selectionNotifier.removeListener(_scheduleCaretReveal);
     plugin.composingActionTag.removeListener(_onSlashChanged);
     plugin.dispose();
     editor.dispose();
@@ -234,7 +254,61 @@ class DocumentEditorState extends State<DocumentEditor> {
   void _onDocumentChanged(se.DocumentChangeLog log) {
     final isEmpty = _computeIsEmpty();
     if (isEmpty != _isEmpty && mounted) setState(() => _isEmpty = isEmpty);
+    _scheduleCaretReveal();
     widget.onDocumentChanged?.call(log);
+  }
+
+  // -------------------------------------------------------------------------
+  // Caret reveal
+  // -------------------------------------------------------------------------
+
+  /// Space kept between the caret and the edge of the scrolling page, the
+  /// same as `TextField.scrollPadding`'s default.
+  static const caretScrollPadding = EdgeInsets.all(20);
+
+  /// Reveals the caret after the next layout. The editor has no scrolling of
+  /// its own (see [build]), so super_editor's auto-scroll cannot move the
+  /// page: this does it instead, through `RenderObject.showOnScreen`, which
+  /// scrolls every enclosing `Scrollable` just enough, like a TextField in a
+  /// ListView.
+  void _scheduleCaretReveal() {
+    if (_revealScheduled || !mounted || widget.readOnly) return;
+    if (!_focusNode.hasPrimaryFocus) return;
+    _revealScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _revealScheduled = false;
+      revealCaret();
+    });
+    // A selection-only change schedules no frame by itself.
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  /// Scrolls the enclosing page so the caret (the selection's extent) is
+  /// visible. Does nothing without focus or a selection.
+  void revealCaret() {
+    if (!mounted || !_focusNode.hasPrimaryFocus) return;
+    final selection = _composer.selection;
+    final Object? layout = _layoutKey.currentState;
+    final body = _bodyKey.currentContext?.findRenderObject();
+    if (selection == null || layout is! se.DocumentLayout) return;
+    if (body is! RenderBox || !body.attached || !body.hasSize) return;
+    final Rect? caret;
+    try {
+      caret = layout.getRectForPosition(selection.extent);
+    } catch (_) {
+      return; // The component is not laid out yet.
+    }
+    if (caret == null) return;
+    final topLeft = layout.getAncestorOffsetFromDocumentOffset(
+      caret.topLeft,
+      body,
+    );
+    final local = topLeft & caret.size;
+    body.showOnScreen(
+      rect: caretScrollPadding.inflateRect(local),
+      duration: const Duration(milliseconds: 100),
+      curve: Curves.fastOutSlowIn,
+    );
   }
 
   bool _computeIsEmpty() {
@@ -516,6 +590,7 @@ class DocumentEditorState extends State<DocumentEditor> {
         key: ValueKey('editor-$_generation'),
         editor: _editor,
         focusNode: _focusNode,
+        documentLayoutKey: _layoutKey,
         plugins: {_slashPlugin},
         shrinkWrap: true,
         stylesheet: stylesheet,
@@ -572,6 +647,7 @@ class DocumentEditorState extends State<DocumentEditor> {
 
     final placeholder = widget.placeholder;
     final body = ConstrainedBox(
+      key: _bodyKey,
       constraints: BoxConstraints(minHeight: widget.minHeight ?? 0),
       child: Stack(
         children: [
