@@ -9,6 +9,7 @@ import 'package:championforms/models/themes.dart';
 import 'package:championforms/models/validatorclass.dart';
 import 'package:championforms/models/colorscheme.dart';
 import 'package:championforms/controllers/form_controller.dart';
+import 'package:championforms/core/field_json.dart';
 import 'package:flutter/widgets.dart';
 
 /// Built-in compound field for collecting address information.
@@ -120,6 +121,22 @@ class AddressField extends CompoundField {
     super.onChange,
   });
 
+  /// Builds a AddressField from a JSON field definition (common keys plus its
+  /// own layout flags).
+  factory AddressField.fromJson(Map<String, dynamic> json) => AddressField(
+    id: FieldJson.id(json),
+    title: FieldJson.string(json, 'title'),
+    description: FieldJson.string(json, 'description'),
+    includeStreet2: FieldJson.boolean(json, 'includeStreet2', fallback: true),
+    includeCountry: FieldJson.boolean(json, 'includeCountry'),
+    disabled: FieldJson.boolean(json, 'disabled'),
+    hideField: FieldJson.boolean(json, 'hideField'),
+    rollUpErrors: FieldJson.boolean(json, 'rollUpErrors'),
+    validateLive: FieldJson.boolean(json, 'validateLive'),
+    validators: FieldJson.validators(json),
+    conditional: FieldJson.conditional(json),
+  );
+
   @override
   AddressField copyWith({
     String? id,
@@ -146,14 +163,16 @@ class AddressField extends CompoundField {
       FormController controller,
       FieldColorScheme currentColors,
       Widget renderedField,
-    )? fieldLayout,
+    )?
+    fieldLayout,
     Widget Function(
       BuildContext context,
       Field fieldDetails,
       FormController controller,
       FieldColorScheme currentColors,
       Widget renderedField,
-    )? fieldBackground,
+    )?
+    fieldBackground,
     bool? requestFocus,
   }) {
     return AddressField(
@@ -202,31 +221,15 @@ class AddressField extends CompoundField {
 
     // Add city, state, zip
     fields.addAll([
-      TextField.city(
-        id: 'city',
-        title: 'City',
-        hintText: 'City',
-      ),
-      TextField.state(
-        id: 'state',
-        title: 'State',
-        hintText: 'State',
-      ),
-      TextField.postalCode(
-        id: 'zip',
-        title: 'ZIP Code',
-        hintText: '12345',
-      ),
+      TextField.city(id: 'city', title: 'City', hintText: 'City'),
+      TextField.state(id: 'state', title: 'State', hintText: 'State'),
+      TextField.postalCode(id: 'zip', title: 'ZIP Code', hintText: '12345'),
     ]);
 
     // Add country field if enabled
     if (includeCountry) {
       fields.add(
-        TextField.country(
-          id: 'country',
-          title: 'Country',
-          hintText: 'Country',
-        ),
+        TextField.country(id: 'country', title: 'Country', hintText: 'Country'),
       );
     }
 

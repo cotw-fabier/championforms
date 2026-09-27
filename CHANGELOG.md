@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- JSON factories for `FileUpload`, `NameField` and `AddressField`, so every
+  built-in field type can now be built with `FormFieldRegistry.fieldFromJson`
+  (type names `fileUpload`, `name`, `address`). `FieldJson.stringList` reads
+  list-of-string keys such as `allowedExtensions`.
+
 - `form.FieldView`: renders one registered field outside a `form.Form`, with
   the same theme resolution, state palette, layout, background and validation
   wiggle a form uses. `Form` now draws every field, compound fields included,

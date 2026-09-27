@@ -48,14 +48,15 @@ import 'package:championforms/models/colorscheme.dart';
 /// - [FormFieldBuilder] for the new simplified signature
 /// - [FieldBuilderContext] for bundled parameters
 @Deprecated('Use FormFieldBuilder with FieldBuilderContext instead')
-typedef LegacyFormFieldBuilder<T extends Field> = flutter.Widget Function(
-  flutter.BuildContext context,
-  FormController controller,
-  T field,
-  FieldState currentState,
-  FieldColorScheme currentColors,
-  Function(bool focused) updateFocus,
-);
+typedef LegacyFormFieldBuilder<T extends Field> =
+    flutter.Widget Function(
+      flutter.BuildContext context,
+      FormController controller,
+      T field,
+      FieldState currentState,
+      FieldColorScheme currentColors,
+      Function(bool focused) updateFocus,
+    );
 
 // ===========================================================================
 // NEW UNIFIED BUILDER SIGNATURE (v0.6.0+)
@@ -152,9 +153,7 @@ typedef LegacyFormFieldBuilder<T extends Field> = flutter.Widget Function(
 /// - [FieldBuilderContext] for detailed context API documentation
 /// - [FormFieldRegistry.register] for field registration
 /// - [StatefulFieldWidget] for stateful field base class
-typedef FormFieldBuilder = flutter.Widget Function(
-  FieldBuilderContext context,
-);
+typedef FormFieldBuilder = flutter.Widget Function(FieldBuilderContext context);
 
 // ===========================================================================
 // JSON FACTORY SIGNATURE (v0.7.0+)
@@ -666,7 +665,8 @@ class FormFieldRegistry {
       FieldBuilderContext ctx,
       List<flutter.Widget> subFields,
       List<FormBuilderError>? errors,
-    )? layoutBuilder, {
+    )?
+    layoutBuilder, {
     bool rollUpErrors = false,
     FieldConverters? converters,
     FieldFromJson? fromJson,
@@ -771,7 +771,8 @@ class FormFieldRegistry {
       FieldBuilderContext ctx,
       List<flutter.Widget> subFields,
       List<FormBuilderError>? errors,
-    )? layoutBuilder,
+    )?
+    layoutBuilder,
     bool rollUpErrors,
     FieldConverters? converters,
     FieldFromJson? fromJson,
@@ -812,7 +813,7 @@ class FormFieldRegistry {
   /// **Returns:**
   /// The [CompoundFieldRegistration] for type `T`, or null if not registered.
   CompoundFieldRegistration?
-      getCompoundRegistration<T extends CompoundField>() {
+  getCompoundRegistration<T extends CompoundField>() {
     return _compoundRegistrations[T];
   }
 
@@ -932,7 +933,8 @@ class FormFieldRegistry {
         );
       } catch (e, stackTrace) {
         flutter.debugPrint(
-            'Error executing builder for type $fieldType: $e\n$stackTrace');
+          'Error executing builder for type $fieldType: $e\n$stackTrace',
+        );
         return _buildErrorPlaceholder(fieldType, 'Builder execution error');
       }
     } else {
@@ -1024,6 +1026,7 @@ class FormFieldRegistry {
     FormFieldRegistry.register<FileUpload>(
       'fileUpload',
       buildFileUpload,
+      fromJson: FileUpload.fromJson,
       clipboard: const FileUploadClipboardCodec(),
     );
 
@@ -1052,18 +1055,12 @@ class FormFieldRegistry {
             flutter.Row(
               children: [
                 // First name: flex 1
-                flutter.Expanded(
-                  flex: 1,
-                  child: subFields[0],
-                ),
+                flutter.Expanded(flex: 1, child: subFields[0]),
                 const flutter.SizedBox(width: 10),
 
                 // Middle name (if present): flex 1
                 if (subFields.length > 2) ...[
-                  flutter.Expanded(
-                    flex: 1,
-                    child: subFields[1],
-                  ),
+                  flutter.Expanded(flex: 1, child: subFields[1]),
                   const flutter.SizedBox(width: 10),
                 ],
 
@@ -1078,21 +1075,24 @@ class FormFieldRegistry {
             // Error display if errors are rolled up
             if (errors != null && errors.isNotEmpty) ...[
               const flutter.SizedBox(height: 8),
-              ...errors.map((error) => flutter.Padding(
-                    padding: const flutter.EdgeInsets.only(bottom: 4),
-                    child: flutter.Text(
-                      error.reason,
-                      style: const flutter.TextStyle(
-                        color: flutter.Colors.red,
-                        fontSize: 12,
-                      ),
+              ...errors.map(
+                (error) => flutter.Padding(
+                  padding: const flutter.EdgeInsets.only(bottom: 4),
+                  child: flutter.Text(
+                    error.reason,
+                    style: const flutter.TextStyle(
+                      color: flutter.Colors.red,
+                      fontSize: 12,
                     ),
-                  )),
+                  ),
+                ),
+              ),
             ],
           ],
         );
       },
       rollUpErrors: false,
+      fromJson: NameField.fromJson,
       clipboard: const CompoundClipboardCodec(),
     );
   }
@@ -1140,20 +1140,11 @@ class FormFieldRegistry {
             // Row 3: City, State, ZIP in horizontal row
             flutter.Row(
               children: [
-                flutter.Expanded(
-                  flex: 4,
-                  child: city,
-                ),
+                flutter.Expanded(flex: 4, child: city),
                 const flutter.SizedBox(width: 10),
-                flutter.Expanded(
-                  flex: 3,
-                  child: state,
-                ),
+                flutter.Expanded(flex: 3, child: state),
                 const flutter.SizedBox(width: 10),
-                flutter.Expanded(
-                  flex: 3,
-                  child: zip,
-                ),
+                flutter.Expanded(flex: 3, child: zip),
               ],
             ),
 
@@ -1166,21 +1157,24 @@ class FormFieldRegistry {
             // Error display if errors are rolled up
             if (errors != null && errors.isNotEmpty) ...[
               const flutter.SizedBox(height: 8),
-              ...errors.map((error) => flutter.Padding(
-                    padding: const flutter.EdgeInsets.only(bottom: 4),
-                    child: flutter.Text(
-                      error.reason,
-                      style: const flutter.TextStyle(
-                        color: flutter.Colors.red,
-                        fontSize: 12,
-                      ),
+              ...errors.map(
+                (error) => flutter.Padding(
+                  padding: const flutter.EdgeInsets.only(bottom: 4),
+                  child: flutter.Text(
+                    error.reason,
+                    style: const flutter.TextStyle(
+                      color: flutter.Colors.red,
+                      fontSize: 12,
                     ),
-                  )),
+                  ),
+                ),
+              ),
             ],
           ],
         );
       },
       rollUpErrors: false,
+      fromJson: AddressField.fromJson,
       clipboard: const CompoundClipboardCodec(),
     );
   }
