@@ -49,14 +49,15 @@ class DerivedField extends form.Field {
       };
 
   @override
-  bool Function(dynamic value) get asBoolConverter => (value) => switch (value) {
-    null => false,
-    final bool b => b,
-    final String s => s.trim().isNotEmpty,
-    final Iterable<Object?> l => l.isNotEmpty,
-    final Map<Object?, Object?> m => m.isNotEmpty,
-    _ => true,
-  };
+  bool Function(dynamic value) get asBoolConverter =>
+      (value) => switch (value) {
+        null => false,
+        final bool b => b,
+        final String s => s.trim().isNotEmpty,
+        final Iterable<Object?> l => l.isNotEmpty,
+        final Map<Object?, Object?> m => m.isNotEmpty,
+        _ => true,
+      };
 
   @override
   List<form.FileModel>? Function(dynamic value)? get asFileListConverter =>

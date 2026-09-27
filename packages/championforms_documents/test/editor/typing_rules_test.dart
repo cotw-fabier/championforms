@@ -106,9 +106,7 @@ void main() {
     testWidgets('Enter in a list item continues the list', (tester) async {
       final h = await _pump(
         tester,
-        doc: DocSnapshot([
-          const ListItemNode(id: 'li', text: DocText('one')),
-        ]),
+        doc: DocSnapshot([const ListItemNode(id: 'li', text: DocText('one'))]),
       );
       await tester.placeCaretInParagraph('li', 3);
       await tester.pressEnter();
@@ -135,9 +133,7 @@ void main() {
     ) async {
       final h = await _pump(
         tester,
-        doc: DocSnapshot([
-          const HeadingNode(id: 'h', text: DocText('Title')),
-        ]),
+        doc: DocSnapshot([const HeadingNode(id: 'h', text: DocText('Title'))]),
       );
       await tester.placeCaretInParagraph('h', 5);
       await tester.pressEnter();
@@ -163,9 +159,7 @@ void main() {
     ) async {
       final h = await _pump(
         tester,
-        doc: DocSnapshot([
-          const HeadingNode(id: 'h', text: DocText('Title')),
-        ]),
+        doc: DocSnapshot([const HeadingNode(id: 'h', text: DocText('Title'))]),
       );
       await tester.placeCaretInParagraph('h', 0);
       await tester.pressBackspace();

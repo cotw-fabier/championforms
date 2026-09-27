@@ -61,48 +61,55 @@ void main() {
     expect(find.byKey(ValueKey('embedded-${node.id}')), findsOneWidget);
   });
 
-  testWidgets('the menu opens below the caret on desktop, above on mobile', (
-    tester,
-  ) async {
-    await _pump(
-      tester,
-      doc: DocSnapshot([
-        for (var i = 0; i < 12; i++)
-          ParagraphNode(id: 'l$i', text: DocText('Line $i')),
-        const ParagraphNode(id: 'p'),
-      ]),
-    );
-    await tester.placeCaretInParagraph('p', 0);
-    await tester.typeImeText('/');
-    await tester.pumpAndSettle();
-    final menu = find.byKey(const ValueKey('slash-menu'));
-    expect(menu, findsOneWidget);
-    final layout = SuperEditorInspector.findDocumentLayout();
-    final caret = layout.getRectForPosition(
-      SuperEditorAdapter.toEditorPosition(
-        tester.state<DocumentFieldWidgetState>(
-          find.byType(DocumentFieldWidget),
-        ).editorState!.document,
-        'p',
-        0,
-      ),
-    )!;
-    final caretTop = layout.getGlobalOffsetFromDocumentOffset(caret.topLeft);
-    final caretBottom = layout.getGlobalOffsetFromDocumentOffset(
-      caret.bottomLeft,
-    );
-    final mobile =
-        defaultTargetPlatform == TargetPlatform.android ||
-        defaultTargetPlatform == TargetPlatform.iOS;
-    if (mobile) {
-      final gap = caretTop.dy - tester.getBottomLeft(menu).dy;
-      expect(gap, inInclusiveRange(0, 40));
-    } else {
-      final gap = tester.getTopLeft(menu).dy - caretBottom.dy;
-      expect(gap, inInclusiveRange(0, 40));
-    }
-    expect((tester.getTopLeft(menu).dx - caretTop.dx).abs(), lessThan(40));
-  }, variant: const TargetPlatformVariant({TargetPlatform.macOS, TargetPlatform.android, TargetPlatform.iOS}));
+  testWidgets(
+    'the menu opens below the caret on desktop, above on mobile',
+    (tester) async {
+      await _pump(
+        tester,
+        doc: DocSnapshot([
+          for (var i = 0; i < 12; i++)
+            ParagraphNode(id: 'l$i', text: DocText('Line $i')),
+          const ParagraphNode(id: 'p'),
+        ]),
+      );
+      await tester.placeCaretInParagraph('p', 0);
+      await tester.typeImeText('/');
+      await tester.pumpAndSettle();
+      final menu = find.byKey(const ValueKey('slash-menu'));
+      expect(menu, findsOneWidget);
+      final layout = SuperEditorInspector.findDocumentLayout();
+      final caret = layout.getRectForPosition(
+        SuperEditorAdapter.toEditorPosition(
+          tester
+              .state<DocumentFieldWidgetState>(find.byType(DocumentFieldWidget))
+              .editorState!
+              .document,
+          'p',
+          0,
+        ),
+      )!;
+      final caretTop = layout.getGlobalOffsetFromDocumentOffset(caret.topLeft);
+      final caretBottom = layout.getGlobalOffsetFromDocumentOffset(
+        caret.bottomLeft,
+      );
+      final mobile =
+          defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS;
+      if (mobile) {
+        final gap = caretTop.dy - tester.getBottomLeft(menu).dy;
+        expect(gap, inInclusiveRange(0, 40));
+      } else {
+        final gap = tester.getTopLeft(menu).dy - caretBottom.dy;
+        expect(gap, inInclusiveRange(0, 40));
+      }
+      expect((tester.getTopLeft(menu).dx - caretTop.dx).abs(), lessThan(40));
+    },
+    variant: const TargetPlatformVariant({
+      TargetPlatform.macOS,
+      TargetPlatform.android,
+      TargetPlatform.iOS,
+    }),
+  );
 
   testWidgets('on mobile the menu flips below when there is no room above', (
     tester,
@@ -149,24 +156,29 @@ void main() {
     );
   });
 
-  testWidgets('Enter picks the highlighted item; arrows move it', (
-    tester,
-  ) async {
-    final h = await _pump(tester);
-    await tester.placeCaretInParagraph('p', 0);
-    await tester.typeImeText('/head');
-    await tester.pumpAndSettle();
-    // Heading 1, 2, 3 match; move down to Heading 2.
-    await tester.pressDownArrow();
-    await tester.pumpAndSettle();
-    await tester.pressEnter();
-    await tester.pumpAndSettle();
-    final node = h.snapshot.nodes.single;
-    expect(node, isA<HeadingNode>());
-    expect((node as HeadingNode).level, 2);
-    expect(node.id, 'p', reason: 'text kinds convert in place');
-    expect(find.byKey(const ValueKey('slash-menu')), findsNothing);
-  }, variant: const TargetPlatformVariant({TargetPlatform.macOS, TargetPlatform.windows}));
+  testWidgets(
+    'Enter picks the highlighted item; arrows move it',
+    (tester) async {
+      final h = await _pump(tester);
+      await tester.placeCaretInParagraph('p', 0);
+      await tester.typeImeText('/head');
+      await tester.pumpAndSettle();
+      // Heading 1, 2, 3 match; move down to Heading 2.
+      await tester.pressDownArrow();
+      await tester.pumpAndSettle();
+      await tester.pressEnter();
+      await tester.pumpAndSettle();
+      final node = h.snapshot.nodes.single;
+      expect(node, isA<HeadingNode>());
+      expect((node as HeadingNode).level, 2);
+      expect(node.id, 'p', reason: 'text kinds convert in place');
+      expect(find.byKey(const ValueKey('slash-menu')), findsNothing);
+    },
+    variant: const TargetPlatformVariant({
+      TargetPlatform.macOS,
+      TargetPlatform.windows,
+    }),
+  );
 
   testWidgets('Escape closes the menu and keeps the text', (tester) async {
     final h = await _pump(tester);
@@ -241,7 +253,11 @@ void main() {
     final block = const DividerNode(id: 'hr');
     final edit = insertBlockEdit(doc, 'p', 2, block)!;
     final result = DocEditApplier.apply(doc, edit);
-    expect(result.nodes.map((n) => n.type), ['paragraph', 'divider', 'paragraph']);
+    expect(result.nodes.map((n) => n.type), [
+      'paragraph',
+      'divider',
+      'paragraph',
+    ]);
     expect((result.nodes[0] as ParagraphNode).text.text, 'ab');
     expect((result.nodes[2] as ParagraphNode).text.text, 'cd');
     expect(edit.caret!.nodeId, result.nodes[2].id);

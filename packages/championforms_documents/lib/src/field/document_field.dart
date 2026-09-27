@@ -133,10 +133,7 @@ class DocumentField extends form.Field {
   /// with the rule set's issues (required extracts and constraints), so
   /// `getResults`, `errorState` and `validateLive` all see them.
   @override
-  List<form.Validator> get validators => [
-    ...?userValidators,
-    _issuesValidator,
-  ];
+  List<form.Validator> get validators => [...?userValidators, _issuesValidator];
 
   /// Runs [ruleSet]'s extract and constraint rules against [doc]. The last
   /// result is cached, so the validator and the derived fields share one
@@ -168,10 +165,11 @@ class DocumentField extends form.Field {
       (value) => toPlainText(coerce(value) ?? defaultValue);
 
   @override
-  List<String> Function(dynamic value) get asStringListConverter => (value) => [
-    for (final n in (coerce(value) ?? defaultValue).nodes)
-      if (n is TextDocNode) n.text.text,
-  ];
+  List<String> Function(dynamic value) get asStringListConverter =>
+      (value) => [
+        for (final n in (coerce(value) ?? defaultValue).nodes)
+          if (n is TextDocNode) n.text.text,
+      ];
 
   @override
   bool Function(dynamic value) get asBoolConverter => (value) {
@@ -331,8 +329,7 @@ class DocumentField extends form.Field {
           if (b is Map && b['label'] is String && b['field'] is Map)
             DocumentBlockTemplate(
               label: b['label'] as String,
-              fieldJson: () =>
-                  Map<String, dynamic>.from(b['field'] as Map),
+              fieldJson: () => Map<String, dynamic>.from(b['field'] as Map),
             ),
       ],
     );

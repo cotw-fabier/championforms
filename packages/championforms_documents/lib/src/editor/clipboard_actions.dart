@@ -90,7 +90,9 @@ class DocumentClipboardActions {
     editor.execute([
       se.DeleteContentRequest(documentRange: range),
       se.ChangeSelectionRequest(
-        se.DocumentSelection.collapsed(position: range.normalize(editor.document).start),
+        se.DocumentSelection.collapsed(
+          position: range.normalize(editor.document).start,
+        ),
         se.SelectionChangeType.deleteContent,
         se.SelectionReason.userInteraction,
       ),

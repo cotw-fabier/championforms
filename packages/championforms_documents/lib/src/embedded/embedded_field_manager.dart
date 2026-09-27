@@ -1,8 +1,7 @@
 import 'package:championforms/championforms.dart' as form;
 import 'package:flutter/foundation.dart';
 
-import '../clipboard/champion_doc_clipboard.dart'
-    show restorePastedFieldValue;
+import '../clipboard/champion_doc_clipboard.dart' show restorePastedFieldValue;
 import '../model/doc_node.dart';
 
 /// What an embedded field inherits from the document that contains it.
@@ -258,7 +257,8 @@ class EmbeddedFieldManager {
     );
     if (!identical(condition, result.conditional)) {
       try {
-        result = (result as dynamic).copyWith(conditional: condition) as form.Field;
+        result =
+            (result as dynamic).copyWith(conditional: condition) as form.Field;
       } on NoSuchMethodError {
         // A custom field whose copyWith has no `conditional`.
       }

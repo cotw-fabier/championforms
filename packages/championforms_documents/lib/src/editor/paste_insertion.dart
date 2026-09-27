@@ -154,7 +154,9 @@ DocEdit? pasteEdit(
   final first = pasted.first;
 
   // Single node that merges: plain inline insertion.
-  if (pasted.length == 1 && first is TextDocNode && _mergesInto(first, target)) {
+  if (pasted.length == 1 &&
+      first is TextDocNode &&
+      _mergesInto(first, target)) {
     final merged = before.concat(first.text);
     return DocEdit([
       ReplaceNodeOp(target.id, target.withText(merged.concat(after))),

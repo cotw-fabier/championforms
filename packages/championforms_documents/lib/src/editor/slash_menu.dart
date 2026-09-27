@@ -176,10 +176,8 @@ class SlashMenuItem {
         label: template.label,
         icon: template.icon ?? Icons.widgets_outlined,
         keywords: template.keywords,
-        build: () => EmbeddedFieldNode(
-          id: newNodeId(),
-          fieldJson: template.fieldJson(),
-        ),
+        build: () =>
+            EmbeddedFieldNode(id: newNodeId(), fieldJson: template.fieldJson()),
       );
 }
 
@@ -387,4 +385,3 @@ class SlashMenuPanel extends StatelessWidget {
     );
   }
 }
-

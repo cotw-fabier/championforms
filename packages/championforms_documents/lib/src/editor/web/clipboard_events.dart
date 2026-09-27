@@ -51,8 +51,7 @@ abstract final class DocClipboardEvents {
 abstract class BrowserClipboardListener {
   factory BrowserClipboardListener({
     required bool Function() isActive,
-    required void Function(BrowserClipboardAction action, Object event)
-    onEvent,
+    required void Function(BrowserClipboardAction action, Object event) onEvent,
   }) = impl.PlatformBrowserClipboardListener;
 
   /// Whether this platform delivers browser clipboard events (the web).

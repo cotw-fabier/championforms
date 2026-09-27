@@ -216,9 +216,8 @@ class DocumentFieldWidgetState extends State<DocumentFieldWidget> {
         controller.findErrors(docId).isNotEmpty;
     final ids = hasErrors
         ? {
-            for (final issue in field
-                .evaluateDocument(_currentControllerDocument())
-                .issues)
+            for (final issue
+                in field.evaluateDocument(_currentControllerDocument()).issues)
               if (issue.nodeId != null) issue.nodeId!,
           }
         : const <String>{};
@@ -311,9 +310,7 @@ class UnsupportedBlockPlaceholder extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border.all(color: theme.colorScheme.outlineVariant),
         borderRadius: BorderRadius.circular(6),
-        color: theme.colorScheme.surfaceContainerHighest.withValues(
-          alpha: 0.5,
-        ),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
       ),
       child: Row(
         children: [

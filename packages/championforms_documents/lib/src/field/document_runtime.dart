@@ -47,7 +47,10 @@ class DocumentRuntime {
 
   /// The runtime for [field] on [controller], created on first use. The
   /// runtime adopts [field] as the current definition.
-  static DocumentRuntime of(form.FormController controller, DocumentField field) {
+  static DocumentRuntime of(
+    form.FormController controller,
+    DocumentField field,
+  ) {
     final map = _registry[controller] ??= {};
     final existing = map[field.id];
     if (existing != null && !existing._disposed) {
@@ -58,8 +61,10 @@ class DocumentRuntime {
   }
 
   /// The runtime of document [docId] on [controller], or null.
-  static DocumentRuntime? lookup(form.FormController controller, String docId) =>
-      _registry[controller]?[docId];
+  static DocumentRuntime? lookup(
+    form.FormController controller,
+    String docId,
+  ) => _registry[controller]?[docId];
 
   /// Every live runtime on [controller].
   static Iterable<DocumentRuntime> allOf(form.FormController controller) =>
@@ -91,7 +96,9 @@ class DocumentRuntime {
     final inheritanceChanged = inheritance != manager.inheritance;
     _field = field;
     if (inheritanceChanged) manager.setInheritance(inheritance, noNotify: true);
-    if (inheritanceChanged || rulesChanged) registerDerivedFields(noNotify: true);
+    if (inheritanceChanged || rulesChanged) {
+      registerDerivedFields(noNotify: true);
+    }
   }
 
   /// Pushes pending editor edits into the controller.
@@ -130,8 +137,10 @@ class DocumentRuntime {
   }
 
   /// Registers and withdraws embedded fields to match [nodes].
-  void syncEmbedded(Iterable<EmbeddedFieldNode> nodes, {bool noNotify = false}) =>
-      manager.sync(nodes, noNotify: noNotify);
+  void syncEmbedded(
+    Iterable<EmbeddedFieldNode> nodes, {
+    bool noNotify = false,
+  }) => manager.sync(nodes, noNotify: noNotify);
 
   /// The derived values of [doc], keyed by derived field id.
   Map<String, Object?> derivedValues(DocSnapshot doc) {

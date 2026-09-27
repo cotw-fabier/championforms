@@ -46,7 +46,9 @@ abstract final class SuperEditorAdapter {
 
   /// A fresh [se.MutableDocument] holding [snapshot]'s nodes (ids preserved).
   static se.MutableDocument toMutableDocument(DocSnapshot snapshot) =>
-      se.MutableDocument(nodes: [for (final n in snapshot.nodes) toEditorNode(n)]);
+      se.MutableDocument(
+        nodes: [for (final n in snapshot.nodes) toEditorNode(n)],
+      );
 
   /// The current content of [document] as a snapshot.
   ///
@@ -86,7 +88,9 @@ abstract final class SuperEditorAdapter {
       ListItemNode(:final id, :final ordered, :final indent, :final text) =>
         se.ListItemNode(
           id: id,
-          itemType: ordered ? se.ListItemType.ordered : se.ListItemType.unordered,
+          itemType: ordered
+              ? se.ListItemType.ordered
+              : se.ListItemType.unordered,
           indent: indent,
           text: toAttributedText(text),
         ),
@@ -285,7 +289,11 @@ abstract final class SuperEditorAdapter {
       selection.startNodeId,
       selection.startOffset,
     ),
-    extent: toEditorPosition(document, selection.endNodeId, selection.endOffset),
+    extent: toEditorPosition(
+      document,
+      selection.endNodeId,
+      selection.endOffset,
+    ),
   );
 
   /// The editor position at [offset] in node [nodeId]: a text offset for a

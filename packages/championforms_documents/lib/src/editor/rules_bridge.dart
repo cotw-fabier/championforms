@@ -137,8 +137,9 @@ class DocumentRulesBridge {
         context.editor.execute([ApplyDocEditRequest(edit)]);
         return;
       }
-      se.defaultEditorSelectorHandlers[se.MacOsSelectors.deleteBackward]
-          ?.call(context);
+      se.defaultEditorSelectorHandlers[se.MacOsSelectors.deleteBackward]?.call(
+        context,
+      );
     },
   };
 

@@ -143,4 +143,3 @@ class ApplyDocEditCommand extends se.EditCommand {
     }
   }
 }
-

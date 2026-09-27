@@ -287,6 +287,7 @@ class DocumentEditorState extends State<DocumentEditor> {
     final clipboard = _clipboard;
     if (clipboard == null || widget.readOnly) return;
     final hasSelection = clipboard.expandedSelection() != null;
+    final selection = _composer.selection;
     final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final position = RelativeRect.fromRect(
       details.globalPosition & const Size(1, 1),
@@ -315,6 +316,19 @@ class DocumentEditorState extends State<DocumentEditor> {
         ),
       ],
     );
+    if (choice == null || !mounted) return;
+    // The menu took focus, which can clear the editor's selection: put both
+    // back before acting on them.
+    _focusNode.requestFocus();
+    if (selection != null) {
+      _editor.execute([
+        se.ChangeSelectionRequest(
+          selection,
+          se.SelectionChangeType.placeCaret,
+          se.SelectionReason.userInteraction,
+        ),
+      ]);
+    }
     switch (choice) {
       case 'cut':
         await clipboard.cut();
@@ -430,9 +444,7 @@ class DocumentEditorState extends State<DocumentEditor> {
           se.BlockSelector.all,
           (doc, node) => {
             se.Styles.maxWidth: double.infinity,
-            se.Styles.padding: const se.CascadingPadding.symmetric(
-              vertical: 3,
-            ),
+            se.Styles.padding: const se.CascadingPadding.symmetric(vertical: 3),
             se.Styles.textStyle: base.copyWith(color: color, height: 1.4),
           },
         ),
@@ -481,8 +493,7 @@ class DocumentEditorState extends State<DocumentEditor> {
           b,
           issueNodeIds: issues,
           wiggleTick: widget.wiggleTick,
-          issueColor:
-              widget.issueColor ?? Theme.of(context).colorScheme.error,
+          issueColor: widget.issueColor ?? Theme.of(context).colorScheme.error,
         ),
     ];
   }
@@ -501,7 +512,7 @@ class DocumentEditorState extends State<DocumentEditor> {
         componentBuilders: _componentBuilders(),
       );
     } else {
-      Widget editor = se.SuperEditor(
+      surface = se.SuperEditor(
         key: ValueKey('editor-$_generation'),
         editor: _editor,
         focusNode: _focusNode,
@@ -531,23 +542,32 @@ class DocumentEditorState extends State<DocumentEditor> {
           ...se.defaultSuperEditorDocumentOverlayBuilders,
         ],
       );
-      if (_iosControls != null && _androidControls != null) {
-        editor = se.SuperEditorIosControlsScope(
-          controller: _iosControls!,
-          child: se.SuperEditorAndroidControlsScope(
-            controller: _androidControls!,
-            child: editor,
-          ),
-        );
-      }
-      if (_clipboard != null && !kIsWeb) {
-        editor = GestureDetector(
-          // SuperEditor has no desktop context menu; this is ours.
-          onSecondaryTapUp: _showContextMenu,
-          child: editor,
-        );
-      }
-      surface = editor;
+    }
+
+    // Inside an ancestor Scrollable (a form in a scroll view) super_editor
+    // renders as a sliver. Give it its own non-scrolling, shrink-wrapped
+    // viewport so it lays out as an ordinary box among the other fields;
+    // the page keeps its own scrolling.
+    Widget viewport = CustomScrollView(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      slivers: [surface],
+    );
+    if (!widget.readOnly && _iosControls != null && _androidControls != null) {
+      viewport = se.SuperEditorIosControlsScope(
+        controller: _iosControls!,
+        child: se.SuperEditorAndroidControlsScope(
+          controller: _androidControls!,
+          child: viewport,
+        ),
+      );
+    }
+    if (!widget.readOnly && _clipboard != null && !kIsWeb) {
+      viewport = GestureDetector(
+        // SuperEditor has no desktop context menu; this is ours.
+        onSecondaryTapUp: _showContextMenu,
+        child: viewport,
+      );
     }
 
     final placeholder = widget.placeholder;
@@ -555,15 +575,7 @@ class DocumentEditorState extends State<DocumentEditor> {
       constraints: BoxConstraints(minHeight: widget.minHeight ?? 0),
       child: Stack(
         children: [
-          // Inside an ancestor Scrollable (a form in a scroll view) super_editor
-          // renders as a sliver. Give it its own non-scrolling, shrink-wrapped
-          // viewport so it lays out as an ordinary box among the other
-          // fields; the page keeps its own scrolling.
-          CustomScrollView(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            slivers: [surface],
-          ),
+          viewport,
           if (placeholder != null && _isEmpty)
             Positioned(
               left: 8,

@@ -75,8 +75,7 @@ void main() {
       final document = SuperEditorAdapter.toMutableDocument(original);
       final copy = se.MutableDocument(
         nodes: [
-          for (final n in document)
-            n.copyAndReplaceMetadata({...n.metadata}),
+          for (final n in document) n.copyAndReplaceMetadata({...n.metadata}),
         ],
       );
       expect(SuperEditorAdapter.toSnapshot(copy), original);
@@ -218,7 +217,10 @@ void main() {
       final document = SuperEditorAdapter.toMutableDocument(
         DocSnapshot([const ParagraphNode(id: 'p', text: DocText('a'))]),
       );
-      expect(SuperEditorAdapter.toSnapshot(document).nodes.single, isA<ParagraphNode>());
+      expect(
+        SuperEditorAdapter.toSnapshot(document).nodes.single,
+        isA<ParagraphNode>(),
+      );
       document.replaceNodeById(
         'p',
         se.ParagraphNode(id: 'p', text: se.AttributedText('b')),

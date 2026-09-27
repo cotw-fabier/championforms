@@ -153,10 +153,7 @@ class _IssuePainter extends CustomPainter {
     final rect = Offset.zero & size;
     canvas
       ..drawRect(rect, Paint()..color = color.withValues(alpha: 0.06))
-      ..drawRect(
-        Rect.fromLTWH(-6, 0, 3, size.height),
-        Paint()..color = color,
-      );
+      ..drawRect(Rect.fromLTWH(-6, 0, 3, size.height), Paint()..color = color);
   }
 
   @override
