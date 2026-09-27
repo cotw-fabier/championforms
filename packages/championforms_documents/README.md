@@ -55,6 +55,28 @@ JSON (`FormFieldRegistry.fieldFromJson({'type': 'document', ...})`, which
 accepts `ruleSet`, `initialDocument`, `placeholder`, `minHeight`,
 `readOnly`, `blocks` and the common field keys).
 
+Extra `/` blocks in JSON name their icon from `DocumentBlockIcons`
+(Material icon names such as `text_fields`, `check_box`, `list`,
+`upload_file`, `star`, `draw`; an unknown name gets a generic icon; add
+your own to `DocumentBlockIcons.named`):
+
+```json
+"blocks": [
+  {"label": "Rating", "icon": "star", "id": "rating",
+   "keywords": ["stars"], "field": {"type": "rating", "maxStars": 5}}
+]
+```
+
+JSON cannot carry a clipboard delegate. Set one app-wide instead; it is
+used by every document field that has none of its own:
+
+```dart
+void main() {
+  DocumentFields.defaultClipboardDelegate = ChampionDocClipboard.new;
+  runApp(const MyApp());
+}
+```
+
 ### Reading results
 
 The editor pushes its content to the controller on a 150 ms trailing
@@ -110,6 +132,45 @@ Required extracts and constraint rules become the document field's errors
 (`errorState`, `formErrors`, live with `validateLive: true`). Issues anchored
 to a block mark that block and make it wiggle when validation fails.
 
+To show the rule issues live without running validation (no wiggle, no
+error state), read them directly:
+
+```dart
+DocumentFields.issuesOf(controller, 'agreement');    // List<DocIssue>
+form.FormResults.getResults(controller: controller, checkForErrors: false)
+    .documentIssues('agreement');                    // same, from results
+```
+
+### Save and load
+
+`controller.exportValues()` returns every stored value as JSON-safe data:
+the document as its JSON, embedded fields under `agreement.field.{nodeId}`,
+options as their values, files as metadata. Derived values are left out
+(they are recomputed). One `setFieldValues` call loads it all back, on a
+fresh form of the same template:
+
+```dart
+final draft = jsonEncode(controller.exportValues());
+
+// later
+controller.setFieldValues(jsonDecode(draft));
+```
+
+Key order does not matter. Values for blocks the fresh form does not have
+yet wait in the controller's `pendingFieldValues`; the document registers
+those blocks in the notification that announces its new value, and each
+block takes its value as it is registered. This works whether or not the
+editor is on screen. File uploads come
+back empty (their bytes are never saved).
+
+`setFieldValues` notifies once, so there is no need to force a
+notification after it. (If you write values with `noNotify: true`, pass
+`noNotify: false` on the last write instead of calling
+`setFieldValues(const {})`.)
+
+For a submission payload, `results.toJson()` gives the visible values as
+JSON, derived values included.
+
 ### Editing
 
 Typing, Enter and Backspace go through the rule set's transform rules
@@ -129,6 +190,11 @@ browser's own copy/cut/paste events do (`DocClipboardEvents.current` gives
 a custom delegate the event). Pasted nodes are inserted at the caret (see
 `pasteEdit` for the exact rules) and pasted embedded field values are
 restored. Without a delegate, super_editor's plain-text clipboard is used.
+
+Selection can be set from code (for tools and tests):
+`DocumentEditorState.selectNode(nodeId)` selects a whole block, and
+`selectRange(DocSelection(...))` any range; `selection` reads it back.
+`DocumentFieldWidgetState.editorState` gives the editor state of a field.
 
 The lower-level pieces are public too: `DocumentEditor` (the editing
 surface without a form), `SuperEditorAdapter` (`MutableDocument` ⇄
@@ -241,6 +307,8 @@ results.grab('agreement').asDocument();      // DocSnapshot?
 results.grab('agreement').asDocumentJson();  // Map?
 results.grab('agreement').asMarkdown();      // String
 results.extracted('agreement');              // {people: [...], startDate: ...}
+results.documentIssues('agreement');         // List<DocIssue>
+results.toJson();                            // JSON-safe values
 ```
 
 ## License
