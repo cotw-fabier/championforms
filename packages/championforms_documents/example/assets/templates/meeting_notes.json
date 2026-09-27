@@ -18,6 +18,9 @@
       {"rule": "requiredSection", "title": "Action items"}
     ]
   },
+  "blocks": [
+    {"label": "Rating", "icon": "star", "id": "rating", "keywords": ["stars", "score", "field"], "field": {"type": "rating", "title": "Rating", "maxStars": 5}}
+  ],
   "initialDocument": {
     "schemaVersion": 1,
     "nodes": [

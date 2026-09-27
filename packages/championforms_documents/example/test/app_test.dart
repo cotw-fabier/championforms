@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:championforms_clipboard/championforms_clipboard.dart';
-import 'package:super_editor/super_editor.dart' as se;
 import 'package:super_editor/super_editor_test.dart';
 
 import 'helpers.dart';
@@ -44,6 +43,24 @@ void main() {
         isA<form.CheckboxSelect>(),
       );
       expect(fields['agreement.field.sa_signed_copy'], isA<form.FileUpload>());
+      // Everything comes from the template JSON: the Rating block and its
+      // icon, and the app-wide clipboard delegate.
+      final agreement = fields['agreement']! as DocumentField;
+      final rating = agreement.blockTemplates.firstWhere(
+        (b) => b.key == 'rating',
+      );
+      expect(rating.icon, DocumentBlockIcons.named['star']);
+      expect(
+        tester
+            .widget<DocumentEditor>(
+              find.descendant(
+                of: find.byKey(const ValueKey('agreement')),
+                matching: find.byType(DocumentEditor),
+              ),
+            )
+            .clipboardDelegate,
+        isA<ChampionDocClipboard>(),
+      );
       // The template's rules are live: derived values are in the side panel.
       expect(app.extractedText('parties'), contains('acme, globex'));
       expect(app.extractedText('startDate'), contains('2026-10-01'));
@@ -219,6 +236,21 @@ void main() {
       toggleOn: ['training', 'support'],
     );
     await app.settle();
+    // A block the template does not have: its id is unknown to a fresh
+    // form until the loaded document registers it.
+    c.updateFieldValue(
+      'agreement',
+      DocSnapshot([
+        ...app.snapshot('agreement').nodes,
+        const EmbeddedFieldNode(
+          id: 'extra_note',
+          fieldJson: {'type': 'text', 'title': 'Extra'},
+        ),
+      ]),
+    );
+    await app.settle();
+    c.updateFieldValue('agreement.field.extra_note', 'kept');
+    await app.settle();
     final before = form.FormResults.getResults(
       controller: c,
       checkForErrors: false,
@@ -233,7 +265,10 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('save')));
     await tester.pumpAndSettle();
-    expect(await storage.read(), contains('Phase one: '));
+    final saved = await storage.read();
+    expect(saved, contains('Phase one: '));
+    expect(saved, contains('"agreement.field.extra_note":"kept"'));
+    expect(saved, isNot(contains('"agreement.parties"')), reason: 'derived');
 
     await tester.tap(find.byKey(const ValueKey('reset')));
     await tester.pumpAndSettle();
@@ -284,6 +319,8 @@ void main() {
       reason: 'the editor shows the loaded document',
     );
     expect(after.extracted('agreement'), before.extracted('agreement'));
+    expect(after.grab('agreement.field.extra_note').asString(), 'kept');
+    expect(after.toJson(), before.toJson());
   });
 
   testWidgets('copying a filled Select block and pasting it in the scratch tab '
@@ -297,23 +334,7 @@ void main() {
 
     // Select just the Select block and copy it.
     final agreement = app.editor('agreement');
-    agreement.focusNode.requestFocus();
-    await tester.pump();
-    agreement.editor.execute([
-      se.ChangeSelectionRequest(
-        SuperEditorAdapter.toEditorSelection(
-          agreement.document,
-          const DocSelection(
-            startNodeId: 'sa_payment_terms',
-            startOffset: 0,
-            endNodeId: 'sa_payment_terms',
-            endOffset: 1,
-          ),
-        ),
-        se.SelectionChangeType.expandSelection,
-        se.SelectionReason.userInteraction,
-      ),
-    ]);
+    expect(agreement.selectNode('sa_payment_terms'), isTrue);
     await tester.pump();
     await pressShortcut(tester, LogicalKeyboardKey.keyC);
     await tester.pumpAndSettle();

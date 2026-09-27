@@ -28,19 +28,16 @@ class AgreementTemplate {
   String get description => (json['description'] as String?) ?? '';
 
   /// Builds the document field through the registry
-  /// (`FormFieldRegistry.fieldFromJson`), then adds what JSON cannot carry:
-  /// the clipboard delegate, which needs the controller, and the app's
-  /// Rating block, which has an icon.
-  DocumentField buildField(form.FormController controller) {
+  /// (`FormFieldRegistry.fieldFromJson`). Everything comes from the JSON,
+  /// the Rating block and its icon included; the clipboard delegate is the
+  /// app-wide default set in [ensureFieldTypes].
+  DocumentField buildField() {
     ensureFieldTypes();
     final decoded = form.FormFieldRegistry.fieldFromJson(json);
     if (decoded is! DocumentField) {
       throw StateError('Template "$id" is not a document field');
     }
-    return decoded.copyWith(
-      clipboardDelegate: ChampionDocClipboard(controller),
-      blockTemplates: [...decoded.blockTemplates, ratingBlock],
-    );
+    return decoded;
   }
 
   /// The rule set's extract keys, for the template summary.
@@ -51,19 +48,22 @@ class AgreementTemplate {
   ];
 }
 
-/// The app's extra `/` menu entry: a star rating field.
+/// The Rating `/` entry for documents written in Dart (the scratch
+/// document). The templates declare the same block in their JSON.
 final ratingBlock = DocumentBlockTemplate(
   id: 'rating',
   label: 'Rating',
-  icon: Icons.star_outline_rounded,
+  icon: DocumentBlockIcons.named['star'],
   keywords: const ['stars', 'score', 'field'],
   fieldJson: () => {'type': 'rating', 'title': 'Rating', 'maxStars': 5},
 );
 
 /// Registers the document field type, the built-in rules and the app's
-/// rating field. Idempotent.
+/// rating field, and turns on rich copy / paste for every document.
+/// Idempotent.
 void ensureFieldTypes() {
   DocumentFields.ensureInitialized();
+  DocumentFields.defaultClipboardDelegate ??= ChampionDocClipboard.new;
   registerRatingField();
 }
 

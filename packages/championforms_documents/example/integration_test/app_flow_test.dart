@@ -128,23 +128,7 @@ void main() {
 
     // 4. Select the block and copy it to the real system clipboard.
     final agreement = editorOf('agreement');
-    agreement.focusNode.requestFocus();
-    await tester.pump();
-    agreement.editor.execute([
-      se.ChangeSelectionRequest(
-        SuperEditorAdapter.toEditorSelection(
-          agreement.document,
-          DocSelection(
-            startNodeId: selectNode.id,
-            startOffset: 0,
-            endNodeId: selectNode.id,
-            endOffset: 1,
-          ),
-        ),
-        se.SelectionChangeType.expandSelection,
-        se.SelectionReason.userInteraction,
-      ),
-    ]);
+    expect(agreement.selectNode(selectNode.id), isTrue);
     await tester.pump();
     await shortcut(LogicalKeyboardKey.keyC);
     await tester.pumpAndSettle();
