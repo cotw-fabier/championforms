@@ -35,6 +35,7 @@ class ChampionVisibilityDetector extends SingleChildRenderObjectWidget {
     super.key,
     required this.onVisibilityChanged,
     this.threshold = 0.5,
+    this.enabled = true,
     required Widget child,
   }) : super(child: child);
 
@@ -48,11 +49,20 @@ class ChampionVisibilityDetector extends SingleChildRenderObjectWidget {
   /// 0.5 crossover are notified promptly, without firing on sub-pixel jitter.
   final double threshold;
 
+  /// Whether to measure at all. A disabled detector is a plain proxy box: it
+  /// schedules no measurements and reports nothing. Toggling it keeps the
+  /// render tree stable, so a caller can measure only while it needs to
+  /// (for example while a deferred animation is pending) without
+  /// re-parenting its child. Re-enabling reports the current fraction on the
+  /// next frame, even if it has not changed since the detector was disabled.
+  final bool enabled;
+
   @override
   RenderChampionVisibilityDetector createRenderObject(BuildContext context) {
     return RenderChampionVisibilityDetector(
       onVisibilityChanged: onVisibilityChanged,
       threshold: threshold,
+      enabled: enabled,
     );
   }
 
@@ -63,7 +73,8 @@ class ChampionVisibilityDetector extends SingleChildRenderObjectWidget {
   ) {
     renderObject
       ..onVisibilityChanged = onVisibilityChanged
-      ..threshold = threshold;
+      ..threshold = threshold
+      ..enabled = enabled;
   }
 }
 
@@ -76,8 +87,10 @@ class RenderChampionVisibilityDetector extends RenderProxyBox {
   RenderChampionVisibilityDetector({
     required void Function(double visibleFraction) onVisibilityChanged,
     required double threshold,
+    bool enabled = true,
   })  : _onVisibilityChanged = onVisibilityChanged,
-        _threshold = threshold;
+        _threshold = threshold,
+        _enabled = enabled;
 
   void Function(double visibleFraction) _onVisibilityChanged;
   set onVisibilityChanged(void Function(double visibleFraction) value) {
@@ -87,6 +100,16 @@ class RenderChampionVisibilityDetector extends RenderProxyBox {
   double _threshold;
   set threshold(double value) {
     _threshold = value;
+  }
+
+  bool _enabled;
+  set enabled(bool value) {
+    if (value == _enabled) return;
+    _enabled = value;
+    // Forget the last report so re-enabling always reports afresh, and
+    // repaint so the first measurement is scheduled.
+    _lastReportedFraction = null;
+    if (value) markNeedsPaint();
   }
 
   /// Guards against scheduling more than one measurement per frame even though
@@ -100,7 +123,7 @@ class RenderChampionVisibilityDetector extends RenderProxyBox {
   @override
   void paint(PaintingContext context, Offset offset) {
     super.paint(context, offset);
-    _scheduleVisibilityUpdate();
+    if (_enabled) _scheduleVisibilityUpdate();
   }
 
   /// Schedules a single post-frame visibility computation, coalescing repeated
@@ -110,7 +133,7 @@ class RenderChampionVisibilityDetector extends RenderProxyBox {
     _updateScheduled = true;
     SchedulerBinding.instance.addPostFrameCallback((_) {
       _updateScheduled = false;
-      _computeAndReport();
+      if (_enabled) _computeAndReport();
     });
   }
 
@@ -193,7 +216,7 @@ class RenderChampionVisibilityDetector extends RenderProxyBox {
   void detach() {
     // Report zero so a removed / disposed detector never leaves a listener
     // believing this subtree is still on screen.
-    if (_lastReportedFraction != 0.0) {
+    if (_enabled && _lastReportedFraction != 0.0) {
       _lastReportedFraction = 0.0;
       _onVisibilityChanged(0.0);
     }

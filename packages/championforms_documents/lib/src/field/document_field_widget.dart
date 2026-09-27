@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:championforms/championforms.dart' as form;
+import 'package:championforms/championforms_themes.dart' show FormFieldDefaults;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:super_editor/super_editor.dart' as se;
@@ -225,11 +226,19 @@ class DocumentFieldWidgetState extends State<DocumentFieldWidget> {
     _failureTick = tick;
     _runSafely(() {
       _updateIssues();
-      if (failed && controller.findErrors(docId).isNotEmpty) {
+      if (failed && _animateErrors && controller.findErrors(docId).isNotEmpty) {
         _wiggleTick.value++;
       }
     });
   }
+
+  /// Whether a validation failure wiggles the offending block: the field's
+  /// `animateValidationErrors`, else the app-wide
+  /// `FormFieldDefaults.instance.animateValidationErrors`. The same chain
+  /// gates the core field wiggle. Reduce motion is honoured by the block.
+  bool get _animateErrors =>
+      field.animateValidationErrors ??
+      FormFieldDefaults.instance.animateValidationErrors;
 
   void _rehydrate(DocSnapshot incoming) {
     final state = editorState;

@@ -191,7 +191,11 @@ fillable (a fixed template with blanks).
 
 Required extracts and constraint rules become the document field's errors
 (`errorState`, `formErrors`, live with `validateLive: true`). Issues anchored
-to a block mark that block and make it wiggle when validation fails.
+to a block mark that block and make it wiggle when validation fails. The
+wiggle follows the core one: `animateValidationErrors: false` on the field (or
+`FormFieldDefaults.instance.animateValidationErrors = false` app-wide) turns it
+off, reduce motion skips it, and a block scrolled off screen waits until it
+scrolls into view.
 
 To show the rule issues live without running validation (no wiggle, no
 error state), read them directly:
