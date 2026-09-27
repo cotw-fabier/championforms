@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:championforms/championforms.dart' as form;
 import 'package:championforms_documents/championforms_documents.dart';
-import 'package:championforms_documents/src/clipboard/clipboard.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 DocMark m(DocMarkType t, int s, int e, [String? href]) =>

@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:championforms_documents/championforms_documents.dart';
-import 'package:championforms_documents/src/clipboard/clipboard.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// A compact, id-free description of a node for structural assertions.

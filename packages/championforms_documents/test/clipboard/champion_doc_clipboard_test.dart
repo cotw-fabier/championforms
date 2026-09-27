@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:championforms/championforms.dart' as form;
 import 'package:championforms_clipboard/championforms_clipboard.dart';
 import 'package:championforms_documents/championforms_documents.dart';
-import 'package:championforms_documents/src/clipboard/clipboard.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const docId = 'doc';
