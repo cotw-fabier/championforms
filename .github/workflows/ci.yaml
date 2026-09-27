@@ -20,11 +20,13 @@ env:
     packages/championforms_clipboard/example
     packages/championforms_documents
     packages/championforms_documents/example
+  CRATE_DIR: packages/championforms_clipboard/rust
 
 jobs:
   analyze-and-test:
     name: Analyze and test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -47,21 +49,25 @@ jobs:
           flutter-version: 3.47.x
           cache: true
 
-      # Rust is only needed once championforms_clipboard has its native crate.
-      - name: Install Rust toolchain
-        if: hashFiles('packages/championforms_clipboard/rust/Cargo.toml') != ''
-        uses: dtolnay/rust-toolchain@stable
-
+      # rustup is preinstalled on every hosted runner. With no argument,
+      # `rustup toolchain install` (rustup >= 1.28) installs the channel and
+      # targets pinned in rust-toolchain.toml; older rustup installs them on
+      # `rustup show`.
       - name: Install pinned Rust toolchain (rust-toolchain.toml)
-        if: hashFiles('packages/championforms_clipboard/rust/Cargo.toml') != ''
-        working-directory: packages/championforms_clipboard/rust
-        run: rustup show
+        working-directory: ${{ env.CRATE_DIR }}
+        run: |
+          rustup toolchain install || rustup show
+          rustup show active-toolchain
+          rustc --version
 
       - name: Cache cargo
-        if: hashFiles('packages/championforms_clipboard/rust/Cargo.toml') != ''
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: packages/championforms_clipboard/rust -> target
+          workspaces: ${{ env.CRATE_DIR }} -> target
+
+      - name: cargo test (championforms_clipboard crate)
+        working-directory: ${{ env.CRATE_DIR }}
+        run: cargo test --locked
 
       - name: Resolve the workspace
         run: flutter pub get
@@ -76,6 +82,8 @@ jobs:
             echo "::endgroup::"
           done
 
+      # Benchmarks (packages/championforms_documents/test/perf) are tagged
+      # `perf` and skipped by that package's dart_test.yaml.
       - name: Test
         run: |
           for member in $MEMBERS; do
@@ -101,6 +109,190 @@ jobs:
         if: runner.os == 'Linux'
         working-directory: packages/championforms_clipboard/example
         run: flutter build web
+
+  # Real system clipboard round trips through the Rust FFI backend. This is
+  # the runtime verification of the Windows and Linux backends, which can
+  # only be compile-checked on a Mac. Each OS is its own job, so the checks
+  # list shows pass/fail per platform; the job summary has one row per test
+  # file.
+  clipboard-integration:
+    name: Clipboard native integration (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
+    env:
+      APP_DIR: packages/championforms_clipboard/example
+      TEST_FILES: >-
+        integration_test/ffi_clipboard_test.dart
+        integration_test/ffi_clipboard_stress_test.dart
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux desktop and X server dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev ninja-build clang cmake pkg-config xvfb
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.x
+          cache: true
+
+      - name: Install pinned Rust toolchain (rust-toolchain.toml)
+        working-directory: ${{ env.CRATE_DIR }}
+        run: |
+          rustup toolchain install || rustup show
+          rustc --version
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ env.CRATE_DIR }} -> target
+
+      - name: Resolve the workspace
+        run: flutter pub get
+
+      # One flutter invocation per file: a second app launch in the same
+      # desktop run is unreliable. macOS goes through the wrapper, which
+      # closes the test app macOS sometimes relaunches (see CLAUDE.md);
+      # Linux runs under a virtual X server (GTK clipboard, X11).
+      - name: Run clipboard integration tests
+        run: |
+          status=0
+          {
+            echo "### Clipboard native integration: $RUNNER_OS"
+            echo
+            echo "| Test file | Result |"
+            echo "|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          for test in $TEST_FILES; do
+            echo "::group::$RUNNER_OS: $test"
+            case "$RUNNER_OS" in
+              macOS)
+                tool/macos_integration_test.sh "$APP_DIR" "$test" --reporter expanded ;;
+              Windows)
+                (cd "$APP_DIR" && flutter test "$test" -d windows --reporter expanded) ;;
+              Linux)
+                (cd "$APP_DIR" && xvfb-run -a flutter test "$test" -d linux --reporter expanded) ;;
+            esac
+            code=$?
+            echo "::endgroup::"
+            if [ "$code" = 0 ]; then
+              echo "PASS  $RUNNER_OS  $test"
+              echo "| \`$test\` | PASS |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "::error title=Clipboard integration ($RUNNER_OS)::$test failed (exit $code)"
+              echo "| \`$test\` | **FAIL** (exit $code) |" >> "$GITHUB_STEP_SUMMARY"
+              status=1
+            fi
+          done
+          exit $status
+
+  browser-tests:
+    name: Browser tests (Chrome)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.x
+          cache: true
+
+      - name: Resolve the workspace
+        run: flutter pub get
+
+      - name: championforms_clipboard (web backend)
+        working-directory: packages/championforms_clipboard
+        run: flutter test --platform chrome test/web_backend_browser_test.dart
+
+      # The documents tests that run in a browser. Not listed: the fixture
+      # tests in html_importer_test.dart read files with dart:io, and the
+      # keyboard clipboard / Enter tests in editor/clipboard_test.dart and
+      # editor/typing_rules_test.dart assert desktop behavior that the web
+      # deliberately hands to the browser (covered by test/web/ instead).
+      - name: championforms_documents (web-capable tests)
+        working-directory: packages/championforms_documents
+        run: >-
+          flutter test --platform chrome
+          test/web/
+          test/editor/super_editor_adapter_test.dart
+          test/editor/slash_menu_test.dart
+          test/embedded/embedded_field_manager_test.dart
+          test/clipboard/champion_doc_clipboard_test.dart
+          test/clipboard/html_exporter_test.dart
+          test/clipboard/selection_slicer_test.dart
+          test/engine_test.dart
+          test/extracts_constraints_test.dart
+          test/model_json_test.dart
+          test/results_extensions_test.dart
+          test/serializers_test.dart
+          test/transforms_test.dart
+          test/untrusted_json_test.dart
+
+  # Only proves the trial app builds.
+  documents-example-build:
+    name: Build documents example (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: web
+          - os: macos-latest
+            target: macos
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.x
+          cache: true
+
+      # The macOS build compiles championforms_clipboard's Rust backend
+      # (native assets); the web build needs no Rust.
+      - name: Install pinned Rust toolchain (rust-toolchain.toml)
+        if: matrix.target == 'macos'
+        working-directory: ${{ env.CRATE_DIR }}
+        run: |
+          rustup toolchain install || rustup show
+          rustc --version
+
+      - name: Cache cargo
+        if: matrix.target == 'macos'
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ env.CRATE_DIR }} -> target
+
+      - name: Resolve the workspace
+        run: flutter pub get
+
+      - name: flutter build ${{ matrix.target }}
+        working-directory: packages/championforms_documents/example
+        run: |
+          case "${{ matrix.target }}" in
+            web) flutter build web ;;
+            macos) flutter build macos --debug ;;
+          esac
 
   publish-dry-run:
     name: Publish dry-run
