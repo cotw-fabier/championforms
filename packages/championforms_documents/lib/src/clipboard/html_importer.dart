@@ -337,7 +337,14 @@ final class _Importer {
   void _element(dom.Element el, _Ctx ctx, int depth) {
     final tag = (el.localName ?? '').toLowerCase();
     if (_dropTags.contains(tag)) return;
-    final style = _parseStyle(el.attributes['style']);
+    final style = {..._parseStyle(el.attributes['style'])};
+    if (tag == 'li' && el.attributes['role'] == 'checkbox') {
+      // Google Docs strikes through ticked checklist items as presentation,
+      // not as content formatting.
+      style
+        ..remove('text-decoration')
+        ..remove('text-decoration-line');
+    }
 
     // Word's list marker span: capture, don't import.
     if ((style['mso-list'] ?? '') == 'ignore') {
