@@ -1,0 +1,24 @@
+{
+  "type": "document",
+  "id": "agreement",
+  "title": "Document",
+  "description": "Start from scratch. Markdown shortcuts, / blocks, @mentions and dates all work.",
+  "placeholder": "Start typing, or press / for blocks",
+  "minHeight": 320,
+  "ruleSet": {
+    "transforms": [],
+    "extracts": [
+      {"rule": "mentions", "key": "people"},
+      {"rule": "dates", "key": "dates", "all": true},
+      {"rule": "taskStatus", "key": "tasks"},
+      {"rule": "hasSection", "key": "hasPricing", "title": "Pricing"}
+    ],
+    "constraints": []
+  },
+  "initialDocument": {
+    "schemaVersion": 1,
+    "nodes": [
+      {"id": "blank_1", "type": "paragraph", "content": {"text": ""}}
+    ]
+  }
+}
