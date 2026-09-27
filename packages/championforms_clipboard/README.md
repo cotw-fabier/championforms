@@ -4,8 +4,11 @@ Multi-format system clipboard for Flutter. One clipboard item can carry several
 representations at once (plain text, HTML and custom application types), so
 rich content can round-trip between your app and other apps.
 
-> **Status:** early development (`0.1.0-dev`). The web and Android backends
-> are implemented; the Rust desktop/iOS backends are in progress.
+> **Status:** prerelease (`0.1.0-dev`). Every backend is implemented: Rust
+> native assets on macOS, iOS, Windows and Linux, `package:jni` on Android
+> and the async Clipboard API on the web. macOS, iOS, Android and Chrome are
+> verified at runtime; Windows and Linux are compile-checked and wait on
+> their first CI integration run (see [Verified on](#verified-on)).
 
 ## Using from git (before the pub.dev release)
 
@@ -64,19 +67,50 @@ Building for desktop or iOS requires a Rust toolchain (`rustup`).
 
 ### Supported formats
 
-| Format | Android | Web (Chromium) | Web (Safari, Firefox) |
-|---|---|---|---|
-| `plainText` | yes | yes | yes |
-| `html` | yes (`ClipData.newHtmlText`) | yes | yes |
-| `rtf` | no | no¹ | no¹ |
-| `png` | no | yes | yes |
-| `custom(name)` | no | yes, as `web application/x-<name>` | where the browser accepts it² |
+Each `ClipboardFormat` maps to these platform identifiers. "no" means the
+format is skipped on write (`SystemClipboard.supports(format)` is false) and
+never reported by `availableFormats()`.
+
+| Format | macOS / iOS | Windows | Linux (GTK 3) | Android | Web |
+|---|---|---|---|---|---|
+| `plainText` | `public.utf8-plain-text` | `CF_UNICODETEXT` | `text/plain;charset=utf-8`, `UTF8_STRING` | `ClipData` text | `text/plain` |
+| `html` | `public.html` | registered `HTML Format` (CF_HTML) | `text/html` | `ClipData.newHtmlText` | `text/html` |
+| `rtf` | `public.rtf` | registered `Rich Text Format` | `text/rtf` | no | `text/rtf`, where supported¹ |
+| `png` | `public.png`³ | registered `PNG`⁴ | `image/png` | no | `image/png` |
+| `custom(name)` | `<name>` as a UTI | registered format `<name>` | `application/x-<name>` | no | `web application/x-<name>`² |
 
 1. Written only where `ClipboardItem.supports('text/rtf')` is true, which no
    mainstream browser reports today.
-2. Probed with `ClipboardItem.supports()`. On browsers without it, the custom
-   format is attempted; if the browser rejects the write, it is retried
-   without custom formats and `supports()` reports false from then on.
+2. Chromium's "web custom format" syntax. Probed with
+   `ClipboardItem.supports()`. On browsers without it, the custom format is
+   attempted; if the browser rejects the write, it is retried without custom
+   formats and `supports()` reports false from then on. Reads accept the
+   unprefixed `application/x-<name>` too.
+3. On macOS a pasteboard that holds only `public.tiff` (screenshots,
+   Preview) is read as PNG.
+4. No `CF_DIB` fallback is written, so pasting an image into older Windows
+   apps that only read bitmaps may not work.
+
+The native mapping is specified in `lib/src/ffi/ABI.md`.
+
+### Verified on
+
+| Platform | Result |
+|---|---|
+| macOS 26 | FFI round trip 7/7, stress 4/4 (`example/integration_test`; the Windows-only CF_HTML cases are skipped) |
+| iOS 26.4 simulator | FFI round trip 7/7, stress 4/4 |
+| Android API 36 emulator | 4/4 (`android_clipboard_test.dart`) |
+| Chrome | browser tests 9/9 (`test/web_backend_browser_test.dart`), including the paste/copy event path |
+| Windows | compile-checked; runtime verified by the CI integration job (pending first CI run) |
+| Linux | compile-checked; runtime verified by the CI integration job (pending first CI run) |
+
+Manual paste checks into other apps (**not yet done**):
+
+- [ ] Google Docs (Chrome): HTML keeps headings, lists and bold; plain text
+  fallback in the plain-paste shortcut.
+- [ ] Microsoft Word (macOS and Windows): HTML keeps structure; RTF where
+  written.
+- [ ] Notion: HTML keeps headings, lists and checkboxes.
 
 ### Android
 
