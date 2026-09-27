@@ -1,6 +1,8 @@
 import 'package:championforms/championforms.dart' as form;
 import 'package:flutter/foundation.dart';
 
+import '../clipboard/champion_doc_clipboard.dart'
+    show restorePastedFieldValue;
 import '../model/doc_node.dart';
 
 /// What an embedded field inherits from the document that contains it.
@@ -177,19 +179,14 @@ class EmbeddedFieldManager {
 
   /// Restores pasted values into freshly registered blocks.
   ///
-  /// [values] maps an `EmbeddedFieldNode.id` to the value its field type's
-  /// `FieldClipboardCodec.paste` returned (see `DocPasteResult.fieldValues`).
-  /// Each type is restored the way its codec documents:
-  ///
-  /// - **FileUpload:** a live `List<FieldOption>` (a value from the
-  ///   clipboard session cache, which still has the file bytes) is written
-  ///   as is; bare metadata (`List<Map>`) is skipped, since the bytes cannot
-  ///   come back from the system clipboard;
-  /// - **OptionSelect** (checkbox, chips, radio, dropdown): the selected
-  ///   option values go through `OptionSelectClipboardCodec.optionsFor` and
-  ///   `updateMultiselectValues(..., overwrite: true)`;
-  /// - **CompoundField:** `CompoundClipboardCodec.writeTo`;
-  /// - anything else (text fields, custom types): `updateFieldValue`.
+  /// [values] maps an `EmbeddedFieldNode.id` to the value the clipboard
+  /// delegate returned in `DocPasteResult.fieldValues`. Each one goes
+  /// through [restorePastedFieldValue], which uses the restore path each
+  /// field type's codec documents (text: `updateFieldValue`; option select:
+  /// `OptionSelectClipboardCodec.optionsFor` + `updateMultiselectValues(...,
+  /// overwrite: true)`; compound: `CompoundClipboardCodec.writeTo`; file
+  /// upload: only a live `List<FieldOption>` from the session cache, never
+  /// bare metadata).
   ///
   /// A value that does not fit its field is skipped; pasted data is
   /// untrusted and must never throw out of a paste.
@@ -198,43 +195,15 @@ class EmbeddedFieldManager {
       final field = _entries[entry.key]?.field;
       if (field == null) continue;
       try {
-        _restore(field, entry.value);
+        restorePastedFieldValue(
+          controller,
+          field,
+          entry.value,
+          noNotify: noNotify,
+        );
       } catch (e) {
         debugPrint('Could not restore pasted value for ${field.id}: $e');
       }
-    }
-  }
-
-  void _restore(form.Field field, Object? value) {
-    final id = field.id;
-    switch (field) {
-      case form.FileUpload():
-        if (value is List && value.every((v) => v is form.FieldOption)) {
-          controller.updateFieldValue<List<form.FieldOption>>(
-            id,
-            value.cast<form.FieldOption>(),
-          );
-        }
-      case form.OptionSelect():
-        if (value is! List) return;
-        final selected = [
-          for (final v in value)
-            if (v is form.FieldOption) v.value else if (v is String) v,
-        ];
-        controller.updateMultiselectValues(
-          id,
-          form.OptionSelectClipboardCodec.optionsFor(field, selected),
-          overwrite: true,
-        );
-      case form.CompoundField():
-        if (value is! Map) return;
-        form.CompoundClipboardCodec.writeTo(controller, field, {
-          for (final e in value.entries)
-            if (e.key is String && e.value is String)
-              e.key as String: e.value as String,
-        });
-      default:
-        controller.updateFieldValue<Object>(id, value);
     }
   }
 

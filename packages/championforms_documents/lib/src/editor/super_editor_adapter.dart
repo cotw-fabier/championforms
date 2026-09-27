@@ -31,9 +31,9 @@ import 'embedded_block.dart';
 /// editor → snapshot. Empty marks (`start == end`) cannot be represented in
 /// attributed text and are dropped snapshot → editor.
 ///
-/// Marks come back in a canonical order (start, end, type, href), so a
-/// snapshot whose marks are already in that order round-trips to an equal
-/// snapshot.
+/// A node that has not been edited converts back to the very [DocNode] it
+/// was made from. Marks read from edited editor text come back in a
+/// canonical order (start, end, type, href).
 abstract final class SuperEditorAdapter {
   /// Editor → snapshot conversions are cached per (immutable) editor node,
   /// so converting a large document on every keystroke only converts the

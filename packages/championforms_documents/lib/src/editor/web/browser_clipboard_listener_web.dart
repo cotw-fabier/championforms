@@ -1,10 +1,22 @@
 import 'dart:js_interop';
 
+import 'package:championforms_clipboard/championforms_clipboard_web.dart';
 import 'package:web/web.dart' as web;
 
 import 'clipboard_events.dart';
 
 const bool browserClipboardEventsSupported = true;
+
+/// The text formats of a `paste` event (see
+/// `WebClipboardBackend.readFromPasteEvent`).
+/// [event] is the `ClipboardEvent` the listener below handed out.
+ClipboardReadResult? readFromPasteEvent(Object event) =>
+    WebClipboardBackend.readFromPasteEvent(event as web.ClipboardEvent);
+
+/// Writes [item]'s text formats into a `copy` / `cut` event (see
+/// `WebClipboardBackend.writeToCopyEvent`).
+bool writeToCopyEvent(Object event, ClipboardItem item) =>
+    WebClipboardBackend.writeToCopyEvent(event as web.ClipboardEvent, item);
 
 /// Capture-phase `copy` / `cut` / `paste` listeners on the window. While
 /// the editor is active they cancel the browser's default action (which

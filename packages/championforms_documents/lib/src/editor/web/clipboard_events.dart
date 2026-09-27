@@ -1,3 +1,5 @@
+import 'package:championforms_clipboard/championforms_clipboard.dart';
+
 import 'browser_clipboard_listener_stub.dart'
     if (dart.library.js_interop) 'browser_clipboard_listener_web.dart'
     as impl;
@@ -58,3 +60,12 @@ abstract class BrowserClipboardListener {
 
   void dispose();
 }
+
+/// The text formats of a browser `paste` event (null off the web).
+ClipboardReadResult? readBrowserPasteEvent(Object event) =>
+    impl.readFromPasteEvent(event);
+
+/// Writes [item]'s text formats into a browser `copy` / `cut` event
+/// (false off the web).
+bool writeBrowserCopyEvent(Object event, ClipboardItem item) =>
+    impl.writeToCopyEvent(event, item);

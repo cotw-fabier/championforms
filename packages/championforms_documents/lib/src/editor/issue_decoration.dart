@@ -130,19 +130,38 @@ class _IssueDecorationState extends State<IssueDecoration>
         final dx = t == 0 ? 0.0 : math.sin(t * math.pi * 6) * 6 * (1 - t);
         return Transform.translate(offset: Offset(dx, 0), child: child);
       },
-      child: DecoratedBox(
+      // A foreground painter, not a DecoratedBox: a decorated box registers
+      // itself as a hit-test target, and super_editor then treats taps on
+      // the block as taps on something other than document content.
+      child: CustomPaint(
         key: flagged ? ValueKey('document-issue-${widget.nodeId}') : null,
-        decoration: BoxDecoration(
-          color: flagged ? widget.color.withValues(alpha: 0.06) : null,
-          border: Border(
-            left: BorderSide(
-              color: flagged ? widget.color : Colors.transparent,
-              width: 3,
-            ),
-          ),
-        ),
+        foregroundPainter: flagged ? _IssuePainter(widget.color) : null,
         child: widget.child,
       ),
     );
   }
+}
+
+/// Paints the issue marker: a bar on the left and a light tint.
+class _IssuePainter extends CustomPainter {
+  _IssuePainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    canvas
+      ..drawRect(rect, Paint()..color = color.withValues(alpha: 0.06))
+      ..drawRect(
+        Rect.fromLTWH(-6, 0, 3, size.height),
+        Paint()..color = color,
+      );
+  }
+
+  @override
+  bool? hitTest(Offset position) => false;
+
+  @override
+  bool shouldRepaint(_IssuePainter oldDelegate) => oldDelegate.color != color;
 }

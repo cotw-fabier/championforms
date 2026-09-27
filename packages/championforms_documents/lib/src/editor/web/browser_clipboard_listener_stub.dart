@@ -1,3 +1,5 @@
+import 'package:championforms_clipboard/championforms_clipboard.dart';
+
 import 'clipboard_events.dart';
 
 const bool browserClipboardEventsSupported = false;
@@ -12,3 +14,7 @@ class PlatformBrowserClipboardListener implements BrowserClipboardListener {
   @override
   void dispose() {}
 }
+
+ClipboardReadResult? readFromPasteEvent(Object event) => null;
+
+bool writeToCopyEvent(Object event, ClipboardItem item) => false;

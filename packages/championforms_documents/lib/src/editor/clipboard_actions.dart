@@ -4,6 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:follow_the_leader/follow_the_leader.dart';
 import 'package:super_editor/super_editor.dart' as se;
 
+import 'package:championforms_clipboard/championforms_clipboard.dart'
+    show ClipboardFormat, ClipboardItem;
+
+import '../clipboard/champion_doc_clipboard.dart';
 import '../clipboard/doc_clipboard_delegate.dart';
 import 'doc_edit_command.dart';
 import 'paste_insertion.dart';
@@ -150,9 +154,20 @@ class DocumentClipboardActions {
     }
   }
 
-  /// Handles a browser clipboard event on the web: calls the delegate
-  /// synchronously inside [DocClipboardEvents.run] so it can use the event.
+  /// Handles a browser clipboard event on the web.
+  ///
+  /// With [ChampionDocClipboard] the event's own `clipboardData` is used:
+  /// a copy/cut writes `encodeSelection`'s HTML (payload embedded) and plain
+  /// text into the event, and a paste reads the event's formats through
+  /// `pasteFromRead` — no permission prompt, no async clipboard API. Any
+  /// other delegate is called synchronously inside [DocClipboardEvents.run]
+  /// so it can use the event itself.
   void handleBrowserEvent(BrowserClipboardAction action, Object event) {
+    final d = delegate;
+    if (d is ChampionDocClipboard) {
+      _handleBrowserEventWith(d, action, event);
+      return;
+    }
     DocClipboardEvents.run(event, () {
       switch (action) {
         case BrowserClipboardAction.copy:
@@ -163,6 +178,50 @@ class DocumentClipboardActions {
           paste();
       }
     });
+  }
+
+  void _handleBrowserEventWith(
+    ChampionDocClipboard d,
+    BrowserClipboardAction action,
+    Object event,
+  ) {
+    final editor = _editor;
+    if (action == BrowserClipboardAction.paste) {
+      final read = readBrowserPasteEvent(event);
+      if (read == null) return;
+      final result = d.pasteFromRead(read, docId: docId);
+      if (result != null && result.nodes.isNotEmpty) insertPasteResult(result);
+      return;
+    }
+    final range = editor.composer.selection;
+    final selection = expandedSelection();
+    if (range == null || selection == null) return;
+    final data = d.encodeSelection(
+      docId: docId,
+      doc: SuperEditorAdapter.toSnapshot(editor.document),
+      selection: selection,
+    );
+    if (data != null) {
+      writeBrowserCopyEvent(
+        event,
+        ClipboardItem({
+          ClipboardFormat.html: data.html,
+          ClipboardFormat.plainText: data.plainText,
+        }),
+      );
+    }
+    if (action == BrowserClipboardAction.cut) {
+      editor.execute([
+        se.DeleteContentRequest(documentRange: range),
+        se.ChangeSelectionRequest(
+          se.DocumentSelection.collapsed(
+            position: range.normalize(editor.document).start,
+          ),
+          se.SelectionChangeType.deleteContent,
+          se.SelectionReason.userInteraction,
+        ),
+      ]);
+    }
   }
 
   // -------------------------------------------------------------------------

@@ -121,6 +121,7 @@ class DocumentEditorState extends State<DocumentEditor> {
 
   late FocusNode _focusNode;
   final _slashLink = LeaderLink();
+  final _slashPortal = OverlayPortalController();
   int _generation = 0;
   int _slashHighlight = 0;
   bool _isEmpty = false;
@@ -331,6 +332,11 @@ class DocumentEditorState extends State<DocumentEditor> {
   void _onSlashChanged() {
     if (!mounted) return;
     setState(() => _slashHighlight = 0);
+    if (slashQuery != null && !widget.readOnly) {
+      _slashPortal.show();
+    } else {
+      _slashPortal.hide();
+    }
   }
 
   bool get _menuAbove =>
@@ -544,13 +550,20 @@ class DocumentEditorState extends State<DocumentEditor> {
       surface = editor;
     }
 
-    final showSlash = !widget.readOnly && slashQuery != null;
     final placeholder = widget.placeholder;
-    return ConstrainedBox(
+    final body = ConstrainedBox(
       constraints: BoxConstraints(minHeight: widget.minHeight ?? 0),
       child: Stack(
         children: [
-          surface,
+          // Inside an ancestor Scrollable (a form in a scroll view) super_editor
+          // renders as a sliver. Give it its own non-scrolling, shrink-wrapped
+          // viewport so it lays out as an ordinary box among the other
+          // fields; the page keeps its own scrolling.
+          CustomScrollView(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            slivers: [surface],
+          ),
           if (placeholder != null && _isEmpty)
             Positioned(
               left: 8,
@@ -567,36 +580,45 @@ class DocumentEditorState extends State<DocumentEditor> {
                 ),
               ),
             ),
-          if (showSlash)
-            Follower.withAligner(
-              link: _slashLink,
-              // On Android the caret drag handle sits in the overlay just
-              // below the caret and swallows taps there, so on mobile the
-              // menu opens above the caret. The aligner flips it to the other
-              // side, and nudges it sideways, at the screen edges.
-              aligner: _menuAbove
-                  ? PreferredPositionAligner(
-                      followerPosition: PreferredPrimaryPosition.top,
-                      leaderCrossAxisAnchor: Alignment.topLeft,
-                      followerCrossAxisAnchor: Alignment.bottomLeft,
-                      gap: 8,
-                    )
-                  : PreferredPositionAligner(
-                      followerPosition: PreferredPrimaryPosition.bottom,
-                      leaderCrossAxisAnchor: Alignment.bottomLeft,
-                      followerCrossAxisAnchor: Alignment.topLeft,
-                      gap: 8,
-                    ),
-              boundary: const SafeAreaFollowerBoundary(),
-              showWhenUnlinked: false,
-              child: SlashMenuPanel(
-                items: matchingSlashItems,
-                highlighted: _slashHighlight,
-                onSelected: chooseSlashItem,
-                onHover: (i) => setState(() => _slashHighlight = i),
-              ),
-            ),
         ],
+      ),
+    );
+    // The `/` menu lives in the app overlay so it can extend past the
+    // editor's bounds and still receive taps.
+    return OverlayPortal(
+      controller: _slashPortal,
+      overlayChildBuilder: _buildSlashMenu,
+      child: body,
+    );
+  }
+
+  Widget _buildSlashMenu(BuildContext context) {
+    return Follower.withAligner(
+      link: _slashLink,
+      // On Android the caret drag handle sits in the overlay just below the
+      // caret and swallows taps there, so on mobile the menu opens above
+      // the caret. The aligner flips it to the other side, and nudges it
+      // sideways, at the screen edges.
+      aligner: _menuAbove
+          ? PreferredPositionAligner(
+              followerPosition: PreferredPrimaryPosition.top,
+              leaderCrossAxisAnchor: Alignment.topLeft,
+              followerCrossAxisAnchor: Alignment.bottomLeft,
+              gap: 8,
+            )
+          : PreferredPositionAligner(
+              followerPosition: PreferredPrimaryPosition.bottom,
+              leaderCrossAxisAnchor: Alignment.bottomLeft,
+              followerCrossAxisAnchor: Alignment.topLeft,
+              gap: 8,
+            ),
+      boundary: const SafeAreaFollowerBoundary(),
+      showWhenUnlinked: false,
+      child: SlashMenuPanel(
+        items: matchingSlashItems,
+        highlighted: _slashHighlight,
+        onSelected: chooseSlashItem,
+        onHover: (i) => setState(() => _slashHighlight = i),
       ),
     );
   }
