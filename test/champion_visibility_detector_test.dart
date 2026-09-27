@@ -40,4 +40,36 @@ void main() {
 
     expect(reported, greaterThan(0.9));
   });
+
+  testWidgets('a disabled detector reports nothing; enabling reports afresh',
+      (tester) async {
+    final reports = <double>[];
+
+    Widget build({required bool enabled}) => MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: ChampionVisibilityDetector(
+                enabled: enabled,
+                onVisibilityChanged: reports.add,
+                child: const SizedBox(height: 100, width: 100),
+              ),
+            ),
+          ),
+        );
+
+    await tester.pumpWidget(build(enabled: false));
+    await tester.pumpAndSettle();
+    expect(reports, isEmpty);
+
+    await tester.pumpWidget(build(enabled: true));
+    await tester.pumpAndSettle();
+    expect(reports, [1.0]);
+
+    // Disable and re-enable: the unchanged fraction is reported again.
+    await tester.pumpWidget(build(enabled: false));
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(build(enabled: true));
+    await tester.pumpAndSettle();
+    expect(reports, [1.0, 1.0]);
+  });
 }

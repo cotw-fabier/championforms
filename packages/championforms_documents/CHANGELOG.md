@@ -34,7 +34,10 @@
 - Derived fields `{docId}.{key}` for every extract rule (usable in results
   and `FieldCondition`s); required extracts and constraints become the
   field's validation errors, and anchored issues mark and wiggle their
-  block.
+  block. The block wiggle follows the core field wiggle: it honours
+  `animateValidationErrors` (on the field, then
+  `FormFieldDefaults.instance.animateValidationErrors`) and reduce motion,
+  and a block that is off screen waits until it scrolls into view.
 - Editor: `SuperEditorAdapter` (`MutableDocument` ⇄ `DocSnapshot`, lossless,
   ids kept), transform rules for typing / Enter / Backspace in place of
   super_editor's markdown reactions (`DocumentRulesBridge`), the `/` block

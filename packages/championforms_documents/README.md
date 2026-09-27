@@ -18,6 +18,67 @@ import 'package:championforms/championforms.dart' as form;
 import 'package:championforms_documents/championforms_documents.dart';
 ```
 
+## Using from git (before the pub.dev release)
+
+Until this package and championforms 0.8.0 are on pub.dev, depend on the
+repository. `championforms_documents` asks for `championforms ^0.8.0-dev.1`
+and `championforms_clipboard ^0.1.0-dev.1`, which pub.dev cannot supply yet,
+so override both with the same git source:
+
+```yaml
+dependencies:
+  championforms:
+    git:
+      url: https://github.com/cotw-fabier/championforms
+      ref: feature/documents-monorepo
+  championforms_documents:
+    git:
+      url: https://github.com/cotw-fabier/championforms
+      ref: feature/documents-monorepo
+      path: packages/championforms_documents
+
+dependency_overrides:
+  championforms:
+    git:
+      url: https://github.com/cotw-fabier/championforms
+      ref: feature/documents-monorepo
+  championforms_clipboard:
+    git:
+      url: https://github.com/cotw-fabier/championforms
+      ref: feature/documents-monorepo
+      path: packages/championforms_clipboard
+```
+
+`ref` is the branch until it merges into `main`; pin a commit SHA for
+reproducible builds, and use the same `ref` in all four entries. If your app
+imports `championforms_clipboard` itself, add `championforms_clipboard: any`
+under `dependencies` (the override supplies it). Building for macOS, iOS,
+Windows or Linux needs a Rust toolchain (`rustup`) for the clipboard's native
+assets.
+
+### Android: compileSdk 36
+
+super_editor's `super_keyboard` plugin compiles against Android API 34, while
+`flutter_plugin_android_lifecycle` (pulled in by `file_picker`) requires the
+plugins that depend on it to compile against 36 or later. Raise every Android
+library plugin to 36 in your app's `android/build.gradle.kts`, as the example
+app does:
+
+```kotlin
+subprojects {
+    val raiseCompileSdk = {
+        extensions.findByType(com.android.build.gradle.LibraryExtension::class.java)?.let { android ->
+            if ((android.compileSdk ?: 0) < 36) android.compileSdk = 36
+        }
+    }
+    if (state.executed) raiseCompileSdk() else afterEvaluate { raiseCompileSdk() }
+}
+```
+
+Place it before the `subprojects { project.evaluationDependsOn(":app") }`
+block. The app module itself also needs `compileSdk` 36 or later; the
+`flutter.compileSdkVersion` default is 36 on current Flutter.
+
 ## DocumentField
 
 A `DocumentField` is a form field whose value is a document. Put it in a
@@ -130,7 +191,11 @@ fillable (a fixed template with blanks).
 
 Required extracts and constraint rules become the document field's errors
 (`errorState`, `formErrors`, live with `validateLive: true`). Issues anchored
-to a block mark that block and make it wiggle when validation fails.
+to a block mark that block and make it wiggle when validation fails. The
+wiggle follows the core one: `animateValidationErrors: false` on the field (or
+`FormFieldDefaults.instance.animateValidationErrors = false` app-wide) turns it
+off, reduce motion skips it, and a block scrolled off screen waits until it
+scrolls into view.
 
 To show the rule issues live without running validation (no wiggle, no
 error state), read them directly:

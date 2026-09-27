@@ -559,6 +559,92 @@ Resolution order (first non-null wins): field-level explicit value →
     *   `.asMultiselectSingle()`: Returns the first selected option as `form.FieldOption?`.
     *   `.asFile()`: Returns uploaded files as `List<form.FileResultData>`, containing name, path, and `FileModel` (with bytes/stream/MIME details).
 
+## Rendering, Clipboard and Saving (v0.8.0)
+
+### `form.FieldView`: one field outside a `Form`
+
+`FieldView` renders a single registered field exactly as a `Form` would (theme
+resolution, state palette, layout, background and validation wiggle). It
+rebuilds only when that field's value, focus, state or errors change. A
+`FieldView` does not register its field, so add it to the controller first:
+
+```dart
+final note = form.TextField(id: 'note', title: 'Note');
+controller.addFields(form.FieldView.fieldsToRegister(note)); // includes compound sub-fields
+
+form.FieldView(controller: controller, field: note);
+```
+
+### Field clipboard codecs
+
+Every built-in field can describe its value for the clipboard as plain text,
+HTML and restorable JSON (`form.ClipboardFragment`). Password fields are never
+copied and file fields copy names and metadata, never bytes.
+
+```dart
+// Per field: the `clipboard:` parameter on every built-in field
+form.TextField(id: 'code', clipboard: const form.TextFieldClipboardCodec());
+
+// Per type: register a codec for your own field class
+FormFieldRegistry.registerClipboardCodec<RatingField>(const RatingClipboardCodec());
+
+// Resolve: field.clipboard, else the codec registered for its type
+final codec = FormFieldRegistry.resolveClipboard(note);
+final fragment = codec?.copy(note, controller.getFieldValueOrNull(note.id));
+
+// Turn it off app-wide
+FormFieldDefaults.instance.clipboardEnabled = false;
+```
+
+A codec extends `form.FieldClipboardCodec` and implements
+`copy(field, value)` and `paste(data)`. Registry codecs match the exact type,
+so a subclass of a built-in field does not inherit its parent's codec.
+
+### Saving and loading values as JSON
+
+```dart
+// Submission payload: the collected (visible) values, JSON-encodable
+final results = form.FormResults.getResults(controller: controller);
+if (!results.errorState) await api.post(jsonEncode(results.toJson()));
+
+// Draft: every stored value, hidden fields included
+await storage.save(jsonEncode(controller.exportValues()));
+
+// Load it back
+controller.setFieldValues(jsonDecode(await storage.load()));
+```
+
+`setFieldValues` takes the JSON shapes `exportValues` writes (an option field
+takes its selected option values). A value for an id that has no field yet is
+kept in `controller.pendingFieldValues` and applied when a field with that id
+is registered, so one call can restore fields that only appear later, such as
+a later wizard page or a document's embedded fields.
+
+### Fields that buffer input
+
+A field that holds input before writing it (a debounced custom field, a rich
+editor on a throttle) registers a synchronous flusher. `getResults`,
+`validateForm` and `validatePage` run every flusher first, so results always
+include the last keystroke:
+
+```dart
+controller.registerPendingEditFlusher(this, () {
+  controller.updateFieldValue('notes', bufferedText);
+});
+
+// In dispose():
+controller.unregisterPendingEditFlusher(this);
+
+// Before reading values some other way:
+controller.flushPendingEdits();
+```
+
+The rich document field in
+[`championforms_documents`](packages/championforms_documents/) is built on
+these APIs, and [`championforms_clipboard`](packages/championforms_clipboard/)
+puts the fragments on the system clipboard. Upgrading from 0.7? See
+[MIGRATION-0.8.0](docs/migrations/MIGRATION-0.8.0.md).
+
 ## Related packages in this repo
 
 This repository is a pub workspace. `championforms` lives at the root; these
