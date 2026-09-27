@@ -71,7 +71,6 @@ class HomePageState extends State<HomePage> {
       minHeight: 360,
       blockTemplates: [ratingBlock],
       ruleSet: const RuleSet(extracts: [MentionsExtract(key: 'people')]),
-      clipboardDelegate: ChampionDocClipboard(_scratchController),
     ),
   ];
 
@@ -117,7 +116,7 @@ class HomePageState extends State<HomePage> {
         ),
       ],
     ),
-    template.buildField(controller),
+    template.buildField(),
     form.TextField(
       id: 'paymentAmount',
       title: 'Payment amount',
@@ -220,13 +219,14 @@ class HomePageState extends State<HomePage> {
   // Save / load
   // ---------------------------------------------------------------------------
 
-  /// Writes the draft: the template id plus every saveable value.
+  /// Writes the draft: the template id plus every saveable value
+  /// (`exportValues`: JSON-safe, derived values left out, file uploads as
+  /// metadata only).
   Future<void> save() async {
-    _controller.flushPendingEdits();
     final draft = Draft(
       templateId: _template.id,
       savedAt: DateTime.now(),
-      values: captureValues(_controller),
+      values: _controller.exportValues(),
     );
     try {
       await widget.storage.write(jsonEncode(draft.toJson()));
@@ -238,8 +238,9 @@ class HomePageState extends State<HomePage> {
     }
   }
 
-  /// Restores the saved draft, then reads the values back and checks they
-  /// match what was saved.
+  /// Restores the saved draft on a fresh form of its template with one
+  /// `setFieldValues` call (the document, the values of its blocks, and the
+  /// other fields), then reads the values back and checks they match.
   Future<void> load() async {
     final Draft draft;
     try {
@@ -258,25 +259,21 @@ class HomePageState extends State<HomePage> {
     await _endOfFrame();
     if (!mounted) return;
 
-    final report = restoreValues(_controller, draft.values);
+    _controller.setFieldValues(draft.values);
     await _endOfFrame();
     if (!mounted) return;
-    _controller.flushPendingEdits();
 
-    final now = captureValues(_controller);
+    // File uploads save metadata only, so they cannot come back.
     const eq = DeepCollectionEquality();
-    final mismatched = [
-      for (final id in report.restored)
-        if (!eq.equals(now[id], draft.values[id])) id,
+    final now = _controller.exportValues();
+    final differ = [
+      for (final MapEntry(:key, :value) in draft.values.entries)
+        if (!eq.equals(now[key], value)) key,
     ];
-    if (mismatched.isEmpty) {
-      final skipped = report.skipped.isEmpty
-          ? ''
-          : ' (${report.skipped.length} not restorable: '
-                '${report.skipped.join(', ')})';
-      _snack('Loaded and verified ${report.restored.length} values$skipped.');
+    if (differ.isEmpty) {
+      _snack('Loaded and verified ${draft.values.length} values.');
     } else {
-      _snack('Loaded, but these differ: ${mismatched.join(', ')}', error: true);
+      _snack('Loaded, but these differ: ${differ.join(', ')}', error: true);
     }
   }
 
@@ -594,12 +591,14 @@ class _ScratchValues extends StatelessWidget {
       listenable: controller,
       builder: (context, _) {
         final theme = Theme.of(context);
+        final results = form.FormResults.getResults(
+          controller: controller,
+          checkForErrors: false,
+        );
         final values = {
-          for (final f in controller.registeredFields)
-            if (f.id.startsWith('$scratchId.field.'))
-              f.title ?? f.id: jsonSafe(
-                controller.getFieldValueOrNull<Object>(f.id),
-              ),
+          for (final MapEntry(:key, :value) in results.toJson().entries)
+            if (key.startsWith('$scratchId.field.'))
+              results.fieldDefinitions[key]?.title ?? key: value,
         };
         return Card(
           child: Padding(

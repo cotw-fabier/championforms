@@ -146,6 +146,61 @@ class DocumentEditorState extends State<DocumentEditor>
   /// The current content.
   DocSnapshot snapshot() => SuperEditorAdapter.toSnapshot(_document);
 
+  /// The current selection (start first), or null when there is none.
+  DocSelection? get selection => switch (_composer.selection) {
+    final se.DocumentSelection s => SuperEditorAdapter.toDocSelection(
+      _document,
+      s,
+    ),
+    null => null,
+  };
+
+  /// Selects the whole of block [nodeId]: all of a text block's text, or a
+  /// field / divider block as a unit (what copying one block copies).
+  ///
+  /// Focuses the editor first unless [requestFocus] is false, so keyboard
+  /// shortcuts (copy, cut, delete) act on the selection. Returns false, and
+  /// changes nothing, when the document has no such node.
+  bool selectNode(String nodeId, {bool requestFocus = true}) {
+    final node = _document.getNodeById(nodeId);
+    if (node == null) return false;
+    return selectRange(
+      DocSelection(
+        startNodeId: nodeId,
+        startOffset: 0,
+        endNodeId: nodeId,
+        endOffset: node is se.TextNode ? node.text.length : 1,
+      ),
+      requestFocus: requestFocus,
+    );
+  }
+
+  /// Selects [range], or places the caret when it is collapsed. Text offsets
+  /// are clamped to their node; for a block node 0 is before it and 1 after
+  /// it (the [DocSelection] convention).
+  ///
+  /// Focuses the editor first unless [requestFocus] is false. Returns false,
+  /// and changes nothing, when either node is not in the document.
+  bool selectRange(DocSelection range, {bool requestFocus = true}) {
+    if (_document.getNodeById(range.startNodeId) == null ||
+        _document.getNodeById(range.endNodeId) == null) {
+      return false;
+    }
+    if (requestFocus && !_focusNode.hasPrimaryFocus) {
+      _focusNode.requestFocus();
+    }
+    _editor.execute([
+      se.ChangeSelectionRequest(
+        SuperEditorAdapter.toEditorSelection(_document, range),
+        range.isCollapsed
+            ? se.SelectionChangeType.placeCaret
+            : se.SelectionChangeType.expandSelection,
+        se.SelectionReason.userInteraction,
+      ),
+    ]);
+    return true;
+  }
+
   @override
   void initState() {
     super.initState();

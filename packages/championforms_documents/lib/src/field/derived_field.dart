@@ -12,7 +12,11 @@ import 'package:flutter/widgets.dart';
 ///
 /// It inherits the document's `hideField`, `conditional` and `disabled`, so
 /// a hidden document takes its derived values out of the results with it.
-class DerivedField extends form.Field {
+///
+/// It is a [form.DerivedValueField]: `FormResults.toJson()` includes it and
+/// `FormController.exportValues()` leaves it out, so a loaded draft
+/// recomputes it from the document instead of writing a stale value.
+class DerivedField extends form.Field implements form.DerivedValueField {
   DerivedField({
     required super.id,
     required this.documentId,

@@ -191,6 +191,39 @@ class DocumentRuntime {
         break;
       }
     }
+    _followValue();
+  }
+
+  /// The document value the embedded registrations were last matched to.
+  Object? _lastSeenValue;
+
+  /// Registers the embedded fields of a new document value right away, in
+  /// the notification that announced it, with or without an editor on
+  /// screen.
+  ///
+  /// This is what makes a one-call restore work:
+  /// `controller.setFieldValues({'agreement': savedDoc,
+  /// 'agreement.field.n1': ['USD']})` stores the document, keeps the value of
+  /// the not-yet-registered `agreement.field.n1` as a pending value, and
+  /// notifies; here the block is registered and the controller hands it its
+  /// pending value. Values of blocks the document already had are written
+  /// directly.
+  ///
+  /// Without a mounted editor nobody else refreshes the derived values, so
+  /// they are published here too (silently: we are inside a notification).
+  ///
+  /// Only values written by someone else count: [lastPushed] is the editor's
+  /// own last write, and its registrations are already current (it syncs
+  /// them the moment a block is inserted, before the throttled push, so
+  /// matching them to the older controller value would drop that block).
+  void _followValue() {
+    final raw = controller.getFieldValueOrNull<Object>(docId);
+    if (identical(raw, lastPushed) || identical(raw, _lastSeenValue)) return;
+    _lastSeenValue = raw;
+    final doc = DocumentField.coerce(raw);
+    if (doc == null) return;
+    manager.sync(doc.embeddedFields, noNotify: true);
+    if (flusher == null) publishDerived(doc, noNotify: true);
   }
 
   /// Withdraws the embedded and derived fields and forgets this runtime.

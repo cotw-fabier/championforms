@@ -1,9 +1,11 @@
 import 'package:championforms/championforms.dart' as form;
 
+import '../field/document_field.dart';
 import '../model/doc_ids.dart';
 import '../model/doc_markdown.dart';
 import '../model/doc_plain_text.dart';
 import '../model/doc_snapshot.dart';
+import '../rules/rule.dart';
 
 /// Document conversions on a result accessor:
 /// `results.grab('agreement').asDocument()`.
@@ -59,5 +61,21 @@ extension DocumentFormResults on form.FormResults {
             isValidIdSegment(e.key.substring(prefix.length)))
           e.key.substring(prefix.length): e.value,
     };
+  }
+
+  /// The rule issues of document [docId] in these results: missing
+  /// required extracts and failed constraints, each with its message and,
+  /// when it has one, the block it is anchored to (`DocIssue.nodeId`).
+  ///
+  /// Evaluated from the collected document value, so it is available even
+  /// when the results were read with `checkForErrors: false` (a live panel
+  /// that must not trigger validation). Empty when the document is valid,
+  /// hidden, or not a [DocumentField]. For the controller's current value
+  /// without collecting results, see `DocumentFields.issuesOf`.
+  List<DocIssue> documentIssues(String docId) {
+    final field = fieldDefinitions[docId];
+    if (field is! DocumentField) return const [];
+    final doc = DocumentField.coerce(results[docId]) ?? field.defaultValue;
+    return field.evaluateDocument(doc).issues;
   }
 }

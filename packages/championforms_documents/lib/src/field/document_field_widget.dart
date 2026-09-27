@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:super_editor/super_editor.dart' as se;
 
+import '../clipboard/doc_clipboard_delegate.dart';
 import '../editor/document_editor.dart';
 import '../model/doc_node.dart';
 import '../model/doc_snapshot.dart';
 import 'document_field.dart';
 import 'document_runtime.dart';
+import 'registration.dart';
 
 /// The widget a [DocumentField] renders as (registered for `document`).
 ///
@@ -296,6 +298,25 @@ class DocumentFieldWidgetState extends State<DocumentFieldWidget> {
     );
   }
 
+  /// The delegate [DocumentFields.defaultClipboardDelegate] built, and for
+  /// which controller and factory, so it is built once, not per build.
+  DocClipboardDelegate? _defaultDelegate;
+  (form.FormController, Object)? _defaultDelegateKey;
+
+  /// The field's own clipboard delegate, else the app-wide default.
+  DocClipboardDelegate? _clipboardDelegate() {
+    final own = field.clipboardDelegate;
+    if (own != null) return own;
+    final factory = DocumentFields.defaultClipboardDelegate;
+    if (factory == null) return null;
+    final key = (controller, factory);
+    if (_defaultDelegateKey != key) {
+      _defaultDelegateKey = key;
+      _defaultDelegate = factory(controller);
+    }
+    return _defaultDelegate;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = widget.ctx.colors;
@@ -317,7 +338,7 @@ class DocumentFieldWidgetState extends State<DocumentFieldWidget> {
         ruleSet: field.ruleSet,
         blockTemplates: field.blockTemplates,
         includeDefaultFieldBlocks: field.includeDefaultFieldBlocks,
-        clipboardDelegate: field.clipboardDelegate,
+        clipboardDelegate: _clipboardDelegate(),
         restoreFieldValues: (values) =>
             _runtime.manager.applyFieldValues(values),
         onDocumentChanged: _onDocumentChanged,

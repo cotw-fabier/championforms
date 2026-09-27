@@ -67,23 +67,12 @@ class _SidePanelState extends State<SidePanel> {
     checkForErrors: false,
   );
 
-  DocumentField? get _field {
-    for (final f in widget.controller.registeredFields) {
-      if (f.id == widget.docId && f is DocumentField) return f;
-    }
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
     final results = _results;
     final extracted = results.extracted(widget.docId);
     final hasDoc = results.results.containsKey(widget.docId);
-    final doc = hasDoc ? results.grab(widget.docId).asDocument() : null;
-    final field = _field;
-    final issues = (doc == null || field == null)
-        ? const <DocIssue>[]
-        : field.evaluateDocument(doc).issues;
+    final issues = results.documentIssues(widget.docId);
     final errors = widget.controller.formErrors;
 
     return ListView(
