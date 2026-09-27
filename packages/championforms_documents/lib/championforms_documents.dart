@@ -7,6 +7,22 @@
 library;
 
 export 'src/clipboard/doc_clipboard_delegate.dart';
+export 'src/editor/clipboard_actions.dart';
+export 'src/editor/doc_edit_command.dart';
+export 'src/editor/document_editor.dart';
+export 'src/editor/embedded_block.dart';
+export 'src/editor/issue_decoration.dart';
+export 'src/editor/paste_insertion.dart';
+export 'src/editor/rules_bridge.dart';
+export 'src/editor/slash_menu.dart';
+export 'src/editor/super_editor_adapter.dart';
+export 'src/editor/web/clipboard_events.dart'
+    show DocClipboardEvents, BrowserClipboardAction;
+export 'src/embedded/embedded_field_manager.dart';
+export 'src/field/derived_field.dart';
+export 'src/field/document_field.dart';
+export 'src/field/document_field_widget.dart';
+export 'src/field/registration.dart';
 export 'src/model/doc_clipboard_payload.dart';
 export 'src/model/doc_ids.dart';
 export 'src/model/doc_markdown.dart';
