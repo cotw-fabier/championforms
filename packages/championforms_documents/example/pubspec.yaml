@@ -19,6 +19,7 @@ dependencies:
     path: ../../championforms_clipboard
   championforms_documents:
     path: ../
+  collection: ^1.19.0
   # Save / Load writes a JSON file to the app documents directory.
   path_provider: ^2.1.5
 

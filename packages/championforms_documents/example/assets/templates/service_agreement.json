@@ -1,0 +1,81 @@
+{
+  "type": "document",
+  "id": "agreement",
+  "title": "Agreement",
+  "description": "Type / for blocks, @ to mention a party, and dates as 2026-10-01.",
+  "placeholder": "Type / for blocks",
+  "minHeight": 360,
+  "ruleSet": {
+    "transforms": [],
+    "extracts": [
+      {"rule": "mentions", "key": "parties", "required": true},
+      {"rule": "dates", "key": "startDate", "required": true},
+      {"rule": "taskStatus", "key": "deliverables"},
+      {"rule": "hasSection", "key": "hasPricing", "title": "Pricing"},
+      {"rule": "sectionText", "key": "scope", "title": "Scope"}
+    ],
+    "constraints": [
+      {
+        "rule": "requiredSection",
+        "title": "Parties",
+        "nonEmpty": true,
+        "message": "Add a \"Parties\" section naming who signs"
+      },
+      {
+        "rule": "forbiddenPattern",
+        "pattern": "\\bTBD\\b",
+        "caseSensitive": false,
+        "message": "Replace \"TBD\" before sending"
+      }
+    ]
+  },
+  "blocks": [
+    {"label": "Signature line", "field": {"type": "text", "title": "Signed by"}}
+  ],
+  "initialDocument": {
+    "schemaVersion": 1,
+    "nodes": [
+      {"id": "sa_title", "type": "heading", "level": 1, "content": {"text": "Service Agreement"}},
+      {"id": "sa_intro", "type": "paragraph", "content": {
+        "text": "This agreement sets out the services, deliverables and terms agreed between the parties below.",
+        "marks": [{"type": "bold", "start": 5, "end": 14}]
+      }},
+      {"id": "sa_parties_h", "type": "heading", "level": 2, "content": {"text": "Parties"}},
+      {"id": "sa_parties", "type": "paragraph", "content": {"text": "Between @acme (the client) and @globex (the provider)."}},
+      {"id": "sa_scope_h", "type": "heading", "level": 2, "content": {"text": "Scope"}},
+      {"id": "sa_scope", "type": "paragraph", "content": {"text": "Design and build a customer onboarding portal."}},
+      {"id": "sa_deliv_h", "type": "heading", "level": 2, "content": {"text": "Deliverables"}},
+      {"id": "sa_deliv_1", "type": "task", "checked": true, "content": {"text": "Discovery workshop"}},
+      {"id": "sa_deliv_2", "type": "task", "checked": false, "content": {"text": "Clickable prototype"}},
+      {"id": "sa_deliv_3", "type": "task", "checked": false, "content": {"text": "Production release"}},
+      {"id": "sa_terms_h", "type": "heading", "level": 2, "content": {"text": "Terms"}},
+      {"id": "sa_terms", "type": "paragraph", "content": {"text": "Work starts on 2026-10-01. The review schedule is TBD."}},
+      {"id": "sa_payment_terms", "type": "embeddedField", "field": {
+        "type": "select",
+        "title": "Payment terms",
+        "options": [
+          {"value": "net15", "label": "Net 15"},
+          {"value": "net30", "label": "Net 30"},
+          {"value": "net60", "label": "Net 60"}
+        ]
+      }},
+      {"id": "sa_onboarding", "type": "embeddedField", "field": {
+        "type": "checkboxSelect",
+        "title": "Includes onboarding",
+        "multiselect": true,
+        "options": [
+          {"value": "training", "label": "Staff training"},
+          {"value": "migration", "label": "Data migration"},
+          {"value": "support", "label": "30 days of support"}
+        ]
+      }},
+      {"id": "sa_sign_h", "type": "heading", "level": 2, "content": {"text": "Signatures"}},
+      {"id": "sa_signed_copy", "type": "embeddedField", "field": {
+        "type": "fileUpload",
+        "title": "Signed copy",
+        "description": "Upload the countersigned PDF."
+      }},
+      {"id": "sa_end", "type": "paragraph", "content": {"text": ""}}
+    ]
+  }
+}

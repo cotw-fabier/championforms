@@ -1,0 +1,38 @@
+{
+  "type": "document",
+  "id": "agreement",
+  "title": "Meeting notes",
+  "description": "Mention attendees with @, add action items with [] and dates as 2026-10-01.",
+  "placeholder": "Type / for blocks",
+  "minHeight": 320,
+  "ruleSet": {
+    "transforms": [],
+    "extracts": [
+      {"rule": "mentions", "key": "attendees", "required": true},
+      {"rule": "taskStatus", "key": "actionItems"},
+      {"rule": "dates", "key": "dates", "all": true},
+      {"rule": "sectionText", "key": "decisions", "title": "Decisions"},
+      {"rule": "hasSection", "key": "hasPricing", "title": "Pricing"}
+    ],
+    "constraints": [
+      {"rule": "requiredSection", "title": "Action items"}
+    ]
+  },
+  "initialDocument": {
+    "schemaVersion": 1,
+    "nodes": [
+      {"id": "mn_title", "type": "heading", "level": 1, "content": {"text": "Weekly sync"}},
+      {"id": "mn_when", "type": "paragraph", "content": {"text": "Held on 2026-09-28 with @dana and @lee."}},
+      {"id": "mn_agenda_h", "type": "heading", "level": 2, "content": {"text": "Agenda"}},
+      {"id": "mn_agenda_1", "type": "listItem", "ordered": true, "indent": 0, "content": {"text": "Roadmap review"}},
+      {"id": "mn_agenda_2", "type": "listItem", "ordered": true, "indent": 0, "content": {"text": "Hiring update"}},
+      {"id": "mn_decisions_h", "type": "heading", "level": 2, "content": {"text": "Decisions"}},
+      {"id": "mn_decisions", "type": "quote", "content": {"text": "Ship the beta on 2026-10-15."}},
+      {"id": "mn_actions_h", "type": "heading", "level": 2, "content": {"text": "Action items"}},
+      {"id": "mn_action_1", "type": "task", "checked": false, "content": {"text": "@dana drafts the release notes"}},
+      {"id": "mn_action_2", "type": "task", "checked": true, "content": {"text": "@lee books the retro"}},
+      {"id": "mn_mood", "type": "embeddedField", "field": {"type": "rating", "title": "How useful was this meeting?", "maxStars": 5}},
+      {"id": "mn_end", "type": "paragraph", "content": {"text": ""}}
+    ]
+  }
+}
