@@ -15,6 +15,7 @@ import 'issue_decoration.dart';
 import 'rules_bridge.dart';
 import 'slash_menu.dart';
 import 'super_editor_adapter.dart';
+import 'unsupported_formatting.dart';
 import 'web/clipboard_events.dart';
 
 /// The document editing surface: a super_editor `SuperEditor` configured for
@@ -206,6 +207,7 @@ class DocumentEditorState extends State<DocumentEditor>
         se.Editor.composerKey: _composer,
       },
       requestHandlers: [
+        refuseUnsupportedFormatting,
         _rules.requestHandler,
         applyDocEditRequestHandler,
         ...se.defaultRequestHandlers,
@@ -509,6 +511,13 @@ class DocumentEditorState extends State<DocumentEditor>
   // Build
   // -------------------------------------------------------------------------
 
+  /// super_editor's IME-mode keyboard actions without the task / paragraph
+  /// indentation shortcuts (see [refuseUnsupportedFormatting]).
+  static final List<se.SuperEditorKeyboardAction> _imeKeyboardActions = [
+    for (final action in se.defaultImeKeyboardActions)
+      if (!isUnsupportedFormattingShortcut(action)) action,
+  ];
+
   se.Stylesheet _stylesheet(BuildContext context) {
     final base =
         widget.textStyle ??
@@ -616,8 +625,7 @@ class DocumentEditorState extends State<DocumentEditor>
         keyboardActions: [
           _slashKeys,
           _rules.backspaceAction,
-          ...(_clipboard?.patch(se.defaultImeKeyboardActions) ??
-              se.defaultImeKeyboardActions),
+          ...(_clipboard?.patch(_imeKeyboardActions) ?? _imeKeyboardActions),
         ],
         selectorHandlers: _rules.selectorHandlers,
         componentBuilders: _componentBuilders(),
