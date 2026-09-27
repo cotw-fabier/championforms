@@ -56,7 +56,7 @@ void main() {
         ],
       );
       h.controller.updateFieldValue<String>('doc.field.b1', 'Ada');
-      var results = DocumentFields.getResults(controller: h.controller);
+      var results = form.FormResults.getResults(controller: h.controller);
       expect(results.grab('doc.field.b1').asString(), 'Ada');
 
       // Backspace at the start of the next paragraph removes the block
@@ -68,7 +68,7 @@ void main() {
       expect(h.snapshot.embeddedFields, isEmpty);
       expect(h.controller.hasFieldDefinition('doc.field.b1'), isFalse);
       expect(find.byKey(const ValueKey('embedded-b1')), findsNothing);
-      results = DocumentFields.getResults(controller: h.controller);
+      results = form.FormResults.getResults(controller: h.controller);
       expect(results.results.containsKey('doc.field.b1'), isFalse);
       expect(results.grab('doc').asDocument()!.embeddedFields, isEmpty);
 
@@ -100,7 +100,7 @@ void main() {
       expect(h.controller.hasFieldDefinition('doc.field.x'), isFalse);
       // The document itself is intact.
       expect(
-        DocumentFields.getResults(
+        form.FormResults.getResults(
           controller: h.controller,
         ).grab('doc').asDocument()!.nodes.first.id,
         'x',
@@ -137,7 +137,7 @@ void main() {
         controller: controller,
         fields: [gate, doc],
       );
-      var results = DocumentFields.getResults(controller: controller);
+      var results = form.FormResults.getResults(controller: controller);
       expect(results.results.containsKey('doc'), isTrue);
       expect(results.results.containsKey('doc.field.b1'), isTrue);
       expect(results.grab('doc.people').asStringList(), ['ada']);
@@ -145,7 +145,7 @@ void main() {
       controller.updateFieldValue<String>('gate', 'closed');
       await tester.pumpAndSettle();
       expect(find.byType(DocumentFieldWidget), findsNothing);
-      results = DocumentFields.getResults(controller: controller);
+      results = form.FormResults.getResults(controller: controller);
       expect(results.results.containsKey('doc'), isFalse);
       expect(results.results.containsKey('doc.field.b1'), isFalse);
       expect(results.results.containsKey('doc.people'), isFalse);
@@ -328,7 +328,7 @@ void main() {
         ],
       );
       expect(find.text('Payment terms'), findsNothing);
-      var results = DocumentFields.getResults(controller: h.controller);
+      var results = form.FormResults.getResults(controller: h.controller);
       expect(results.grab('doc.people').asStringList(), ['ada']);
       expect(results.extracted('doc'), {
         'hasPricing': false,
@@ -343,7 +343,7 @@ void main() {
       await h.settleThrottle();
 
       expect(find.text('Payment terms'), findsOneWidget);
-      results = DocumentFields.getResults(controller: h.controller);
+      results = form.FormResults.getResults(controller: h.controller);
       expect(results.grab('doc.hasPricing').asBool(), isTrue);
       expect(results.results.containsKey('payment'), isTrue);
     });
@@ -363,7 +363,7 @@ void main() {
           ),
         ],
       );
-      final results = DocumentFields.getResults(controller: h.controller);
+      final results = form.FormResults.getResults(controller: h.controller);
       expect(results.errorState, isTrue);
       expect(
         results.formErrors.map((e) => e.reason),
@@ -376,7 +376,7 @@ void main() {
       // Fix it and the error goes away.
       await tester.placeCaretInParagraph('p', 11);
       await tester.typeImeText(' @bob');
-      final fixed = DocumentFields.getResults(controller: h.controller);
+      final fixed = form.FormResults.getResults(controller: h.controller);
       expect(fixed.errorState, isFalse);
     });
 
@@ -399,7 +399,7 @@ void main() {
         ],
       );
       expect(find.byKey(const ValueKey('document-issue-bad')), findsNothing);
-      final results = DocumentFields.getResults(controller: h.controller);
+      final results = form.FormResults.getResults(controller: h.controller);
       expect(results.errorState, isTrue);
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('document-issue-bad')), findsOneWidget);
@@ -494,8 +494,8 @@ void main() {
             '',
         '',
       );
-      // Flushing (what DocumentFields.getResults does) pushes it.
-      final results = DocumentFields.getResults(controller: h.controller);
+      // getResults flushes pending edits first, which pushes it.
+      final results = form.FormResults.getResults(controller: h.controller);
       expect(results.grab('doc').asMarkdown().trim(), 'Hello');
       expect(h.fieldState.hasPendingChanges, isFalse);
     });
@@ -568,7 +568,7 @@ void main() {
       h.controller.updateFieldValue<Object>('doc', json);
       await tester.pumpAndSettle();
       expect(h.snapshot.nodes.single, isA<QuoteNode>());
-      final results = DocumentFields.getResults(controller: h.controller);
+      final results = form.FormResults.getResults(controller: h.controller);
       expect(results.grab('doc').asDocument()!.nodes.single.id, 'q');
     });
 
@@ -583,7 +583,7 @@ void main() {
       );
       await tester.placeCaretInParagraph('p', 5);
       await tester.typeImeText(' more');
-      DocumentFields.flushAll(h.controller);
+      h.controller.flushPendingEdits();
       h.controller.resetField('doc');
       await tester.pumpAndSettle();
       expect((h.snapshot.nodes.single as ParagraphNode).text.text, 'start');
@@ -619,7 +619,7 @@ void main() {
     await tester.typeImeText('Body text');
     await tester.pumpAndSettle();
     expect(find.text('Type / for blocks'), findsNothing);
-    final results = DocumentFields.getResults(controller: h.controller);
+    final results = form.FormResults.getResults(controller: h.controller);
     expect(results.errorState, isFalse);
     expect(results.grab('title').asString(), 'My title');
     expect(results.grab('body').asMarkdown().trim(), 'Body text');

@@ -21,8 +21,11 @@
   `.asMarkdown()` and `results.extracted(docId)`.
 - `DocumentField` (type `document`, with `fromJson`) and its widget: a
   super_editor block editor as a form field. Its value is a `DocSnapshot`,
-  pushed on a 150 ms trailing throttle, on blur and on
-  `DocumentFields.flushAll` / `DocumentFields.getResults`; external value
+  pushed on a 150 ms trailing throttle, on blur, and whenever the controller
+  flushes pending edits. Each document registers a flusher through
+  ChampionForms' `FormController.registerPendingEditFlusher`, so a plain
+  `FormResults.getResults` (or `validateForm`) always sees the last
+  keystroke; there is no document-specific results call. External value
   changes (`setFieldValues`, `resetField`, saved JSON) rebuild the editor.
 - Embedded fields: `EmbeddedFieldManager` registers each embedded block as
   `{docId}.field.{nodeId}` (inheriting disabled / hidden / conditional /

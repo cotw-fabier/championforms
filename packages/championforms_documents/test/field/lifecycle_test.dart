@@ -71,7 +71,7 @@ void main() {
     // Typing now goes to B only.
     await tester.placeCaretInParagraph('n', 6);
     _typeWithoutPumping(tester, '?');
-    DocumentFields.flushAll(a);
+    a.flushPendingEdits();
     expect(
       (DocumentField.coerce(b.getFieldValueOrNull<Object>('doc'))!.nodes.first
               as ParagraphNode)
@@ -80,7 +80,7 @@ void main() {
       'From B',
       reason: 'flushing A must not push B\'s editor',
     );
-    DocumentFields.flushAll(b);
+    b.flushPendingEdits();
     expect(
       (DocumentField.coerce(b.getFieldValueOrNull<Object>('doc'))!.nodes.first
               as ParagraphNode)
@@ -124,7 +124,7 @@ void main() {
     final value = DocumentField.coerce(c.getFieldValueOrNull<Object>('doc'))!;
     expect((value.nodes.single as ParagraphNode).text.text, 'Hi!');
     expect(DocumentRuntime.lookup(c, 'doc')!.flusher, isNull);
-    DocumentFields.flushAll(c);
+    c.flushPendingEdits();
     // Controller notifications after the widget is gone reach no state.
     c.updateFieldValue<Object>('doc', DocSnapshot.empty);
     await tester.pump(const Duration(seconds: 1));
@@ -144,5 +144,47 @@ void main() {
     c.dispose();
     await tester.pumpWidget(const SizedBox());
     expect(tester.takeException(), isNull);
+  });
+
+  group('controller pending-edit flush hook', () {
+    testWidgets('validateForm sees keystrokes still inside the throttle', (
+      tester,
+    ) async {
+      final controller = form.FormController();
+      addTearDown(controller.dispose);
+      final doc = DocumentField(
+        id: 'doc',
+        initialDocument: DocSnapshot([const ParagraphNode(id: 'p')]),
+        ruleSet: const RuleSet(
+          extracts: [MentionsExtract(key: 'people', required: true)],
+        ),
+      );
+      await tester.pumpWidget(_app(controller, doc));
+      await tester.pump();
+      await tester.placeCaretInParagraph('p', 0);
+
+      _typeWithoutPumping(tester, 'with @bob');
+      // No pump, no flush call: the controller value is still stale here,
+      // and validateForm must flush before validating.
+      expect(controller.validateForm(), isTrue);
+      expect(controller.getFieldValue<List<Object?>>('doc.people'), ['bob']);
+    });
+
+    test('a disposed runtime no longer flushes', () {
+      final controller = form.FormController();
+      addTearDown(controller.dispose);
+      final doc = DocumentField(id: 'doc');
+      controller.addFields([doc]);
+      final runtime = DocumentRuntime.of(controller, doc);
+      var flushes = 0;
+      runtime.flusher = () => flushes++;
+
+      controller.flushPendingEdits();
+      expect(flushes, 1);
+
+      runtime.dispose();
+      controller.flushPendingEdits();
+      expect(flushes, 1, reason: 'the runtime must unregister its flusher');
+    });
   });
 }

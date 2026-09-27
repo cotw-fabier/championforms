@@ -37,8 +37,7 @@ import 'registration.dart';
 ///   ],
 /// );
 ///
-/// // Later:
-/// DocumentFields.flushAll(controller); // push any pending keystrokes
+/// // Later (getResults flushes pending keystrokes itself):
 /// final results = form.FormResults.getResults(controller: controller);
 /// final doc = results.grab('agreement').asDocument();
 /// final people = results.extracted('agreement')['people'];

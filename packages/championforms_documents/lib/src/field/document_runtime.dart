@@ -13,7 +13,8 @@ import 'document_field.dart';
 /// Everything a document field keeps on its controller besides its own
 /// value: the embedded field registrations ([EmbeddedFieldManager]), the
 /// derived-value fields (`{docId}.{key}`), and the flush hook of the editor
-/// currently showing it.
+/// currently showing it, which it registers as the controller's pending-edit
+/// flusher.
 ///
 /// There is one runtime per (controller, document id). It outlives the
 /// editor widget — a document scrolled out of a lazy list keeps its blocks
@@ -41,6 +42,9 @@ class DocumentRuntime {
         inheritance: EmbeddedFieldInheritance.from(field),
       ) {
     controller.addListener(_onControllerChanged);
+    // FormResults.getResults / validateForm / validatePage flush first, so a
+    // results read always sees the editor's last keystrokes.
+    controller.registerPendingEditFlusher(this, flush);
   }
 
   static final Expando<Map<String, DocumentRuntime>> _registry = Expando(
@@ -194,6 +198,7 @@ class DocumentRuntime {
     if (_disposed) return;
     _disposed = true;
     controller.removeListener(_onControllerChanged);
+    controller.unregisterPendingEditFlusher(this);
     manager.unregisterAll(noNotify: true);
     if (_derivedKeys.isNotEmpty) {
       controller.unregisterFields([

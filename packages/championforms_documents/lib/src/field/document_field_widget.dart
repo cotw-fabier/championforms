@@ -16,8 +16,9 @@ import 'document_runtime.dart';
 /// It connects a [DocumentEditor] to the form:
 ///
 /// - **Value.** Document changes are pushed to the controller with a 150 ms
-///   trailing throttle, and immediately on blur, on [flush] and through
-///   `DocumentFields.flushAll`. One push writes the snapshot and every
+///   trailing throttle, and immediately on blur, on [flush], and whenever
+///   the controller flushes pending edits (`FormResults.getResults`,
+///   `validateForm` and `validatePage` do so first). One push writes the snapshot and every
 ///   derived value in a single notification.
 /// - **External changes.** When the controller's value changes to anything
 ///   the editor did not write (`updateFieldValue`, `setFieldValues`,

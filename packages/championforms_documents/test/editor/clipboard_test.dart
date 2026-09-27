@@ -91,7 +91,7 @@ void main() {
       expect(h.snapshot.nodeById('emb'), isNull);
       expect((h.snapshot.nodes.single as ParagraphNode).text.text, 'Hello bye');
       expect(h.controller.hasFieldDefinition('doc.field.emb'), isFalse);
-      final results = DocumentFields.getResults(controller: h.controller);
+      final results = form.FormResults.getResults(controller: h.controller);
       expect(results.results.containsKey('doc.field.emb'), isFalse);
     },
     variant: const TargetPlatformVariant({

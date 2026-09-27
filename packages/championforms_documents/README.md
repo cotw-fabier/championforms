@@ -55,22 +55,20 @@ JSON (`FormFieldRegistry.fieldFromJson({'type': 'document', ...})`, which
 accepts `ruleSet`, `initialDocument`, `placeholder`, `minHeight`,
 `readOnly`, `blocks` and the common field keys).
 
-### Reading results: flush first
+### Reading results
 
 The editor pushes its content to the controller on a 150 ms trailing
-throttle, on blur, and whenever it is flushed. Before reading results, push
-any pending keystrokes:
+throttle and on blur. You don't need to flush it yourself: each document
+registers a pending-edit flusher on its `FormController`, and
+`FormResults.getResults`, `validateForm` and `validatePage` run every
+flusher first. A plain results call always sees the last keystroke:
 
 ```dart
-final results = DocumentFields.getResults(controller: controller);
-// same as:
-DocumentFields.flushAll(controller);
 final results = form.FormResults.getResults(controller: controller);
 ```
 
-(`FormResults.getResults` has no hook a package can use, so the flush is
-explicit. Validation of the document's rules always runs on the value the
-controller holds.)
+To push pending edits before reading values some other way (for example
+`controller.getFieldValue`), call `controller.flushPendingEdits()`.
 
 ### What the document registers
 
@@ -238,7 +236,7 @@ Each accepts a custom `message`.
 ## Results
 
 ```dart
-final results = DocumentFields.getResults(controller: controller);
+final results = form.FormResults.getResults(controller: controller);
 results.grab('agreement').asDocument();      // DocSnapshot?
 results.grab('agreement').asDocumentJson();  // Map?
 results.grab('agreement').asMarkdown();      // String
