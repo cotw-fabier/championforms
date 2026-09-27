@@ -1,11 +1,11 @@
 import 'package:championforms_documents/championforms_documents.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_test_robots/flutter_test_robots.dart';
 import 'package:super_editor/super_editor.dart' as se;
 import 'package:super_editor/super_editor_test.dart';
 
 import '../field/helpers.dart';
+import 'platform_keys.dart';
 
 const _platforms = TargetPlatformVariant({
   TargetPlatform.macOS,
@@ -109,7 +109,7 @@ void main() {
         doc: DocSnapshot([const ListItemNode(id: 'li', text: DocText('one'))]),
       );
       await tester.placeCaretInParagraph('li', 3);
-      await tester.pressEnter();
+      await pressEnterOnPlatform(tester);
       await tester.typeImeText('two');
       final nodes = h.snapshot.nodes;
       expect(nodes, hasLength(2));
@@ -123,7 +123,7 @@ void main() {
         doc: DocSnapshot([const ListItemNode(id: 'li')]),
       );
       await tester.placeCaretInParagraph('li', 0);
-      await tester.pressEnter();
+      await pressEnterOnPlatform(tester);
       expect(h.snapshot.nodes.single, isA<ParagraphNode>());
       expect(h.snapshot.nodes.single.id, 'li');
     }, variant: _platforms);
@@ -136,7 +136,7 @@ void main() {
         doc: DocSnapshot([const HeadingNode(id: 'h', text: DocText('Title'))]),
       );
       await tester.placeCaretInParagraph('h', 5);
-      await tester.pressEnter();
+      await pressEnterOnPlatform(tester);
       await tester.typeImeText('body');
       final nodes = h.snapshot.nodes;
       expect(nodes[0], isA<HeadingNode>());
@@ -148,7 +148,7 @@ void main() {
       final h = await _pump(tester);
       await tester.placeCaretInParagraph('p', 0);
       await tester.typeImeText('---');
-      await tester.pressEnter();
+      await pressEnterOnPlatform(tester);
       final nodes = h.snapshot.nodes;
       expect(nodes[0], isA<DividerNode>());
       expect(nodes[1], isA<ParagraphNode>());
@@ -162,7 +162,7 @@ void main() {
         doc: DocSnapshot([const HeadingNode(id: 'h', text: DocText('Title'))]),
       );
       await tester.placeCaretInParagraph('h', 0);
-      await tester.pressBackspace();
+      await pressBackspaceOnPlatform(tester);
       final node = h.snapshot.nodes.single;
       expect(node, isA<ParagraphNode>());
       expect((node as ParagraphNode).text.text, 'Title');
@@ -179,7 +179,7 @@ void main() {
         ]),
       );
       await tester.placeCaretInParagraph('b', 0);
-      await tester.pressBackspace();
+      await pressBackspaceOnPlatform(tester);
       final node = h.snapshot.nodes.single as ParagraphNode;
       expect(node.id, 'a');
       expect(node.text.text, 'abcd');
@@ -200,7 +200,7 @@ void main() {
         ]),
       );
       await tester.placeCaretInParagraph('b', 0);
-      await tester.pressBackspace();
+      await pressBackspaceOnPlatform(tester);
       expect(h.snapshot.nodes.map((n) => n.id), ['a', 'b']);
     });
 
@@ -209,7 +209,7 @@ void main() {
     ) async {
       final h = await _pump(tester, doc: paragraphDoc('p', 'abc'));
       await tester.placeCaretInParagraph('p', 3);
-      await tester.pressBackspace();
+      await pressBackspaceOnPlatform(tester);
       expect((h.snapshot.nodes.single as ParagraphNode).text.text, 'ab');
     });
 

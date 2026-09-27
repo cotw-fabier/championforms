@@ -1,5 +1,6 @@
 import 'package:championforms/championforms.dart' as form;
 import 'package:championforms_documents/championforms_documents.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -47,14 +48,42 @@ void _expectAcross(DocSelection selection) {
   expect(selection.endOffset, 4);
 }
 
+/// Sends Cmd/Ctrl+[key] and returns whether Flutter handled the key.
+///
+/// In a browser an unhandled key is not `preventDefault`ed, so the browser
+/// raises its own copy / cut / paste event, which the editor's capture-phase
+/// listeners handle (lib/src/editor/web/, tested in test/web/). A handled
+/// key would swallow that event.
+Future<bool> _shortcut(WidgetTester tester, LogicalKeyboardKey key) async {
+  final apple =
+      defaultTargetPlatform == TargetPlatform.macOS ||
+      defaultTargetPlatform == TargetPlatform.iOS;
+  final modifier = apple
+      ? LogicalKeyboardKey.metaLeft
+      : LogicalKeyboardKey.controlLeft;
+  await tester.sendKeyDownEvent(modifier);
+  final handled = await tester.sendKeyEvent(key);
+  await tester.sendKeyUpEvent(modifier);
+  await tester.pumpAndSettle();
+  return handled;
+}
+
+/// On the web the clipboard shortcuts belong to the browser: the key must
+/// pass through untouched and the delegate must not be called from it.
+void _expectLeftToBrowser(bool handled, FakeDocClipboard delegate) {
+  expect(handled, isFalse, reason: 'the browser must get the key');
+  expect(delegate.copies, isEmpty);
+  expect(delegate.pastes, isEmpty);
+}
+
 void main() {
   testWidgets(
     'Cmd/Ctrl+C sends the selection to the delegate',
     (tester) async {
       final (h, delegate) = await _pump(tester);
       await _selectAcross(tester, h);
-      await pressShortcut(tester, LogicalKeyboardKey.keyC);
-      await tester.pumpAndSettle();
+      final handled = await _shortcut(tester, LogicalKeyboardKey.keyC);
+      if (kIsWeb) return _expectLeftToBrowser(handled, delegate);
       expect(delegate.copies, hasLength(1));
       final copy = delegate.copies.single;
       expect(copy.docId, 'doc');
@@ -79,8 +108,13 @@ void main() {
       final (h, delegate) = await _pump(tester);
       expect(h.controller.hasFieldDefinition('doc.field.emb'), isTrue);
       await _selectAcross(tester, h);
-      await pressShortcut(tester, LogicalKeyboardKey.keyX);
-      await tester.pumpAndSettle();
+      final before = h.snapshot;
+      final handled = await _shortcut(tester, LogicalKeyboardKey.keyX);
+      if (kIsWeb) {
+        _expectLeftToBrowser(handled, delegate);
+        expect(h.snapshot, before, reason: 'the key itself deletes nothing');
+        return;
+      }
       expect(delegate.copies, hasLength(1));
       _expectAcross(delegate.copies.single.selection);
       expect(
@@ -134,8 +168,8 @@ void main() {
       await tester.pump();
       h.placeCaret('p1', 5); // "Hello| world"
       await tester.pump();
-      await pressShortcut(tester, LogicalKeyboardKey.keyV);
-      await tester.pumpAndSettle();
+      final handled = await _shortcut(tester, LogicalKeyboardKey.keyV);
+      if (kIsWeb) return _expectLeftToBrowser(handled, delegate);
 
       expect(delegate.pastes, hasLength(1));
       expect(delegate.pastes.single.docId, 'doc');
@@ -239,6 +273,11 @@ void main() {
     );
     await gesture.up();
     await tester.pumpAndSettle();
+    if (kIsWeb) {
+      // No in-app menu on the web: the right-click belongs to the browser.
+      expect(find.byKey(const ValueKey('document-menu-copy')), findsNothing);
+      return;
+    }
     expect(find.byKey(const ValueKey('document-menu-copy')), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('document-menu-copy')));
     await tester.pumpAndSettle();

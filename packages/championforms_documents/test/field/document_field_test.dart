@@ -6,6 +6,7 @@ import 'package:flutter_test_robots/flutter_test_robots.dart';
 import 'package:super_editor/super_editor.dart' as se;
 import 'package:super_editor/super_editor_test.dart';
 
+import '../editor/platform_keys.dart';
 import 'helpers.dart';
 
 EmbeddedFieldNode _textBlock(String id, {String title = 'Name'}) =>
@@ -338,7 +339,7 @@ void main() {
 
       // Add a "Pricing" heading by typing.
       await tester.placeCaretInParagraph('p', 10);
-      await tester.pressEnter();
+      await pressEnterOnPlatform(tester);
       await tester.typeImeText('# Pricing');
       await h.settleThrottle();
 

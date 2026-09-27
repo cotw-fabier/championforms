@@ -219,19 +219,21 @@ jobs:
         working-directory: packages/championforms_clipboard
         run: flutter test --platform chrome test/web_backend_browser_test.dart
 
-      # The documents tests that run in a browser. Not listed: the fixture
-      # tests in html_importer_test.dart read files with dart:io, and the
-      # keyboard clipboard / Enter tests in editor/clipboard_test.dart and
-      # editor/typing_rules_test.dart assert desktop behavior that the web
-      # deliberately hands to the browser (covered by test/web/ instead).
+      # Every documents test file runs in a browser except
+      # clipboard/html_importer_test.dart, whose fixture tests read files
+      # with dart:io (VM-only by design). The editor tests drive Enter /
+      # Backspace the way the browser delivers them (IME deltas and the
+      # newline action; see test/editor/platform_keys.dart), and the
+      # clipboard shortcut tests check the keys are left to the browser,
+      # whose clipboard events test/web/ covers.
       - name: championforms_documents (web-capable tests)
         working-directory: packages/championforms_documents
         run: >-
           flutter test --platform chrome
           test/web/
-          test/editor/super_editor_adapter_test.dart
-          test/editor/slash_menu_test.dart
-          test/embedded/embedded_field_manager_test.dart
+          test/editor/
+          test/field/
+          test/embedded/
           test/clipboard/champion_doc_clipboard_test.dart
           test/clipboard/html_exporter_test.dart
           test/clipboard/selection_slicer_test.dart

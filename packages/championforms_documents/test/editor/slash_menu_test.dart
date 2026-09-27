@@ -27,6 +27,11 @@ Future<DocHarness> _pump(
 EmbeddedFieldNode _embedded(DocHarness h) =>
     h.snapshot.nodes.whereType<EmbeddedFieldNode>().single;
 
+/// Android's software keyboard outside a browser, which reports Enter only as
+/// a "\n" insertion delta (super_editor forwards it as a newline action).
+bool get _nativeAndroid =>
+    defaultTargetPlatform == TargetPlatform.android && !kIsWeb;
+
 void main() {
   testWidgets('typing "/" opens the menu at the caret; tapping an item '
       'inserts a field block that is registered on the controller', (
@@ -189,12 +194,13 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('slash-menu')), findsOneWidget);
 
-      if (defaultTargetPlatform == TargetPlatform.android) {
-        // Android reports the action key only as a "\n" insertion delta.
+      if (_nativeAndroid) {
+        // Native Android reports the action key only as a "\n" insertion
+        // delta. (Chrome on Android also sends a newline action, below.)
         await tester.ime.typeText('\n', getter: imeClientGetter);
       } else {
-        // iOS reports a "\n" delta (which super_editor skips) and then a
-        // newline action.
+        // iOS and the web report a "\n" delta (which super_editor skips)
+        // and then a newline action.
         await tester.pressEnterWithIme(getter: imeClientGetter);
       }
       await tester.pumpAndSettle();
@@ -217,7 +223,7 @@ void main() {
       // With the menu closed, Enter is a newline again.
       await tester.placeCaretInParagraph(texts.last.id, 0);
       await tester.typeImeText('x');
-      if (defaultTargetPlatform == TargetPlatform.android) {
+      if (_nativeAndroid) {
         await tester.ime.typeText('\n', getter: imeClientGetter);
       } else {
         await tester.pressEnterWithIme(getter: imeClientGetter);
