@@ -56,3 +56,22 @@
 - Pending keystrokes are kept when the field unmounts, the runtime's flush
   hook is released on dispose, and a controller swap sends pending edits to
   the old controller and rehydrates from the new one.
+- One-call restore: `controller.setFieldValues({'agreement': savedDoc,
+  'agreement.field.n1': value, ...})` restores a document and its embedded
+  field values together, in any key order and with or without the editor
+  on screen. The document's runtime registers the blocks of a new value in
+  the notification that announces it, and the controller applies the
+  values it kept for those not-yet-registered ids (core
+  `pendingFieldValues`).
+- `DerivedField` is a core `DerivedValueField`: `controller.exportValues()`
+  leaves derived values out of a saved draft; `results.toJson()` keeps them.
+- `blocks` in `DocumentField` JSON take `icon` (a name from the new
+  `DocumentBlockIcons`; unknown names fall back to a generic icon), `id`
+  and `keywords`.
+- `DocumentFields.defaultClipboardDelegate`: a factory used by every
+  document field without its own `clipboardDelegate` (fields decoded from
+  JSON included), e.g. `ChampionDocClipboard.new`.
+- Live rule issues without validation: `DocumentFields.issuesOf(controller,
+  docId)` and `results.documentIssues(docId)`.
+- `DocumentEditorState.selectNode(nodeId)`, `selectRange(DocSelection)` and
+  `selection`, for apps and tests.
