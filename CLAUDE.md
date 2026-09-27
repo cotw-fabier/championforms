@@ -27,9 +27,11 @@ tool/macos_integration_test.sh packages/championforms_clipboard/example
 tool/macos_integration_test.sh packages/championforms_clipboard/example integration_test/ffi_clipboard_test.dart
 ```
 
-`flutter test -d macos` intermittently leaves the test app's window open after
-reporting results (even for a trivial test), so always run macOS integration
-tests through `tool/macos_integration_test.sh`. It closes any leftover process
+After `flutter test -d macos` terminates the test app, macOS intermittently
+relaunches it (a new launchd-parented process, no arguments), leaving a stray
+window. This reproduces in a clean app with no native assets, so it is not our
+Rust code. Always run macOS integration tests through
+`tool/macos_integration_test.sh`. It closes any leftover process
 of that app (matched by its `build/macos/` path only) and keeps flutter's exit
 status.
 
