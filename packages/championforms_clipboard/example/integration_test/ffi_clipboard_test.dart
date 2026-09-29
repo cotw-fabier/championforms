@@ -3,7 +3,7 @@
 //
 //   flutter test integration_test/ffi_clipboard_test.dart -d macos
 import 'dart:convert';
-import 'dart:io' show Platform;
+import 'dart:io' show Directory, File, Platform;
 import 'dart:isolate';
 import 'dart:typed_data';
 
@@ -24,6 +24,11 @@ const _rtf = r'{\rtf1\ansi Hello \b world\b0}';
 final _png = base64.decode(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA'
   '60e6kgAAAABJRU5ErkJggg==',
+);
+
+/// A 1x1 GIF89a.
+final _gif = base64.decode(
+  'R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==',
 );
 
 /// Custom bytes including 0x00 and every other byte value.
@@ -62,11 +67,78 @@ void main() {
       ClipboardFormat.html,
       ClipboardFormat.rtf,
       ClipboardFormat.png,
+      ClipboardFormat.gif,
       _custom,
     ]) {
       expect(clipboard.supports(f), isTrue, reason: f.id);
     }
+    // UIPasteboard has no file references.
+    expect(clipboard.supports(ClipboardFormat.files), !Platform.isIOS);
   }, skip: !native);
+
+  testWidgets('GIF round-trips next to PNG', (tester) async {
+    await clipboard.write(
+      ClipboardItem({ClipboardFormat.png: _png, ClipboardFormat.gif: _gif}),
+    );
+    final r = await clipboard.read(
+      formats: [ClipboardFormat.png, ClipboardFormat.gif],
+    );
+    expect(r.png, _png);
+    expect(r.gif, _gif);
+    expect(
+      await clipboard.availableFormats(),
+      containsAll([ClipboardFormat.png, ClipboardFormat.gif]),
+    );
+  }, skip: !native);
+
+  testWidgets('a file list round-trips with other formats', (tester) async {
+    final dir = await Directory.systemTemp.createTemp('cfclip files ');
+    addTearDown(() => dir.delete(recursive: true));
+    final paths = <String>[];
+    for (final name in ['clip one.mp4', 'x😀#%.gif']) {
+      final f = File('${dir.path}/$name');
+      await f.writeAsBytes([1, 2, 3]);
+      paths.add(f.resolveSymbolicLinksSync());
+    }
+
+    await clipboard.write(
+      ClipboardItem({
+        ClipboardFormat.plainText: 'two files',
+        ClipboardFormat.gif: _gif,
+        ClipboardFormat.files: paths,
+      }),
+    );
+    final r = await clipboard.read(
+      formats: [
+        ClipboardFormat.files,
+        ClipboardFormat.plainText,
+        ClipboardFormat.gif,
+      ],
+    );
+    expect(r.files, paths);
+    expect(r.plainText, 'two files');
+    expect(r.gif, _gif);
+    expect(await clipboard.availableFormats(), contains(ClipboardFormat.files));
+
+    // Files alone, then a text write drops them.
+    await clipboard.write(
+      ClipboardItem({
+        ClipboardFormat.files: [paths[0]],
+      }),
+    );
+    expect((await clipboard.read(formats: [ClipboardFormat.files])).files, [
+      paths[0],
+    ]);
+    await clipboard.write(ClipboardItem({ClipboardFormat.plainText: 'text'}));
+    expect(
+      (await clipboard.read(formats: [ClipboardFormat.files])).files,
+      isNull,
+    );
+    expect(
+      await clipboard.availableFormats(),
+      isNot(contains(ClipboardFormat.files)),
+    );
+  }, skip: !native || Platform.isIOS);
 
   testWidgets('writes all five formats and reads them back exactly', (
     tester,

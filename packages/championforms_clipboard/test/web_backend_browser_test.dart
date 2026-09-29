@@ -27,6 +27,12 @@ void main() {
       expect(backend.supports(ClipboardFormat.png), isTrue);
     });
 
+    test('GIF and files are never supported', () {
+      final backend = WebClipboardBackend();
+      expect(backend.supports(ClipboardFormat.gif), isFalse);
+      expect(backend.supports(ClipboardFormat.files), isFalse);
+    });
+
     test('RTF and custom formats follow ClipboardItem.supports', () {
       final backend = WebClipboardBackend();
       expect(

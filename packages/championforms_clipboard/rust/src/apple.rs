@@ -8,7 +8,8 @@
 //!
 //! Writes are eager: all formats are set up front, with no lazy
 //! `NSPasteboardWriting` / item-provider callbacks. Text formats are UTF-8
-//! bytes on both sides of the ABI.
+//! bytes on both sides of the ABI. GIF is `com.compuserve.gif`. A file list
+//! (macOS only) is one `public.file-url` pasteboard item per file.
 //!
 //! The TIFF-to-PNG synthesis and the "prefer the pasteboard's own string
 //! conversion for text" approach follow super_native_extensions
@@ -88,15 +89,17 @@ fn utf8_text(data: Option<Vec<u8>>, fallback: impl FnOnce() -> Option<String>) -
 
 #[cfg(target_os = "macos")]
 mod imp {
-    use objc2::runtime::AnyObject;
+    use objc2::rc::Retained;
+    use objc2::runtime::{AnyObject, ProtocolObject};
     use objc2_app_kit::{
         NSBitmapImageFileType, NSBitmapImageRep, NSBitmapImageRepPropertyKey, NSPasteboard,
+        NSPasteboardItem, NSPasteboardWriting,
     };
-    use objc2_foundation::{NSData, NSDictionary, NSString};
+    use objc2_foundation::{NSArray, NSData, NSDictionary, NSString, NSURL};
 
     use super::uti::{self, uti_for};
     use super::{is_text, utf8_text};
-    use crate::format::Format;
+    use crate::format::{Format, decode_paths, encode_paths};
     use crate::platform::{ClipError, Entries};
 
     // Only `public.utf8-plain-text` is written for plain text, not the
@@ -106,6 +109,9 @@ mod imp {
 
     pub fn write(entries: &Entries) -> Result<(), ClipError> {
         let pb = NSPasteboard::generalPasteboard();
+        if let Some((_, paths)) = entries.iter().find(|(f, _)| *f == Format::Files) {
+            return write_with_files(&pb, entries, &decode_paths(paths));
+        }
         pb.clearContents();
         for (format, bytes) in entries {
             let ty = NSString::from_str(uti_for(format));
@@ -127,7 +133,87 @@ mod imp {
             .collect()
     }
 
+    /// A file list needs one pasteboard item per file, so this path writes
+    /// `NSPasteboardItem`s with `writeObjects:`. The first item carries the
+    /// first file's `public.file-url` plus every other format, so readers
+    /// that only look at the first item (as the legacy `dataForType:` API
+    /// does) still see all of them; each further file gets its own item.
+    /// The URL strings are `NSURL fileURLWithPath:`'s, the same value an
+    /// `NSURL` writes for itself.
+    fn write_with_files(
+        pb: &NSPasteboard,
+        entries: &Entries,
+        paths: &[String],
+    ) -> Result<(), ClipError> {
+        if paths.is_empty() {
+            return Err(ClipError::InvalidArgument("empty file list".into()));
+        }
+        let file_url = NSString::from_str(uti::FILE_URL);
+        let mut items: Vec<Retained<NSPasteboardItem>> = Vec::with_capacity(paths.len());
+        for (i, path) in paths.iter().enumerate() {
+            let item = NSPasteboardItem::new();
+            let url = NSURL::fileURLWithPath(&NSString::from_str(path));
+            let Some(url) = url.absoluteString() else {
+                return Err(ClipError::InvalidArgument(format!(
+                    "not a usable file path: {path:?}"
+                )));
+            };
+            if !item.setString_forType(&url, &file_url) {
+                return Err(ClipError::Platform(
+                    "NSPasteboardItem setString:forType: failed for public.file-url".into(),
+                ));
+            }
+            if i == 0 {
+                for (format, bytes) in entries.iter().filter(|(f, _)| *f != Format::Files) {
+                    let ty = NSString::from_str(uti_for(format));
+                    if !item.setData_forType(&NSData::with_bytes(bytes), &ty) {
+                        return Err(ClipError::Platform(format!(
+                            "NSPasteboardItem setData:forType: failed for {}",
+                            uti_for(format)
+                        )));
+                    }
+                }
+            }
+            items.push(item);
+        }
+        let objects: Vec<Retained<ProtocolObject<dyn NSPasteboardWriting>>> = items
+            .into_iter()
+            .map(ProtocolObject::from_retained)
+            .collect();
+        pb.clearContents();
+        if !pb.writeObjects(&NSArray::from_retained_slice(&objects)) {
+            return Err(ClipError::Platform(
+                "NSPasteboard writeObjects: failed".into(),
+            ));
+        }
+        Ok(())
+    }
+
+    /// Every item's `public.file-url`, resolved to a path. Finder writes
+    /// file reference URLs (`file:///.file/id=…`); `filePathURL` turns them
+    /// into ordinary paths.
+    fn read_files(pb: &NSPasteboard) -> Option<Vec<u8>> {
+        let file_url = NSString::from_str(uti::FILE_URL);
+        let items = pb.pasteboardItems()?;
+        let paths: Vec<String> = items
+            .iter()
+            .filter_map(|item| {
+                let s = item.stringForType(&file_url)?;
+                let url = NSURL::URLWithString(&s)?;
+                if !url.isFileURL() {
+                    return None;
+                }
+                let path = url.filePathURL()?.path()?;
+                Some(path.to_string())
+            })
+            .collect();
+        (!paths.is_empty()).then(|| encode_paths(&paths))
+    }
+
     fn read_one(pb: &NSPasteboard, format: &Format) -> Option<Vec<u8>> {
+        if *format == Format::Files {
+            return read_files(pb);
+        }
         let ty = NSString::from_str(uti_for(format));
         let data = pb.dataForType(&ty).map(|d| d.to_vec());
         match format {
@@ -194,6 +280,37 @@ mod imp {
         }
 
         #[test]
+        fn files_round_trip_with_other_formats() {
+            let pb = NSPasteboard::pasteboardWithUniqueName();
+            // Non-ASCII letters come back decomposed (NFD): NSURL uses the
+            // file system representation. The emoji has no decomposition.
+            let paths = ["/tmp/championforms a.mp4", "/tmp/x😀#%.gif"];
+            let gif = b"GIF89a\x01\x00\x01\x00".to_vec();
+            let entries: Entries = vec![
+                (Format::PlainText, b"two files".to_vec()),
+                (Format::Gif, gif.clone()),
+                (Format::Files, encode_paths(&paths)),
+            ];
+            write_with_files(&pb, &entries, &decode_paths(&entries[2].1)).unwrap();
+            assert_eq!(pb.pasteboardItems().unwrap().len(), 2);
+            let files = read_one(&pb, &Format::Files).expect("files read");
+            assert_eq!(decode_paths(&files), paths);
+            assert_eq!(read_one(&pb, &Format::Gif), Some(gif));
+            assert_eq!(
+                read_one(&pb, &Format::PlainText).as_deref(),
+                Some(&b"two files"[..])
+            );
+            let names: Vec<String> = pb
+                .types()
+                .map(|t| t.iter().map(|t| t.to_string()).collect())
+                .unwrap_or_default();
+            let formats = uti::formats_for(names.iter().map(String::as_str), true);
+            assert!(formats.contains(&Format::Files), "{names:?}");
+            assert!(formats.contains(&Format::Gif), "{names:?}");
+            release(&pb);
+        }
+
+        #[test]
         fn text_and_custom_bytes_round_trip() {
             let pb = NSPasteboard::pasteboardWithUniqueName();
             pb.clearContents();
@@ -238,7 +355,9 @@ mod imp {
         let pb = UIPasteboard::generalPasteboard();
         let mut keys: Vec<Retained<NSString>> = Vec::with_capacity(entries.len());
         let mut values: Vec<Retained<NSObject>> = Vec::with_capacity(entries.len());
-        for (format, bytes) in entries {
+        // Files never reach here (Dart's `supports` is false on iOS); skip
+        // them if they do: UIPasteboard has no file references.
+        for (format, bytes) in entries.iter().filter(|(f, _)| *f != Format::Files) {
             keys.push(NSString::from_str(uti_for(format)));
             let as_string = matches!(format, Format::PlainText | Format::Html);
             values.push(match std::str::from_utf8(bytes) {
@@ -265,6 +384,9 @@ mod imp {
     }
 
     fn read_one(pb: &UIPasteboard, format: &Format) -> Option<Vec<u8>> {
+        if *format == Format::Files {
+            return None;
+        }
         let ty = NSString::from_str(uti_for(format));
         if !is_text(format) {
             return pb.dataForPasteboardType(&ty).map(|d| d.to_vec());
@@ -287,7 +409,9 @@ mod imp {
         // SAFETY: called on the main thread (see `on_main`).
         let types = unsafe { pb.pasteboardTypes() };
         let names: Vec<String> = types.iter().map(|t| t.to_string()).collect();
-        uti::formats_for(names.iter().map(String::as_str), false)
+        let mut formats = uti::formats_for(names.iter().map(String::as_str), false);
+        formats.retain(|f| *f != Format::Files);
+        formats
     }
 }
 

@@ -17,6 +17,9 @@
 //! - `text/html`  → registered `HTML Format` (CF_HTML, see cf_html.rs).
 //! - `text/rtf`   → registered `Rich Text Format`.
 //! - `image/png`  → registered `PNG` (no `CF_DIB` fallback is written).
+//! - `image/gif`  → registered `GIF`.
+//! - `files`      → `CF_HDROP` (a `DROPFILES` list, see hdrop.rs), which
+//!   Explorer pastes as a copy of the files.
 //! - `custom:<n>` → registered format `<n>`.
 //!
 //! Format-name handling mirrors super_native_extensions' win32/common.rs
@@ -38,7 +41,7 @@ use windows::Win32::System::DataExchange::{
 use windows::Win32::System::Memory::{
     GMEM_MOVEABLE, GlobalAlloc, GlobalLock, GlobalSize, GlobalUnlock,
 };
-use windows::Win32::System::Ole::{CF_OEMTEXT, CF_TEXT, CF_UNICODETEXT};
+use windows::Win32::System::Ole::{CF_HDROP, CF_OEMTEXT, CF_TEXT, CF_UNICODETEXT};
 use windows::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DispatchMessageW, GetMessageW, HWND_MESSAGE, MSG, PostMessageW,
     WINDOW_EX_STYLE, WINDOW_STYLE, WM_APP,
@@ -46,7 +49,8 @@ use windows::Win32::UI::WindowsAndMessaging::{
 use windows::core::{PCWSTR, w};
 
 use crate::cf_html;
-use crate::format::Format;
+use crate::format::{Format, decode_paths, encode_paths};
+use crate::hdrop;
 use crate::platform::{ClipError, Done, Entries};
 
 // ---------------------------------------------------------------------------
@@ -216,6 +220,7 @@ fn open_clipboard(hwnd: HWND) -> Result<OpenClipboardGuard, ClipError> {
 const NAME_HTML: &str = "HTML Format";
 const NAME_RTF: &str = "Rich Text Format";
 const NAME_PNG: &str = "PNG";
+const NAME_GIF: &str = "GIF";
 
 fn wide(s: &str) -> Vec<u16> {
     s.encode_utf16().chain(std::iter::once(0)).collect()
@@ -241,6 +246,8 @@ fn format_id(format: &Format) -> Result<u32, ClipError> {
         Format::Html => register(NAME_HTML),
         Format::Rtf => register(NAME_RTF),
         Format::Png => register(NAME_PNG),
+        Format::Gif => register(NAME_GIF),
+        Format::Files => Ok(u32::from(CF_HDROP.0)),
         Format::Custom(name) => register(name),
     }
 }
@@ -262,11 +269,15 @@ fn format_from_id(id: u32) -> Option<Format> {
     {
         return Some(Format::PlainText);
     }
+    if id == u32::from(CF_HDROP.0) {
+        return Some(Format::Files);
+    }
     let name = format_name(id)?;
     match name.as_str() {
         NAME_HTML => Some(Format::Html),
         NAME_RTF => Some(Format::Rtf),
         NAME_PNG => Some(Format::Png),
+        NAME_GIF => Some(Format::Gif),
         _ => looks_like_custom(&name).then_some(Format::Custom(name)),
     }
 }
@@ -337,7 +348,8 @@ fn to_system(format: &Format, data: &[u8]) -> Vec<u8> {
             v.push(0);
             v
         }
-        Format::Png | Format::Custom(_) => data.to_vec(),
+        Format::Files => hdrop::encode(&decode_paths(data)),
+        Format::Png | Format::Gif | Format::Custom(_) => data.to_vec(),
     }
 }
 
@@ -348,7 +360,11 @@ fn from_system(format: &Format, data: Vec<u8>) -> Option<Vec<u8>> {
         Format::PlainText => Some(utf16_to_utf8(&data)),
         Format::Html => cf_html::decode(&data).map(String::into_bytes),
         Format::Rtf => Some(trim_trailing_nuls(data)),
-        Format::Png | Format::Custom(_) => Some(data),
+        Format::Files => {
+            let paths = hdrop::decode(&data)?;
+            (!paths.is_empty()).then(|| encode_paths(&paths))
+        }
+        Format::Png | Format::Gif | Format::Custom(_) => Some(data),
     }
 }
 
@@ -507,6 +523,18 @@ mod tests {
         ] {
             assert!(!looks_like_custom(bad), "{bad}");
         }
+    }
+
+    #[test]
+    fn files_are_cf_hdrop() {
+        let paths = [r"C:\a b.mp4", r"C:\é.gif"];
+        let sys = to_system(&Format::Files, &encode_paths(&paths));
+        assert_eq!(hdrop::decode(&sys).unwrap(), paths);
+        assert_eq!(
+            from_system(&Format::Files, sys).unwrap(),
+            encode_paths(&paths)
+        );
+        assert_eq!(from_system(&Format::Files, hdrop::encode(&[])), None);
     }
 
     #[test]

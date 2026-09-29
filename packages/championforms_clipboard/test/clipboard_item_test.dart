@@ -16,6 +16,39 @@ void main() {
       expect(item.values, hasLength(5));
     });
 
+    test('accepts GIF bytes and a file list, copied unmodifiable', () {
+      final paths = ['/tmp/a.mp4', '/tmp/b c.gif'];
+      final item = ClipboardItem({
+        ClipboardFormat.gif: Uint8List.fromList([0x47, 0x49, 0x46]),
+        ClipboardFormat.files: paths,
+      });
+      paths.add('/tmp/late');
+      final stored = item.values[ClipboardFormat.files]! as List<String>;
+      expect(stored, ['/tmp/a.mp4', '/tmp/b c.gif']);
+      expect(() => stored.add('x'), throwsUnsupportedError);
+    });
+
+    test('rejects bad file lists', () {
+      for (final bad in <Object>[
+        <String>[],
+        [''],
+        ['/ok', 'bad\x00path'],
+        '/tmp/a.mp4',
+        [1, 2],
+        Uint8List(1),
+      ]) {
+        expect(
+          () => ClipboardItem({ClipboardFormat.files: bad}),
+          throwsArgumentError,
+          reason: '$bad',
+        );
+      }
+      expect(
+        () => ClipboardItem({ClipboardFormat.gif: 'not bytes'}),
+        throwsArgumentError,
+      );
+    });
+
     test('rejects empty items', () {
       expect(() => ClipboardItem({}), throwsArgumentError);
     });
@@ -68,8 +101,21 @@ void main() {
       expect(result.rtf, 'rtf');
       expect(result.png, png);
       expect(result.bytes(custom), [7]);
+      expect(result.gif, isNull);
+      expect(result.files, isNull);
       expect(result.bytes(ClipboardFormat.png), png);
       expect(result.has(custom), isTrue);
+    });
+
+    test('gif and files accessors', () {
+      final gif = Uint8List.fromList([0x47]);
+      final result = ClipboardReadResult({
+        ClipboardFormat.gif: gif,
+        ClipboardFormat.files: const ['/a', '/b'],
+      });
+      expect(result.gif, gif);
+      expect(result.bytes(ClipboardFormat.gif), gif);
+      expect(result.files, ['/a', '/b']);
     });
 
     test('absent formats read as null', () {
@@ -79,6 +125,8 @@ void main() {
       expect(result.html, isNull);
       expect(result.rtf, isNull);
       expect(result.png, isNull);
+      expect(result.gif, isNull);
+      expect(result.files, isNull);
       expect(result.bytes(ClipboardFormat.custom('com.x')), isNull);
       expect(result.has(ClipboardFormat.plainText), isFalse);
     });

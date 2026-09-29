@@ -19,6 +19,11 @@
 //! - `text/html`  → `text/html`
 //! - `text/rtf`   → `text/rtf`
 //! - `image/png`  → `image/png`
+//! - `image/gif`  → `image/gif`
+//! - `files`      → `text/uri-list` (`file://` URIs, CRLF separated) and
+//!   `x-special/gnome-copied-files` (`copy\n` then one URI per line), which
+//!   Nautilus, Nemo and Caja paste as a copy of the files; read back from
+//!   `text/uri-list`, keeping only local `file:` URIs.
 //! - `custom:<n>` → `application/x-<n>`
 //!
 //! X11 vs Wayland: GTK3 abstracts both. On X11 the data lives in this
@@ -76,7 +81,7 @@ use std::ffi::{CStr, CString, c_char, c_int, c_uint, c_void};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::rc::Rc;
 
-use crate::format::Format;
+use crate::format::{Format, decode_paths, encode_paths, file_uri_to_path, path_to_file_uri};
 use crate::platform::{ClipError, Done, Entries};
 
 // ---------------------------------------------------------------------------
@@ -250,8 +255,46 @@ fn targets_for(format: &Format) -> Vec<String> {
         Format::Html => vec!["text/html".into()],
         Format::Rtf => vec!["text/rtf".into()],
         Format::Png => vec!["image/png".into()],
+        Format::Gif => vec!["image/gif".into()],
+        Format::Files => vec![URI_LIST.into(), GNOME_COPIED_FILES.into()],
         Format::Custom(name) => vec![format!("application/x-{name}")],
     }
+}
+
+const URI_LIST: &str = "text/uri-list";
+const GNOME_COPIED_FILES: &str = "x-special/gnome-copied-files";
+
+/// The payloads served for one written entry, each with the targets that
+/// ask for it. Every format serves its bytes as-is under all of its
+/// targets, except a file list, whose two targets need different bodies.
+fn served_for(format: &Format, data: Vec<u8>) -> Vec<(Vec<String>, Vec<u8>)> {
+    if *format != Format::Files {
+        return vec![(targets_for(format), data)];
+    }
+    let uris: Vec<String> = decode_paths(&data)
+        .iter()
+        .map(|p| path_to_file_uri(p))
+        .collect();
+    // RFC 2483: CRLF line ends. GNOME's list is LF separated, no trailer.
+    let uri_list: String = uris.iter().map(|u| format!("{u}\r\n")).collect();
+    let gnome = format!("copy\n{}", uris.join("\n"));
+    vec![
+        (vec![URI_LIST.into()], uri_list.into_bytes()),
+        (vec![GNOME_COPIED_FILES.into()], gnome.into_bytes()),
+    ]
+}
+
+/// Local paths in a `text/uri-list` body, NUL-joined for the ABI, or `None`
+/// when it names no local file.
+fn paths_from_uri_list(data: &[u8]) -> Option<Vec<u8>> {
+    let text = String::from_utf8_lossy(data);
+    let paths: Vec<String> = text
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+        .filter_map(file_uri_to_path)
+        .collect();
+    (!paths.is_empty()).then(|| encode_paths(&paths))
 }
 
 /// Maps an advertised target back to a [`Format`].
@@ -272,6 +315,8 @@ fn format_for_target(target: &str) -> Option<Format> {
         "text/html" => Some(Format::Html),
         "text/rtf" => Some(Format::Rtf),
         "image/png" => Some(Format::Png),
+        "image/gif" => Some(Format::Gif),
+        URI_LIST | GNOME_COPIED_FILES => Some(Format::Files),
         _ => Format::parse(&format!(
             "custom:{}",
             target.strip_prefix("application/x-")?
@@ -314,7 +359,8 @@ fn normalise_html(data: Vec<u8>) -> Vec<u8> {
 // ---------------------------------------------------------------------------
 
 /// Clipboard contents owned by GTK as `user_data` while we own the
-/// selection. `GtkTargetEntry::info` indexes into `entries`.
+/// selection. `GtkTargetEntry::info` indexes into `entries`, which holds
+/// one payload per [`served_for`] slot (a file list has two).
 struct Owned {
     entries: Entries,
 }
@@ -373,11 +419,16 @@ fn write_now(entries: Entries) -> Result<(), ClipError> {
     // The target strings only need to outlive the set_with_data call; GTK
     // interns them into atoms.
     let mut names: Vec<(CString, c_uint)> = Vec::new();
-    for (i, (format, _)) in entries.iter().enumerate() {
-        for t in targets_for(format) {
-            let t = CString::new(t)
-                .map_err(|_| ClipError::InvalidArgument("target contains NUL".into()))?;
-            names.push((t, i as c_uint));
+    let mut served: Entries = Vec::new();
+    for (format, data) in entries {
+        for (targets, bytes) in served_for(&format, data) {
+            let info = served.len() as c_uint;
+            for t in targets {
+                let t = CString::new(t)
+                    .map_err(|_| ClipError::InvalidArgument("target contains NUL".into()))?;
+                names.push((t, info));
+            }
+            served.push((format.clone(), bytes));
         }
     }
     if names.is_empty() {
@@ -392,7 +443,7 @@ fn write_now(entries: Entries) -> Result<(), ClipError> {
         })
         .collect();
 
-    let owned = Box::into_raw(Box::new(Owned { entries }));
+    let owned = Box::into_raw(Box::new(Owned { entries: served }));
     let ok = unsafe {
         gtk_clipboard_set_with_data(
             clipboard,
@@ -574,11 +625,14 @@ fn finish_read(acc: ReadAcc) -> Entries {
     acc.into_iter().filter_map(|(f, d)| Some((f, d?))).collect()
 }
 
-fn convert_read(format: &Format, data: Vec<u8>) -> Vec<u8> {
+/// Converts a target's bytes to the ABI representation; `None` drops the
+/// entry (a uri-list with no local files).
+fn convert_read(format: &Format, data: Vec<u8>) -> Option<Vec<u8>> {
     match format {
-        Format::Html => normalise_html(data),
-        Format::Rtf => trim_trailing_nuls(data),
-        _ => data,
+        Format::Html => Some(normalise_html(data)),
+        Format::Rtf => Some(trim_trailing_nuls(data)),
+        Format::Files => paths_from_uri_list(&data),
+        _ => Some(data),
     }
 }
 
@@ -615,7 +669,7 @@ unsafe extern "C" fn on_contents(
         };
         part_done(&part.req, |acc| {
             let slot = &mut acc[part.index];
-            slot.1 = value.map(|v| convert_read(&slot.0, v));
+            slot.1 = value.and_then(|v| convert_read(&slot.0, v));
         });
     }));
 }
@@ -730,6 +784,8 @@ mod tests {
             Format::Html,
             Format::Rtf,
             Format::Png,
+            Format::Gif,
+            Format::Files,
             Format::Custom("championforms+json".into()),
         ] {
             for t in targets_for(&f) {
@@ -738,6 +794,34 @@ mod tests {
         }
         assert_eq!(format_for_target("application/x-"), None);
         assert_eq!(format_for_target("TARGETS"), None);
+    }
+
+    #[test]
+    fn files_serve_uri_list_and_gnome_list() {
+        let paths = ["/tmp/a b.mp4", "/home/é/😀.gif"];
+        let served = served_for(&Format::Files, encode_paths(&paths));
+        assert_eq!(served.len(), 2);
+        let uri_list = String::from_utf8(served[0].1.clone()).unwrap();
+        assert_eq!(served[0].0, [URI_LIST]);
+        assert_eq!(
+            uri_list,
+            "file:///tmp/a%20b.mp4\r\nfile:///home/%C3%A9/%F0%9F%98%80.gif\r\n"
+        );
+        let gnome = String::from_utf8(served[1].1.clone()).unwrap();
+        assert_eq!(served[1].0, [GNOME_COPIED_FILES]);
+        assert_eq!(
+            gnome,
+            "copy\nfile:///tmp/a%20b.mp4\nfile:///home/%C3%A9/%F0%9F%98%80.gif"
+        );
+        let back = convert_read(&Format::Files, served[0].1.clone()).unwrap();
+        assert_eq!(decode_paths(&back), paths);
+    }
+
+    #[test]
+    fn uri_list_keeps_local_files_only() {
+        let list = b"# comment\r\nhttps://x/y\r\nfile:///a\nfile://host/b\r\n\r\n";
+        assert_eq!(paths_from_uri_list(list), Some(b"/a".to_vec()));
+        assert_eq!(paths_from_uri_list(b"https://x/y\r\n"), None);
     }
 
     #[test]

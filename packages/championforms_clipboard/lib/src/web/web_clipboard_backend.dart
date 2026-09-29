@@ -27,7 +27,9 @@ import 'web_formats.dart';
 /// write, it is retried without them and [supports] reports false for custom
 /// formats from then on. Without `ClipboardItem` at all, only plain text is
 /// written (`writeText`). RTF is written only where `supports('text/rtf')`
-/// is true, which no mainstream browser reports today.
+/// is true, which no mainstream browser reports today. GIF and file lists
+/// are never supported: browsers only take `image/png` among images, and a
+/// page has no local paths.
 ///
 /// Browsers only allow writes during (or shortly after) a user gesture and
 /// while the document has focus; otherwise the write fails with a
@@ -69,6 +71,9 @@ class WebClipboardBackend implements ClipboardBackend {
   @override
   bool supports(ClipboardFormat format) {
     if (!_hasClipboard) return false;
+    // Browsers accept only image/png among images, and a page has no
+    // local file paths to put on the clipboard.
+    if (format.kind == ClipboardFormatKind.gif || format.isFiles) return false;
     if (format == ClipboardFormat.plainText) return true; // writeText at worst
     if (!_hasClipboardItem) return false;
     if (_hasSupportsFn) {

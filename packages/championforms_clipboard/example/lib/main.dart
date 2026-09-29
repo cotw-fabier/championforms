@@ -9,6 +9,8 @@ import 'dart:ui' as ui;
 import 'package:championforms_clipboard/championforms_clipboard.dart';
 import 'package:flutter/material.dart';
 
+import 'demo_file.dart';
+
 void main() => runApp(const ClipboardInspectorApp());
 
 /// The custom format the demo writes.
@@ -20,8 +22,18 @@ final inspectedFormats = [
   ClipboardFormat.html,
   ClipboardFormat.rtf,
   ClipboardFormat.png,
+  ClipboardFormat.gif,
+  ClipboardFormat.files,
   demoFormat,
 ];
+
+/// A 16x16, two-frame animated GIF (201 bytes).
+final demoGif = base64.decode(
+  'R0lGODlhEAAQAIEAAD9Rtf/BBwAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh+QQAKAAAACwAAAAA'
+  'EAAQAAAIMwABCBxIsKDBgwgTJgzAMIBCAA0bLowo0SBFihYvViSocePAjgwPdpwY8WHJhyhTqhwY'
+  'EAAh+QQBKAACACwAAAAAEAAQAIE/UbX/wQcAAAAAAAAIMwADCBxIsKDBgwgTJgTAEIDCAA0bLowo'
+  '0SBFihYvViSocePAjgwPdpwY8WHJhyhTqhwYEAA7',
+);
 
 class ClipboardInspectorApp extends StatelessWidget {
   const ClipboardInspectorApp({super.key});
@@ -151,6 +163,20 @@ class _InspectorPageState extends State<InspectorPage> {
               FilledButton.tonal(
                 onPressed: _busy
                     ? null
+                    : () => _write('GIF', {ClipboardFormat.gif: demoGif}),
+                child: const Text('GIF'),
+              ),
+              FilledButton.tonal(
+                onPressed: _busy
+                    ? null
+                    : () async => _write('file list', {
+                        ClipboardFormat.files: [await createDemoFile()],
+                      }),
+                child: const Text('File list'),
+              ),
+              FilledButton.tonal(
+                onPressed: _busy
+                    ? null
                     : () => _write('custom', {
                         ClipboardFormat.plainText: 'custom payload',
                         demoFormat: Uint8List.fromList(
@@ -229,12 +255,13 @@ class _ValueView extends StatelessWidget {
       final shown = v.length > 2000 ? '${v.substring(0, 2000)}…' : v;
       return SelectableText(shown);
     }
+    if (v is List<String>) return SelectableText(v.join('\n'));
     final bytes = v as Uint8List;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SelectableText('${bytes.length} bytes: ${hexPreview(bytes)}'),
-        if (format == ClipboardFormat.png)
+        if (format == ClipboardFormat.png || format == ClipboardFormat.gif)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Image.memory(

@@ -3,15 +3,54 @@
 
 import '../api/clipboard_format.dart';
 
-/// Formats the Android backend can write and read.
+/// Formats the Android backend can write.
 ///
-/// Android's `ClipData` carries plain text and HTML on one item
-/// (`ClipData.newHtmlText`). RTF, PNG (which needs a `ContentProvider` URI)
-/// and custom formats are not supported.
+/// Android's `ClipData` carries plain text and HTML on its first item and
+/// images and files as `content://` URIs served by the package's
+/// `ClipboardContentProvider`. RTF and custom formats are not supported.
+/// [ClipboardFormat.files] is write only (see [androidReadableFormats]).
 final androidSupportedFormats = {
   ClipboardFormat.plainText,
   ClipboardFormat.html,
+  ClipboardFormat.png,
+  ClipboardFormat.gif,
+  ClipboardFormat.files,
 };
+
+/// Formats the Android backend can read back. A pasted `content://` URI is
+/// not a local path, so [ClipboardFormat.files] is not read.
+final androidReadableFormats = {
+  ClipboardFormat.plainText,
+  ClipboardFormat.html,
+  ClipboardFormat.png,
+  ClipboardFormat.gif,
+};
+
+/// Subfolder of the app's cache dir that the provider serves. Must match
+/// `ClipboardContentProvider.DIR`.
+const androidClipboardDir = 'championforms_clipboard';
+
+/// Suffix of the provider authority, after the application id. Must match
+/// the package's `AndroidManifest.xml`.
+const androidAuthoritySuffix = '.championforms_clipboard';
+
+/// The `content://` URI string for [relativePath] (slash separated, under
+/// [androidClipboardDir]), each segment percent-encoded.
+String androidContentUri(String packageName, String relativePath) {
+  final segments = relativePath
+      .split('/')
+      .where((s) => s.isNotEmpty)
+      .map(Uri.encodeComponent)
+      .join('/');
+  return 'content://$packageName$androidAuthoritySuffix/$segments';
+}
+
+/// The last segment of a local [path] (`/` separated), used as the display
+/// name of a copied file. Never empty.
+String androidBaseName(String path) {
+  final parts = path.split('/').where((s) => s.isNotEmpty);
+  return parts.isEmpty ? 'file' : parts.last;
+}
 
 /// Maps the MIME types of a `ClipDescription` to [ClipboardFormat]s.
 ///
@@ -19,6 +58,8 @@ final androidSupportedFormats = {
 /// carries plain text (`ClipData.Item.getText()`), so HTML implies
 /// [ClipboardFormat.plainText]. Any other `text/*` type (`text/plain`,
 /// `text/uri-list`, ...) is readable as plain text through `getText()`.
+/// `image/png` and `image/gif` URIs are readable as bytes; other URI types
+/// (files) are not reported, since [ClipboardFormat.files] is write only.
 Set<ClipboardFormat> androidFormatsFromMimeTypes(Iterable<String> mimeTypes) {
   final result = <ClipboardFormat>{};
   for (final raw in mimeTypes) {
@@ -29,6 +70,10 @@ Set<ClipboardFormat> androidFormatsFromMimeTypes(Iterable<String> mimeTypes) {
         ..add(ClipboardFormat.plainText);
     } else if (mime.startsWith('text/')) {
       result.add(ClipboardFormat.plainText);
+    } else if (mime == 'image/png') {
+      result.add(ClipboardFormat.png);
+    } else if (mime == 'image/gif') {
+      result.add(ClipboardFormat.gif);
     }
   }
   return result;

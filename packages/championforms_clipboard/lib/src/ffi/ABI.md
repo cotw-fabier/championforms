@@ -34,7 +34,8 @@ int32_t cfclip_write(int64_t req_id, const CfClipEntry* entries, size_t count,
                      CfClipCallback cb);
 
 // Read the listed formats. Callback entries: one per format present
-// (absent formats are simply omitted).
+// (absent formats are simply omitted; a `files` entry is omitted rather
+// than sent empty).
 int32_t cfclip_read(int64_t req_id, const char* const* formats, size_t count,
                     CfClipCallback cb);
 
@@ -70,7 +71,24 @@ entry whose `format` is `"error"` and whose `data` is the UTF-8 message.
 | `text/html`  | `public.html` | registered `HTML Format` (CF_HTML header with byte offsets) | `text/html` |
 | `text/rtf`   | `public.rtf` | registered `Rich Text Format` | `text/rtf` |
 | `image/png`  | `public.png` | registered `PNG` | `image/png` |
+| `image/gif`  | `com.compuserve.gif` | registered `GIF` | `image/gif` |
+| `files`      | macOS: one `public.file-url` pasteboard item per file; iOS: not supported (skipped on write, never read) | `CF_HDROP` (`DROPFILES`, `fWide`, UTF-16 list) | written as `text/uri-list` (CRLF, percent-encoded `file://` URIs) and `x-special/gnome-copied-files` (`copy\n` + LF-separated URIs); read from `text/uri-list`, local `file:` URIs only |
 | `custom:<n>` | `<n>` as UTI | registered format `<n>` | `application/x-<n>` |
+
+### The `files` payload
+
+The data of a `files` entry, in both directions, is the UTF-8 paths joined
+by a single NUL byte (`/a/b.mp4\0/c/d.gif`), with no trailing NUL. No path
+can contain NUL on any platform. Readers drop empty segments.
+
+- macOS: a write that includes `files` goes through `writeObjects:` with one
+  `NSPasteboardItem` per file (`NSURL fileURLWithPath:` as a string). The
+  first item also carries every other format of the write. A read resolves
+  each item's URL with `filePathURL` (Finder writes file reference URLs) and
+  returns `path`, which is in the file system's decomposed (NFD) form.
+- Windows: `from_system` returns nothing for an empty `CF_HDROP` list.
+- Linux: a `text/uri-list` with no local `file:` URI (a browser's link) is
+  reported by `cfclip_available_formats` but yields no entry on read.
 
 ## Threading
 

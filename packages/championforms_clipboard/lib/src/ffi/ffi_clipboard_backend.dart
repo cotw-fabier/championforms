@@ -18,9 +18,13 @@ import 'bindings.dart';
 /// and completes through one long-lived [NativeCallable.listener] per
 /// isolate, which routes each completion to its request by `req_id`. It
 /// works from any isolate, including background ones.
+///
+/// Every format is supported on all four platforms except
+/// [ClipboardFormat.files] on iOS (`UIPasteboard` has no file references).
 class FfiClipboardBackend implements ClipboardBackend {
   @override
-  bool supports(ClipboardFormat format) => _nativePlatform;
+  bool supports(ClipboardFormat format) =>
+      _nativePlatform && !(format.isFiles && Platform.isIOS);
 
   static final bool _nativePlatform =
       Platform.isMacOS ||
@@ -83,9 +87,14 @@ class FfiClipboardBackend implements ClipboardBackend {
     for (final (id, bytes) in entries) {
       final format = _parseFormat(id);
       if (format == null) continue;
-      values[format] = format.isText
-          ? utf8.decode(bytes, allowMalformed: true)
-          : bytes;
+      if (format.isFiles) {
+        final paths = decodePaths(bytes);
+        if (paths.isNotEmpty) values[format] = paths;
+      } else {
+        values[format] = format.isText
+            ? utf8.decode(bytes, allowMalformed: true)
+            : bytes;
+      }
     }
     return ClipboardReadResult(values);
   }
@@ -96,8 +105,23 @@ class FfiClipboardBackend implements ClipboardBackend {
     return {for (final (id, _) in entries) ?_parseFormat(id)};
   }
 
-  static Uint8List _encode(ClipboardFormat format, Object value) =>
-      format.isText ? utf8.encode(value as String) : value as Uint8List;
+  static Uint8List _encode(ClipboardFormat format, Object value) {
+    if (format.isFiles) return encodePaths(value as List<String>);
+    return format.isText ? utf8.encode(value as String) : value as Uint8List;
+  }
+
+  /// The ABI encoding of a file list: UTF-8 paths separated by NUL (no path
+  /// can contain NUL on any platform).
+  static Uint8List encodePaths(List<String> paths) =>
+      utf8.encode(paths.join('\x00'));
+
+  /// Inverse of [encodePaths]; empty segments are dropped.
+  static List<String> decodePaths(Uint8List bytes) => List.unmodifiable(
+    utf8
+        .decode(bytes, allowMalformed: true)
+        .split('\x00')
+        .where((p) => p.isNotEmpty),
+  );
 
   static ClipboardFormat? _parseFormat(String id) {
     try {

@@ -1,6 +1,6 @@
 name: championforms_clipboard
-description: "Multi-format system clipboard for Flutter (plain text, HTML, and custom types) on every platform, backed by Rust native assets, JNI on Android and the web Clipboard API."
-version: 0.1.0-dev.1
+description: "Multi-format system clipboard for Flutter (plain text, HTML, images, files and custom types) on every platform, backed by Rust native assets, JNI on Android and the web Clipboard API."
+version: 0.1.0-dev.2
 homepage: "https://championsoftheweb.com"
 repository: "https://github.com/cotw-fabier/championforms/tree/main/packages/championforms_clipboard"
 issue_tracker: "https://github.com/cotw-fabier/championforms/issues"
@@ -34,3 +34,13 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+
+flutter:
+  # Android only: the plugin module merges the ContentProvider that serves
+  # copied images and files (android/src/main/AndroidManifest.xml). Every
+  # other platform is FFI or package:web and needs no plugin registration.
+  plugin:
+    platforms:
+      android:
+        package: com.championforms.clipboard
+        pluginClass: ChampionformsClipboardPlugin

@@ -7,6 +7,9 @@ pub const PLAIN_TEXT: &str = "public.utf8-plain-text";
 pub const HTML: &str = "public.html";
 pub const RTF: &str = "public.rtf";
 pub const PNG: &str = "public.png";
+pub const GIF: &str = "com.compuserve.gif";
+/// One per pasteboard item, holding a `file://` URL string (macOS only).
+pub const FILE_URL: &str = "public.file-url";
 /// Read-only: macOS apps (Preview, screenshots, many image editors) often
 /// put only TIFF on the pasteboard. The macOS backend converts it to PNG.
 pub const TIFF: &str = "public.tiff";
@@ -18,6 +21,8 @@ pub fn uti_for(format: &Format) -> &str {
         Format::Html => HTML,
         Format::Rtf => RTF,
         Format::Png => PNG,
+        Format::Gif => GIF,
+        Format::Files => FILE_URL,
         Format::Custom(name) => name,
     }
 }
@@ -27,11 +32,12 @@ pub fn uti_for(format: &Format) -> &str {
 ///
 /// Every non-system type is reported as `custom:<type>`: a custom format is
 /// stored under its bare name, so there is no way to tell "ours" from any
-/// other application's private type, and hiding them would hide ours too.
-/// System types (the `public.*` and `dyn.*` namespaces, Apple's own
+/// other application's private type, and hiding them would hide ours too
+/// (`com.compuserve.gif` is the one non-system type mapped to a built-in
+/// format). System types (the `public.*` and `dyn.*` namespaces, Apple's own
 /// `com.apple.*` types, the nspasteboard.org marker types used by clipboard
 /// managers and legacy `NS…PboardType` names) are ignored unless mapped
-/// above. Names with whitespace (e.g. `CorePasteboardFlavorType 0x…`) are
+/// above, as `public.file-url` is. Names with whitespace (e.g. `CorePasteboardFlavorType 0x…`) are
 /// rejected by [`Format::parse`].
 ///
 /// With `tiff_as_png`, `public.tiff` maps to [`Format::Png`] (the macOS
@@ -42,6 +48,8 @@ pub fn format_for(uti: &str, tiff_as_png: bool) -> Option<Format> {
         HTML => Some(Format::Html),
         RTF => Some(Format::Rtf),
         PNG => Some(Format::Png),
+        GIF => Some(Format::Gif),
+        FILE_URL => Some(Format::Files),
         TIFF if tiff_as_png => Some(Format::Png),
         _ if is_system(uti) => None,
         _ => Format::parse(&format!("custom:{uti}")),
@@ -72,7 +80,14 @@ mod tests {
 
     #[test]
     fn standard_formats_round_trip() {
-        for f in [Format::PlainText, Format::Html, Format::Rtf, Format::Png] {
+        for f in [
+            Format::PlainText,
+            Format::Html,
+            Format::Rtf,
+            Format::Png,
+            Format::Gif,
+            Format::Files,
+        ] {
             assert_eq!(format_for(uti_for(&f), false), Some(f));
         }
     }

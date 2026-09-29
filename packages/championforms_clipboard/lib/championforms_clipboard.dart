@@ -1,10 +1,10 @@
 /// Multi-format system clipboard for Flutter.
 ///
 /// Reads and writes several representations of one clipboard item at once
-/// (plain text, HTML, RTF, PNG and custom application types) on macOS, iOS,
-/// Windows, Linux, Android and the web. Desktop and iOS backends are Rust
-/// native assets; Android uses `package:jni`; the web uses the async
-/// Clipboard API.
+/// (plain text, HTML, RTF, PNG, GIF, local files and custom application
+/// types) on macOS, iOS, Windows, Linux, Android and the web. Desktop and
+/// iOS backends are Rust native assets; Android uses `package:jni`; the web
+/// uses the async Clipboard API.
 ///
 /// ```dart
 /// await SystemClipboard.write(ClipboardItem({

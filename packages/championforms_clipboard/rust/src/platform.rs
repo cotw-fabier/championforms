@@ -17,7 +17,9 @@ pub type Entries = Vec<(Format, Vec<u8>)>;
 pub enum ClipError {
     /// Bad input from Dart (maps to ABI status -1).
     InvalidArgument(String),
-    /// The clipboard could not be opened / is unavailable (-2).
+    /// The clipboard could not be opened / is unavailable (-2). The Apple
+    /// pasteboards are always available, so only the other backends use it.
+    #[cfg_attr(any(target_os = "macos", target_os = "ios"), allow(dead_code))]
     Unavailable(String),
     /// The platform call failed (-3).
     Platform(String),

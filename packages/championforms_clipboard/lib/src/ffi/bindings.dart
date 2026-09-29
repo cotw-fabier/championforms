@@ -12,7 +12,9 @@ const _asset = 'package:championforms_clipboard/championforms_clipboard_native';
 
 /// `CfClipEntry`: one format and its bytes.
 final class CfClipEntry extends Struct {
-  /// NUL-terminated UTF-8 format id (`text/plain`, `custom:<name>`, ...).
+  /// NUL-terminated UTF-8 format id (`text/plain`, `image/gif`, `files`,
+  /// `custom:<name>`, ...). For `files` the data is the UTF-8 paths joined
+  /// by NUL bytes.
   external Pointer<Utf8> format;
 
   /// May be null when [len] is 0.

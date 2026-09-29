@@ -10,6 +10,10 @@ void main() {
       expect(ClipboardFormat.png.id, 'image/png');
       expect(ClipboardFormat.plainText.kind, ClipboardFormatKind.plainText);
       expect(ClipboardFormat.png.kind, ClipboardFormatKind.png);
+      expect(ClipboardFormat.gif.id, 'image/gif');
+      expect(ClipboardFormat.gif.kind, ClipboardFormatKind.gif);
+      expect(ClipboardFormat.files.id, 'files');
+      expect(ClipboardFormat.files.kind, ClipboardFormatKind.files);
     });
 
     test('isText is true for text formats only', () {
@@ -17,7 +21,15 @@ void main() {
       expect(ClipboardFormat.html.isText, isTrue);
       expect(ClipboardFormat.rtf.isText, isTrue);
       expect(ClipboardFormat.png.isText, isFalse);
+      expect(ClipboardFormat.gif.isText, isFalse);
+      expect(ClipboardFormat.files.isText, isFalse);
       expect(ClipboardFormat.custom('com.example.x').isText, isFalse);
+    });
+
+    test('isFiles is true for the file list only', () {
+      expect(ClipboardFormat.files.isFiles, isTrue);
+      expect(ClipboardFormat.png.isFiles, isFalse);
+      expect(ClipboardFormat.plainText.isFiles, isFalse);
     });
 
     test('custom formats', () {
@@ -41,6 +53,8 @@ void main() {
         ClipboardFormat.html,
         ClipboardFormat.rtf,
         ClipboardFormat.png,
+        ClipboardFormat.gif,
+        ClipboardFormat.files,
         ClipboardFormat.custom('com.championforms.demo'),
       ];
       for (final f in formats) {

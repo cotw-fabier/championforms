@@ -14,6 +14,8 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 #[cfg_attr(not(target_os = "windows"), allow(dead_code))]
 mod cf_html;
 mod format;
+#[cfg_attr(not(target_os = "windows"), allow(dead_code))]
+mod hdrop;
 mod platform;
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
@@ -81,7 +83,12 @@ fn complete(cb: CfClipCallback, req_id: i64, status: i32, entries: Vec<(String, 
 }
 
 fn complete_err(cb: CfClipCallback, req_id: i64, err: ClipError) {
-    complete(cb, req_id, err.status(), vec![("error".into(), err.message().as_bytes().to_vec())]);
+    complete(
+        cb,
+        req_id,
+        err.status(),
+        vec![("error".into(), err.message().as_bytes().to_vec())],
+    );
 }
 
 /// Runs `body`, converting panics and errors into an ABI status.

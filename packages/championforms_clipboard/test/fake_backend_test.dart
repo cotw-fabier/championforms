@@ -32,6 +32,37 @@ void main() {
       expect(backend.writes, hasLength(1));
     });
 
+    test('gif and files round-trip; files can be write only', () async {
+      final gif = Uint8List.fromList([0x47, 0x49, 0x46]);
+      final item = ClipboardItem({
+        ClipboardFormat.plainText: 'clip.mp4',
+        ClipboardFormat.gif: gif,
+        ClipboardFormat.files: ['/tmp/clip.mp4'],
+      });
+
+      final desktop = FakeClipboardBackend();
+      await desktop.write(item);
+      final r = await desktop.read();
+      expect(r.gif, gif);
+      expect(r.files, ['/tmp/clip.mp4']);
+
+      final android = FakeClipboardBackend(writeOnly: {ClipboardFormat.files});
+      expect(android.supports(ClipboardFormat.files), isTrue);
+      await android.write(item);
+      expect(android.writes.single.values, contains(ClipboardFormat.files));
+      expect(await android.availableFormats(), {
+        ClipboardFormat.plainText,
+        ClipboardFormat.gif,
+      });
+      expect((await android.read()).files, isNull);
+
+      final web = FakeClipboardBackend(
+        unsupported: {ClipboardFormat.gif, ClipboardFormat.files},
+      );
+      await web.write(item);
+      expect(await web.availableFormats(), {ClipboardFormat.plainText});
+    });
+
     test('read with formats returns only requested, present formats', () async {
       final backend = FakeClipboardBackend();
       await backend.write(ClipboardItem({ClipboardFormat.plainText: 'x'}));

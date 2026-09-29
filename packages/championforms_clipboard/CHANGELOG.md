@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.1.0-dev.2
+
+- `ClipboardFormat.gif` (`image/gif`, `Uint8List`): `com.compuserve.gif` on
+  macOS and iOS, a registered `GIF` format on Windows, `image/gif` on Linux,
+  a `content://` URI on Android. Not supported on the web.
+- `ClipboardFormat.files`: local file paths as a non-empty `List<String>`
+  (`ClipboardItem` validates and copies it; `ClipboardReadResult.files`
+  reads it; `ClipboardFormat.isFiles`). macOS writes one `public.file-url`
+  pasteboard item per file and reads them back; Windows writes and reads
+  `CF_HDROP`; Linux writes `text/uri-list` and
+  `x-special/gnome-copied-files` and reads `text/uri-list`; Android writes
+  `content://` URIs (write only). Not supported on iOS or the web. On the
+  FFI boundary the value is the UTF-8 paths joined by NUL.
+- Android: PNG, GIF and files. The package is now a Flutter plugin on
+  Android only: its module merges a read-only `ClipboardContentProvider`
+  (authority `<applicationId>.championforms_clipboard`) into the app's
+  manifest. Writes copy images and files into
+  `<cacheDir>/championforms_clipboard/`, clearing the previous write's files,
+  and are serialised. PNG and GIF are read back from any app's image URI.
+- `FakeClipboardBackend(writeOnly: ...)` imitates a write-only format.
+- **Breaking:** `ClipboardFormatKind` gains `gif` and `files`; exhaustive
+  switches over it need the new cases.
+- Rust: `ClipError::Unavailable` no longer trips `dead_code` on Apple
+  targets (clippy `-D warnings` was failing there).
+
 ## 0.1.0-dev.1
 
 - Initial package skeleton inside the championforms monorepo.

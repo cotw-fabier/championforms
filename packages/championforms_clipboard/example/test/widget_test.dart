@@ -28,6 +28,16 @@ void main() {
     expect(fake.contents.keys, [ClipboardFormat.plainText]);
   });
 
+  testWidgets('writes a GIF and lists it', (tester) async {
+    final fake = FakeClipboardBackend();
+    SystemClipboard.backend = fake;
+    await tester.pumpWidget(const ClipboardInspectorApp());
+    await tester.tap(find.text('GIF'));
+    await tester.pumpAndSettle();
+    expect(fake.contents[ClipboardFormat.gif], demoGif);
+    expect(find.text('image/gif'), findsWidgets);
+  });
+
   testWidgets('shows write failures in the last-error field', (tester) async {
     SystemClipboard.backend = FakeClipboardBackend(
       unsupported: {ClipboardFormat.rtf, ClipboardFormat.plainText},

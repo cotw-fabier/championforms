@@ -1,0 +1,15 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <!--
+      Serves the images and files championforms_clipboard puts on the
+      clipboard as content:// URIs. Not exported: other apps read an item
+      only through the temporary grant the clipboard gives the app that
+      pastes it. The authority is unique per app.
+    -->
+    <provider
+      android:name="com.championforms.clipboard.ClipboardContentProvider"
+      android:authorities="${applicationId}.championforms_clipboard"
+      android:exported="false"
+      android:grantUriPermissions="true" />
+  </application>
+</manifest>

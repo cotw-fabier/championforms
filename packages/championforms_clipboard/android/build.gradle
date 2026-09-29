@@ -1,0 +1,32 @@
+// Android library module for championforms_clipboard. It exists only to
+// merge a ContentProvider into the app's manifest (see
+// src/main/AndroidManifest.xml); every clipboard call is made from Dart
+// through package:jni.
+
+group 'com.championforms.clipboard'
+version '1.0'
+
+rootProject.allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+apply plugin: 'com.android.library'
+
+android {
+    namespace 'com.championforms.clipboard'
+
+    compileSdk 36
+
+    defaultConfig {
+        minSdk 21
+        consumerProguardFiles 'consumer-rules.pro'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+}

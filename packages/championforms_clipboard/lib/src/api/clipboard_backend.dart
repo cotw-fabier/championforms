@@ -24,7 +24,9 @@ abstract interface class ClipboardBackend {
   /// Formats currently on the clipboard that this backend can read.
   Future<Set<ClipboardFormat>> availableFormats();
 
-  /// Whether this backend can write and read [format] at all on this
-  /// platform (e.g. custom formats on Android: false).
+  /// Whether this backend can write [format] at all on this platform
+  /// (e.g. custom formats on Android: false). A supported format can also be
+  /// read back, with one exception: [ClipboardFormat.files] on Android is
+  /// write only (a pasted `content://` URI is not a local path).
   bool supports(ClipboardFormat format);
 }

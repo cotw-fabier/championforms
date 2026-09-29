@@ -72,19 +72,52 @@ void main() {
       });
     });
 
-    test('non-text types are ignored', () {
-      expect(androidFormatsFromMimeTypes(['image/png']), isEmpty);
-      expect(androidFormatsFromMimeTypes(['image/png', 'text/plain']), {
+    test('PNG and GIF URIs are images; other types are ignored', () {
+      expect(androidFormatsFromMimeTypes(['image/png']), {ClipboardFormat.png});
+      expect(androidFormatsFromMimeTypes(['text/plain', 'IMAGE/GIF']), {
         ClipboardFormat.plainText,
+        ClipboardFormat.gif,
       });
+      // Files are write only, so a video URI reports nothing.
+      expect(androidFormatsFromMimeTypes(['video/mp4', 'image/jpeg']), isEmpty);
       expect(androidFormatsFromMimeTypes([]), isEmpty);
     });
 
-    test('supported set is plain text and HTML only', () {
+    test('supported and readable sets', () {
       expect(androidSupportedFormats, {
         ClipboardFormat.plainText,
         ClipboardFormat.html,
+        ClipboardFormat.png,
+        ClipboardFormat.gif,
+        ClipboardFormat.files,
       });
+      expect(
+        androidReadableFormats,
+        androidSupportedFormats.difference({ClipboardFormat.files}),
+      );
+    });
+  });
+
+  group('content URIs', () {
+    test('authority is the package name plus the suffix', () {
+      expect(
+        androidContentUri('com.example.app', '123/image.png'),
+        'content://com.example.app.championforms_clipboard/123/image.png',
+      );
+    });
+
+    test('segments are percent-encoded, slashes kept', () {
+      expect(
+        androidContentUri('a.b', '/1/0/my clip #1 é.mp4'),
+        'content://a.b.championforms_clipboard/1/0/my%20clip%20%231%20%C3%A9.mp4',
+      );
+    });
+
+    test('base names', () {
+      expect(androidBaseName('/data/user/0/x/cache/v.mp4'), 'v.mp4');
+      expect(androidBaseName('/data/dir/'), 'dir');
+      expect(androidBaseName('/'), 'file');
+      expect(androidBaseName('plain'), 'plain');
     });
   });
 }
